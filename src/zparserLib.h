@@ -1,0 +1,24 @@
+#include "zig.h"
+zig_extern int32_t add(int32_t const a0, int32_t const a1);
+zig_extern zig_noreturn void abort(void);
+zig_extern uint32_t _dyld_image_count(void);
+zig_extern struct mach_header__4062 *_dyld_get_image_header(uint32_t const a0);
+zig_extern uintptr_t _dyld_get_image_vmaddr_slide(uint32_t const a0);
+zig_extern uint8_t const *_dyld_get_image_name(uint32_t const a0);
+zig_extern int getcontext(struct ucontext_t__6139 *const a0);
+zig_extern void os_unfair_lock_lock(struct os_unfair_lock__2521 *const a0);
+zig_extern int pthread_threadid_np(void *const a0, uint64_t *const a1);
+zig_extern void *mmap(void *const a0, uintptr_t const a1, unsigned int const a2, unsigned int const a3, int const a4, int64_t const a5);
+zig_extern int *__error(void);
+zig_extern void os_unfair_lock_unlock(struct os_unfair_lock__2521 *const a0);
+zig_extern int sigaction(int const a0, struct Sigaction__2796 const *const a1, struct Sigaction__2796 *const a2);
+zig_extern int close$NOCANCEL(int const a0);
+zig_extern intptr_t read(int const a0, uint8_t *const a1, uintptr_t const a2);
+zig_extern int __ulock_wait2(uint32_t const a0, void const *const a1, uint64_t const a2, uint64_t const a3, uint64_t const a4);
+zig_extern int munmap(void const *const a0, uintptr_t const a1);
+zig_extern uint8_t *getenv(uint8_t const *const a0);
+zig_extern int openat(int const a0, uint8_t const *const a1, unsigned int const a2, ...);
+zig_extern int fcntl(int const a0, int const a1, ...);
+zig_extern intptr_t write(int const a0, uint8_t const *const a1, uintptr_t const a2);
+zig_extern int isatty(int const a0);
+zig_extern int msync(void const *const a0, uintptr_t const a1, int const a2);
