@@ -4,19 +4,19 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const zparser_lib = b.addStaticLibrary(.{
-        .name = "zparserlib",
-        .root_source_file = .{ .path = "src/zparserLib.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
-    var zparser_h_gf = std.Build.GeneratedFile{ .step = &zparser_lib.step, .path = "" };
-    zparser_lib.generated_h = &zparser_h_gf;
-    b.installArtifact(zparser_lib);
+    // const zparser_lib = b.addStaticLibrary(.{
+    //     .name = "zacc",
+    //     .root_source_file = .{ .path = "src/zacc.zig" },
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
+    // var zparser_h_gf = std.Build.GeneratedFile{ .step = &zparser_lib.step, .path = "" };
+    // zparser_lib.generated_h = &zparser_h_gf;
+    // b.installArtifact(zparser_lib);
 
     const exe = b.addExecutable(.{
-        .name = "zparser",
-        .root_source_file = .{ .path = "src/zparser.zig" },
+        .name = "zacc",
+        .root_source_file = .{ .path = "src/zacc.zig" },
         .target = target,
         .optimize = optimize,
     });

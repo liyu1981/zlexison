@@ -1,4 +1,5 @@
 const std = @import("std");
+const testing = std.testing;
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
@@ -17,8 +18,17 @@ pub fn main() !void {
 }
 
 test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+    const allocator = testing.allocator;
+    {
+        const f = try std.fs.cwd().openFile("tests/flex_manual_example_1/exampleParser.zig", .{});
+        defer f.close();
+        const content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
+        defer allocator.free(content);
+        var content_z = try allocator.alloc(u8, content.len + 1);
+        defer allocator.free(content_z);
+        @memcpy(content_z[0..content.len], content);
+        content_z[content_z.len - 1] = 0;
+        var ast = try std.zig.Ast.parse(allocator, content_z[0..content.len :0], .zig);
+        ast.deinit(allocator);
+    }
 }

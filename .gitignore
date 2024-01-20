@@ -1,5 +1,6 @@
 *.gv
 *.output
+*.yy.c
 
 # Created by https://www.toptal.com/developers/gitignore/api/zig,macos,c,cpp,flex,bison
 # Edit at https://www.toptal.com/developers/gitignore?templates=zig,macos,c,cpp,flex,bison
