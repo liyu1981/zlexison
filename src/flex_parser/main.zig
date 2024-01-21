@@ -21,11 +21,12 @@ pub fn main() !u8 {
 
     try parser.lex();
 
-    try stdout_writer.print("# rules: {d},{d}, loc: {d}:{d}\n", .{
-        parser.context.code_blocks_before_rules.items.len,
-        parser.context.rule_actions.items.len,
-        parser.context.cur_loc.line,
-        parser.context.cur_loc.col,
+    try stdout_writer.print("# definitions: {d}, rules_cbs_1: {d}, rules_action_cbs: {d}, rules_cbs_2: {d}, user_code: {d}\n", .{
+        parser.context.definitions_cbs.items.len,
+        parser.context.rules_cbs_1.items.len,
+        parser.context.rules_action_cbs.items.len,
+        parser.context.rules_cbs_2.items.len,
+        parser.context.user_cbs.items.len,
     });
 
     return 0;

@@ -43,6 +43,19 @@ const YYBufferState = struct {
     // just pointing yyin at a new input file.
 };
 
+const StartCondition = struct {
+    pub fn BEGIN(this: *const StartCondition, start_condition: usize) void {
+        _ = this;
+        zlex_begin(start_condition);
+    }
+
+    // TODO: this needs to be auto gened
+    pub const INITIAL = 0;
+    pub const rule = 1;
+    pub const rule_action = 2;
+    pub const user_block = 3;
+};
+
 // ch14, values available to the user
 const YY = struct {
     text: [*c]u8 = undefined,
@@ -206,6 +219,7 @@ export fn zlex_prepare_yy(
 
 extern fn zlex_setup_parser(parser_intptr: uint_ptr) void;
 
+extern fn zlex_begin(start_condition: usize) void;
 extern fn zlex_action_echo() void;
 extern fn yylex() void;
 
@@ -216,6 +230,7 @@ pub fn lex(this: *Parser) !void {
 
 allocator: std.mem.Allocator,
 input: ?[]const u8,
+startCondition: StartCondition = StartCondition{},
 yy: YY = YY{},
 action: Action = Action{},
 buffer: Buffer = Buffer{},
@@ -251,7 +266,7 @@ const Context = struct {
         Flex,
     };
     const Section = enum {
-        BeforeRules,
+        Definitions,
         Rules,
         UserCode,
     };
@@ -273,191 +288,181 @@ const Context = struct {
                 .end = context.cur_loc,
             };
         }
+
+        pub fn countLines(this: *const CodeBlock) usize {
+            var c: usize = 0;
+            for (0..this.content.items.len) |i| {
+                if (this.content.items[i] == '\n') c += 1;
+            }
+            return c;
+        }
     };
 
     allocator: std.mem.Allocator,
-    code_blocks_before_rules: std.ArrayList(CodeBlock),
-    rule_actions: std.ArrayList(CodeBlock),
-    code_block_after_rules: ?CodeBlock = null,
-    user_block: ?CodeBlock = null,
+
+    definitions_cbs: std.ArrayList(CodeBlock),
+    rules_cbs_1: std.ArrayList(CodeBlock),
+    rules_action_cbs: std.ArrayList(CodeBlock),
+    rules_cbs_2: std.ArrayList(CodeBlock),
+    user_cbs: std.ArrayList(CodeBlock),
 
     scope_stack: std.ArrayList(Scope),
 
     cur_codeblock: CodeBlock = undefined,
-    cur_section: Section = .BeforeRules,
+    cur_section: Section = .Definitions,
     cur_scope: Scope = .Flex,
     cur_loc: Loc = Loc{},
 
     pub fn init(allocator: std.mem.Allocator) Context {
-        return Context{
+        var c = Context{
             .allocator = allocator,
-            .code_blocks_before_rules = std.ArrayList(CodeBlock).init(allocator),
-            .rule_actions = std.ArrayList(CodeBlock).init(allocator),
+            .definitions_cbs = std.ArrayList(CodeBlock).init(allocator),
+            .rules_cbs_1 = std.ArrayList(CodeBlock).init(allocator),
+            .rules_action_cbs = std.ArrayList(CodeBlock).init(allocator),
+            .rules_cbs_2 = std.ArrayList(CodeBlock).init(allocator),
+            .user_cbs = std.ArrayList(CodeBlock).init(allocator),
             .scope_stack = std.ArrayList(Scope).init(allocator),
         };
+        c.cur_codeblock = Parser.Context.CodeBlock.init(&c);
+        return c;
     }
 };
 
-export fn zlex_parser_rule_line86(parser_intptr: usize) u32 {
+export fn zlex_parser_rule_section(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_rule_line86_impl(parser) catch return 1;
+    zlex_parser_rule_section_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_rule_line86_impl(parser: *Parser) !void {
-    // {ws}+
-    switch (parser.context.cur_scope) {
-        .Flex, .Comment => {},
-        .CodeBlock => {
-            var block_ = parser.context.cur_codeblock;
-            try block_.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
-        },
-    }
-    parser.context.cur_loc.col += parser.yy.leng;
-}
-
-export fn zlex_parser_rule_line111(parser_intptr: usize) u32 {
-    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
-    _ = &parser;
-    zlex_parser_rule_line111_impl(parser) catch return 1;
-    return 0;
-}
-
-fn zlex_parser_rule_line111_impl(parser: *Parser) !void {
-    // {nl}
-    switch (parser.context.cur_scope) {
-        .Flex => {},
-        .Comment => {
-            parser.context.cur_scope = parser.context.scope_stack.pop();
-        },
-        .CodeBlock => {
-            var block_ = parser.context.cur_codeblock;
-            try block_.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
-        },
-    }
-    parser.context.cur_loc.line += 1;
-    parser.context.cur_loc.col = 0;
-}
-
-export fn zlex_parser_rule_line140(parser_intptr: usize) u32 {
-    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
-    _ = &parser;
-    zlex_parser_rule_line140_impl(parser) catch return 1;
-    return 0;
-}
-
-fn zlex_parser_rule_line140_impl(parser: *Parser) !void {
-    // \/\/
-    switch (parser.context.cur_scope) {
-        .Flex, .Comment => {},
-        .CodeBlock => {
-            try parser.context.scope_stack.append(parser.context.cur_scope);
-            parser.context.cur_scope = .Comment;
-        },
-    }
-    parser.context.cur_loc.col += 2;
-}
-
-export fn zlex_parser_rule_line169(parser_intptr: usize) u32 {
-    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
-    _ = &parser;
-    zlex_parser_rule_line169_impl(parser) catch return 1;
-    return 0;
-}
-
-fn zlex_parser_rule_line169_impl(parser: *Parser) !void {
-    // \%\%
+fn zlex_parser_rule_section_impl(parser: *Parser) !void {
+    // section
     switch (parser.context.cur_section) {
-        .BeforeRules => {
+        .Definitions => {
             parser.context.cur_section = .Rules;
+            parser.startCondition.BEGIN(Parser.StartCondition.rule);
         },
         .Rules => {
             parser.context.cur_section = .UserCode;
+            parser.startCondition.BEGIN(Parser.StartCondition.user_block);
         },
-        .UserCode => {
-            return Context.Error.LexSyntaxError;
-        },
+        else => {},
     }
-    std.debug.print("\nsection now: {any}\n", .{parser.context.cur_section});
-    parser.context.cur_loc.col += 2;
+    std.debug.print("\nsection: {any}\n", .{parser.context.cur_section});
+    parser.context.cur_loc.line += 1;
+    parser.context.cur_loc.col += 0;
 }
 
-export fn zlex_parser_rule_line179(parser_intptr: usize) u32 {
+export fn zlex_parser_rule_code_block(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_rule_line179_impl(parser) catch return 1;
+    zlex_parser_rule_code_block_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_rule_line179_impl(parser: *Parser) !void {
-    // \{z
-    parser.action.ECHO();
-    switch (parser.context.cur_scope) {
-        .Flex => {
-            parser.context.cur_codeblock = Context.CodeBlock.init(&parser.context);
-            try parser.context.scope_stack.append(parser.context.cur_scope);
-            parser.context.cur_scope = .CodeBlock;
+fn zlex_parser_rule_code_block_impl(parser: *Parser) !void {
+    // code block
+    try parser.context.cur_codeblock.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    parser.context.cur_codeblock.start = parser.context.cur_loc;
+    const lines = parser.context.cur_codeblock.countLines();
+    parser.context.cur_codeblock.end.line = parser.context.cur_codeblock.start.line + lines;
+    parser.context.cur_codeblock.end.col = 0;
+    switch (parser.context.cur_section) {
+        .Definitions => {
+            std.debug.print("\ncode block added to definitions\n", .{});
+            try parser.context.definitions_cbs.append(parser.context.cur_codeblock);
         },
-        .Comment => {},
-        .CodeBlock => {
-            return Context.Error.LexSyntaxError;
-        },
-    }
-    parser.context.cur_loc.col += 2;
-}
-
-export fn zlex_parser_rule_line193(parser_intptr: usize) u32 {
-    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
-    _ = &parser;
-    zlex_parser_rule_line193_impl(parser) catch return 1;
-    return 0;
-}
-
-fn zlex_parser_rule_line193_impl(parser: *Parser) !void {
-    // z\}
-    parser.action.ECHO();
-    switch (parser.context.cur_scope) {
-        .Flex => return Context.Error.LexSyntaxError,
-        .Comment => {},
-        .CodeBlock => {
-            parser.context.cur_codeblock.end.line = parser.context.cur_loc.line;
-            parser.context.cur_codeblock.end.col = parser.context.cur_loc.col + 2;
-            switch (parser.context.cur_section) {
-                .BeforeRules => {
-                    try parser.context.code_blocks_before_rules.append(parser.context.cur_codeblock);
-                },
-                .Rules => {
-                    try parser.context.rule_actions.append(parser.context.cur_codeblock);
-                },
-                .UserCode => {
-                    parser.context.user_block = parser.context.cur_codeblock;
-                },
+        .Rules => {
+            if (parser.context.rules_action_cbs.items.len == 0) {
+                std.debug.print("\ncode block added to rules_cbs_1\n", .{});
+                try parser.context.rules_cbs_1.append(parser.context.cur_codeblock);
+            } else {
+                std.debug.print("\ncode block added to rules_cbs_2\n", .{});
+                try parser.context.rules_cbs_2.append(parser.context.cur_codeblock);
             }
-            parser.context.cur_codeblock = Context.CodeBlock.init(&parser.context);
         },
+        else => {},
     }
-    parser.context.cur_loc.col += 2;
+
+    parser.context.cur_loc.line += lines;
+    parser.context.cur_loc.col = 0;
+    parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
 }
 
-export fn zlex_parser_rule_line213(parser_intptr: usize) u32 {
+export fn zlex_parser_rule_pattern(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_rule_line213_impl(parser) catch return 1;
+    zlex_parser_rule_pattern_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_rule_line213_impl(parser: *Parser) !void {
-    // .
-    // parser.action.ECHO();
-    switch (parser.context.cur_scope) {
-        .Flex, .Comment => {},
-        .CodeBlock => {
-            var block_ = parser.context.cur_codeblock;
-            try block_.content.append(parser.yy.text[0]);
-        },
-    }
-    parser.context.cur_loc.col += 1;
+fn zlex_parser_rule_pattern_impl(parser: *Parser) !void {
+    std.debug.print("\nrule: ", .{});
+    parser.action.ECHO();
+    std.debug.print("\n", .{});
+    parser.startCondition.BEGIN(Parser.StartCondition.rule_action);
+    parser.context.cur_loc.col += parser.yy.leng;
+}
+
+export fn zlex_parser_rule_action_in_newline(parser_intptr: usize) u32 {
+    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+    _ = &parser;
+    zlex_parser_rule_action_in_newline_impl(parser) catch return 1;
+    return 0;
+}
+
+fn zlex_parser_rule_action_in_newline_impl(parser: *Parser) !void {
+    try parser.context.cur_codeblock.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    parser.context.cur_loc.col += parser.yy.leng;
+}
+
+export fn zlex_parser_rule_action_inline(parser_intptr: usize) u32 {
+    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+    _ = &parser;
+    zlex_parser_rule_action_inline_impl(parser) catch return 1;
+    return 0;
+}
+
+fn zlex_parser_rule_action_inline_impl(parser: *Parser) !void {
+    try parser.context.cur_codeblock.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    parser.context.cur_loc.col += parser.yy.leng;
+}
+
+export fn zlex_parser_rule_action_new_line(parser_intptr: usize) u32 {
+    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+    _ = &parser;
+    zlex_parser_rule_action_new_line_impl(parser) catch return 1;
+    return 0;
+}
+
+fn zlex_parser_rule_action_new_line_impl(parser: *Parser) !void {
+    parser.context.cur_codeblock.end.line = parser.context.cur_loc.line;
+    parser.context.cur_codeblock.end.col = parser.context.cur_loc.col + parser.yy.leng;
+    try parser.context.rules_action_cbs.append(parser.context.cur_codeblock);
+
+    parser.startCondition.BEGIN(Parser.StartCondition.rule);
+    parser.context.cur_loc.col += parser.yy.leng;
+    parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+}
+
+export fn zlex_parser_rule_user_code_block(parser_intptr: usize) u32 {
+    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+    _ = &parser;
+    zlex_parser_rule_user_code_block_impl(parser) catch return 1;
+    return 0;
+}
+
+fn zlex_parser_rule_user_code_block_impl(parser: *Parser) !void {
+    try parser.context.cur_codeblock.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    parser.context.cur_codeblock.start = parser.context.cur_loc;
+    const lines = parser.context.cur_codeblock.countLines();
+    parser.context.cur_codeblock.end.line = parser.context.cur_codeblock.start.line + lines;
+    parser.context.cur_codeblock.end.col = 0;
+    try parser.context.user_cbs.append(parser.context.cur_codeblock);
+
+    parser.context.cur_loc.line += lines;
+    parser.context.cur_loc.col = 0;
+    parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
 }
 
 export fn zlex_parser_user_code(parser_ptr: *void) u32 {

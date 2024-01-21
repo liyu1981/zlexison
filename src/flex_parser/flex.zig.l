@@ -83,6 +83,10 @@ nl [\r\n]
 
 %%
 
+%{
+    // code block before rules
+%}
+
 "\ "
 
 [\ 123]+  {}
@@ -243,4 +247,10 @@ z\}    {
             parser.context.cur_loc.col += 1;
         }
 
+%{
+    // code block after rules
+%}
+
 %%
+
+// user code
