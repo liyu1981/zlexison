@@ -78,6 +78,8 @@ const Context = struct {
 };
 %}
 
+  const std = @import("std");
+
 ws [ \t]
 nl [\r\n]
 

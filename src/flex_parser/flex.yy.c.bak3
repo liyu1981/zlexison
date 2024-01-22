@@ -355,30 +355,30 @@ struct yy_trans_info {
     flex_int32_t yy_verify;
     flex_int32_t yy_nxt;
 };
-static const flex_int16_t yy_accept[45] =
+static const flex_int16_t yy_accept[51] =
     {0,
-     0, 0, 8, 8, 10, 10, 5, 5, 13, 11,
-     11, 11, 8, 9, 8, 10, 10, 5, 6, 5,
-     0, 0, 2, 0, 0, 0, 8, 8, 8, 10,
-     10, 5, 5, 5, 1, 0, 3, 0, 4, 8,
-     7, 1, 5, 0};
+     0, 0, 0, 7, 10, 10, 5, 5, 13, 11,
+     11, 11, 9, 7, 8, 8, 7, 7, 10, 10,
+     5, 6, 5, 0, 0, 2, 0, 0, 0, 7,
+     7, 8, 7, 7, 7, 10, 10, 5, 5, 5,
+     1, 0, 3, 0, 4, 7, 7, 1, 5, 0};
 
 static const YY_CHAR yy_ec[256] =
     {0,
      1, 1, 1, 1, 1, 1, 1, 1, 2, 3,
+     4, 4, 4, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 2, 1, 1, 1, 1, 4, 1, 1, 1,
-     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 5, 1, 1, 1, 1, 6, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 7, 1, 1, 1, 1, 1, 1, 1, 1,
 
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 5, 1, 6, 1, 1, 1, 1, 1,
+     1, 1, 8, 1, 9, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -394,45 +394,59 @@ static const YY_CHAR yy_ec[256] =
      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
      1, 1, 1, 1, 1};
 
-static const YY_CHAR yy_meta[7] =
+static const YY_CHAR yy_meta[10] =
     {0,
-     1, 1, 2, 1, 1, 1};
+     1, 2, 3, 2, 2, 1, 1, 1, 1};
 
-static const flex_int16_t yy_base[54] =
+static const flex_int16_t yy_base[62] =
     {0,
-     0, 0, 47, 2, 0, 45, 45, 4, 47, 51,
-     7, 7, 0, 51, 10, 0, 42, 0, 51, 12,
-     42, 17, 51, 0, 19, 21, 0, 41, 23, 0,
-     40, 0, 39, 25, 51, 0, 51, 0, 51, 0,
-     51, 0, 0, 51, 28, 30, 32, 34, 36, 40,
-     38, 16, 1};
+     0, 0, 82, 6, 0, 78, 80, 13, 82, 86,
+     18, 18, 86, 74, 0, 0, 27, 32, 0, 74,
+     0, 86, 34, 76, 42, 86, 43, 39, 38, 31,
+     0, 0, 29, 46, 24, 0, 27, 0, 26, 50,
+     86, 22, 0, 19, 0, 11, 12, 0, 0, 86,
+     55, 58, 61, 64, 2, 66, 69, 72, 73, 75,
+     0};
 
-static const flex_int16_t yy_def[54] =
+static const flex_int16_t yy_def[62] =
     {0,
-     45, 45, 46, 46, 47, 47, 48, 48, 44, 44,
-     49, 44, 50, 44, 50, 51, 51, 52, 44, 52,
-     49, 49, 44, 53, 44, 44, 50, 50, 50, 51,
-     51, 52, 52, 52, 44, 25, 44, 26, 44, 29,
-     44, 51, 34, 0, 44, 44, 44, 44, 44, 44,
-     44, 44, 44};
+     51, 51, 51, 50, 52, 52, 53, 53, 50, 50,
+     54, 50, 50, 55, 56, 56, 50, 55, 57, 57,
+     58, 50, 58, 54, 54, 50, 50, 59, 60, 55,
+     18, 56, 30, 30, 61, 57, 57, 58, 58, 58,
+     50, 59, 42, 60, 44, 61, 46, 57, 40, 0,
+     50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
+     50};
 
-static const flex_int16_t yy_nxt[58] =
+static const flex_int16_t yy_nxt[96] =
     {0,
-     44, 11, 35, 12, 14, 15, 19, 20, 22, 23,
-     24, 25, 26, 28, 29, 33, 32, 34, 22, 23,
-     36, 37, 38, 39, 40, 41, 43, 39, 10, 10,
-     13, 13, 16, 16, 18, 18, 21, 21, 30, 30,
-     27, 35, 42, 35, 23, 31, 44, 19, 17, 14,
-     9, 44, 44, 44, 44, 44, 44};
+     46, 11, 30, 50, 11, 12, 14, 15, 16, 15,
+     15, 17, 18, 14, 14, 22, 35, 47, 23, 25,
+     26, 45, 25, 27, 43, 28, 29, 30, 41, 48,
+     47, 41, 33, 31, 34, 30, 35, 31, 31, 39,
+     45, 43, 40, 25, 26, 41, 25, 42, 43, 42,
+     42, 49, 45, 49, 49, 10, 10, 10, 19, 19,
+     19, 21, 21, 21, 24, 24, 24, 32, 32, 36,
+     36, 36, 38, 38, 42, 42, 44, 44, 26, 37,
+     31, 50, 22, 20, 13, 9, 50, 50, 50, 50,
+     50, 50, 50, 50, 50
 
-static const flex_int16_t yy_chk[58] =
+};
+
+static const flex_int16_t yy_chk[96] =
     {0,
-     0, 2, 53, 2, 4, 4, 8, 8, 11, 11,
-     12, 12, 12, 15, 15, 20, 52, 20, 22, 22,
-     25, 25, 26, 26, 29, 29, 34, 34, 45, 45,
-     46, 46, 47, 47, 48, 48, 49, 49, 51, 51,
-     50, 33, 31, 28, 21, 17, 9, 7, 6, 3,
-     44, 44, 44, 44, 44, 44, 44};
+     61, 2, 55, 0, 2, 2, 4, 4, 4, 4,
+     4, 4, 4, 4, 4, 8, 47, 46, 8, 11,
+     11, 44, 11, 12, 42, 12, 12, 17, 39, 37,
+     35, 33, 17, 17, 17, 17, 18, 30, 18, 23,
+     29, 28, 23, 25, 25, 27, 25, 34, 34, 34,
+     34, 40, 40, 40, 40, 51, 51, 51, 52, 52,
+     52, 53, 53, 53, 54, 54, 54, 56, 56, 57,
+     57, 57, 58, 58, 59, 59, 60, 60, 24, 20,
+     14, 9, 7, 6, 3, 50, 50, 50, 50, 50,
+     50, 50, 50, 50, 50
+
+};
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -457,9 +471,9 @@ uintptr_t parser_intptr = 0;
 void zlex_setup_parser(intptr_t ptr) {
     parser_intptr = ptr;
 }
-#line 468 "flex_test.yy.c"
+#line 480 "flex_test.yy.c"
 
-#line 470 "flex_test.yy.c"
+#line 482 "flex_test.yy.c"
 
 #define INITIAL 0
 #define rule 1
@@ -647,7 +661,56 @@ extern int yylex(void);
     YY_USER_ACTION
 
 // zlex utils
-#include "zlex_utils.c"
+
+void zlex_begin(size_t start_condition) {
+    yy_start = 1 + 2 * start_condition;
+}
+
+int8_t zlex_action_input() {
+    return (int8_t)input();
+}
+
+void zlex_action_echo() {
+    ECHO;
+}
+
+uintptr_t zlex_yy_create_buffer(FILE *f, size_t size) {
+    return ZLEX_CAST_UINTPTR(yy_create_buffer(f, size));
+}
+
+void zlex_yy_switch_to_buffer(uintptr_t new_buffer) {
+    yy_switch_to_buffer((YY_BUFFER_STATE)(void *)new_buffer);
+}
+
+void zlex_yy_delete_buffer(uintptr_t buffer) {
+    yy_delete_buffer((YY_BUFFER_STATE)(void *)buffer);
+}
+
+void zlex_yypush_buffer_state(uintptr_t buffer) {
+    yypush_buffer_state((YY_BUFFER_STATE)(void *)buffer);
+}
+
+void zlex_yypop_buffer_state() {
+    yypop_buffer_state();
+}
+
+void zlex_yy_flush_buffer(uintptr_t buffer) {
+    yy_flush_buffer((YY_BUFFER_STATE)(void *)buffer);
+}
+
+uintptr_t zlex_yy_scan_string(const char *str) {
+    return ZLEX_CAST_UINTPTR(yy_scan_string(str));
+}
+
+uintptr_t zlex_yy_scan_bytes(const char *str, size_t len) {
+    return ZLEX_CAST_UINTPTR(yy_scan_bytes(str, len));
+}
+
+uintptr_t zlex_yy_scan_buffer(char *base, size_t size) {
+    YY_BUFFER_STATE s = yy_scan_buffer(base, size);
+    printf("scan buffer return: %p\n", s);
+    return ZLEX_CAST_UINTPTR(s);
+}
 
 /** The main scanner function which does all the work.
  */
@@ -684,7 +747,7 @@ YY_DECL {
     {
 #line 10 "flex_test.l"
 
-#line 696 "flex_test.yy.c"
+#line 708 "flex_test.yy.c"
 
         while (/*CONSTCOND*/ 1) /* loops until end-of-file is reached */
         {
@@ -709,12 +772,12 @@ YY_DECL {
                 }
                 while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
                     yy_current_state = (int)yy_def[yy_current_state];
-                    if (yy_current_state >= 45)
+                    if (yy_current_state >= 51)
                         yy_c = yy_meta[yy_c];
                 }
                 yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
                 ++yy_cp;
-            } while (yy_base[yy_current_state] != 51);
+            } while (yy_base[yy_current_state] != 86);
 
         yy_find_action:
             yy_act = yy_accept[yy_current_state];
@@ -759,7 +822,9 @@ YY_DECL {
                     }
                     YY_BREAK
                 case 3:
+                    /* rule 3 can match eol */
                     *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
+                    YY_LINENO_REWIND_TO(yy_cp - 1);
                     (yy_c_buf_p) = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
@@ -770,11 +835,13 @@ YY_DECL {
                     }
                     YY_BREAK
                 case 4:
+                    /* rule 4 can match eol */
                     *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
+                    YY_LINENO_REWIND_TO(yy_cp - 1);
                     (yy_c_buf_p) = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
-#line 45 "flex_test.l"
+#line 46 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zlex_parser_code_block_stop(parser_intptr);
@@ -782,7 +849,7 @@ YY_DECL {
                     YY_BREAK
                 case 5:
                     YY_RULE_SETUP
-#line 55 "flex_test.l"
+#line 56 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zlex_parser_code_block_content(parser_intptr);
@@ -791,35 +858,33 @@ YY_DECL {
                 case 6:
                     /* rule 6 can match eol */
                     YY_RULE_SETUP
-#line 62 "flex_test.l"
+#line 63 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zlex_parser_code_block_new_line(parser_intptr);
                     }
                     YY_BREAK
                 case 7:
-                    *yy_cp = (yy_hold_char); /* undo effects of setting up yytext */
-                    (yy_c_buf_p) = yy_cp -= 1;
-                    YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
 #line 69 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zlex_parser_code_block_start(parser_intptr);
+                        zlex_parser_rule_pattern(parser_intptr);
                     }
                     YY_BREAK
                 case 8:
+                    /* rule 8 can match eol */
                     YY_RULE_SETUP
-#line 80 "flex_test.l"
+#line 77 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zlex_parser_rule_line(parser_intptr);
+                        zlex_parser_rule_action_line(parser_intptr);
                     }
                     YY_BREAK
                 case 9:
                     /* rule 9 can match eol */
                     YY_RULE_SETUP
-#line 89 "flex_test.l"
+#line 85 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zlex_parser_rule_new_line(parser_intptr);
@@ -828,7 +893,7 @@ YY_DECL {
                 case 10:
                     /* rule 10 can match eol */
                     YY_RULE_SETUP
-#line 94 "flex_test.l"
+#line 90 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zlex_parser_user_code_block(parser_intptr);
@@ -837,7 +902,7 @@ YY_DECL {
                 case 11:
                     /* rule 11 can match eol */
                     YY_RULE_SETUP
-#line 102 "flex_test.l"
+#line 98 "flex_test.l"
                     {
                         zlex_prepare_yy(parser_intptr, ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zlex_parser_default_rule(parser_intptr);
@@ -845,10 +910,10 @@ YY_DECL {
                     YY_BREAK
                 case 12:
                     YY_RULE_SETUP
-#line 106 "flex_test.l"
+#line 102 "flex_test.l"
                     ECHO;
                     YY_BREAK
-#line 904 "flex_test.yy.c"
+#line 915 "flex_test.yy.c"
                 case YY_STATE_EOF(INITIAL):
                 case YY_STATE_EOF(rule):
                 case YY_STATE_EOF(user_block):
@@ -1125,7 +1190,7 @@ static yy_state_type yy_get_previous_state(void) {
         }
         while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
             yy_current_state = (int)yy_def[yy_current_state];
-            if (yy_current_state >= 45)
+            if (yy_current_state >= 51)
                 yy_c = yy_meta[yy_c];
         }
         yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -1150,11 +1215,11 @@ static yy_state_type yy_try_NUL_trans(yy_state_type yy_current_state) {
     }
     while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
         yy_current_state = (int)yy_def[yy_current_state];
-        if (yy_current_state >= 45)
+        if (yy_current_state >= 51)
             yy_c = yy_meta[yy_c];
     }
     yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-    yy_is_jam = (yy_current_state == 44);
+    yy_is_jam = (yy_current_state == 50);
 
     return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1776,4 +1841,4 @@ void yyfree(void *ptr) {
 
 #define YYTABLES_NAME "yytables"
 
-#line 106 "flex_test.l"
+#line 102 "flex_test.l"

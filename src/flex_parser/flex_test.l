@@ -1,17 +1,17 @@
 %{
 int section = 0; // 0 - before rules, 1 - rules, 2 - user code
+int last_sc = 0;
 %}
 
-nl [\r\n]
-
 %x rule
-%x rule_action
 %x user_block
+%x code_block
 
 %%
 
 <*>^\%\%$    {
       // section
+      // replace me
       section += 1;
       if (section == 1) {
         BEGIN(rule);
@@ -23,51 +23,84 @@ nl [\r\n]
       printf("now section: %d\n", section);
   }
 
-<INITIAL,rule>\%\{([^\%]|\n)*\%\} {
-      // code block
-      printf("code block:");
+<INITIAL>^[ \t]+.*$ {
+    // code block inline
+    // replace me
+    printf("code block (inline)");
+    ECHO;
+    printf("\n");
+  }
+
+<INITIAL>^\%\{[ \t]*$ {
+        // code block start
+      // replace me
+      printf("code block start:");
       ECHO;
       printf("\n");
+      input();
+      BEGIN(code_block);
+      last_sc = INITIAL;
   }
 
-<rule>^[^[:space:]]*(\\\ [^[:space:]]*)* {
-    // pattern
-    printf("rule:");
+<INITIAL,code_block>^\%\}[ \t]*$ {
+    // code block stop
+    // replace me
+    printf("code block stop:");
     ECHO;
     printf("\n");
-    BEGIN(rule_action);
+    input();
+    BEGIN(last_sc);
   }
 
-<rule>[ \t]+[^\r\n]+ {
-    // action in newline
-    printf("action:");
+<code_block>.* {
+    // code block content
+    // replace me
+    printf("code block content:");
+    ECHO;
+  }
+
+<code_block>\n {
+    // code block newline
+    // replace me
+    printf("code block newline");
+    ECHO;
+  }
+
+<rule>^\%\{[ \t]*$ {
+        // code block start
+      // replace me
+      printf("code block start(rule):");
+      ECHO;
+      printf("\n");
+      input();
+      BEGIN(code_block);
+      last_sc = rule;
+  }
+
+<rule>.* {
+    // rule line
+    // replace me
+    printf("rule line:");
     ECHO;
     printf("\n");
   }
 
-<rule>{nl} {
+
+<rule>\n {
     // rule new line
-  }
-
-<rule_action>[^\r\n]+ {
-    // action inline
-    printf("action:");
-    ECHO;
-    printf("\n");
-  }
-
-<rule_action>{nl} {
-    // rule action new line
-    BEGIN(rule);
+    // replace me
   }
 
 <user_block>(.|\n)* {
     // user code block
+      // replace me
     printf("user code block:");
     ECHO;
     printf("\n");
   }
 
-<*>.|\n {}
+<*>.|\n {
+      // replace me
+  }
 
 %%

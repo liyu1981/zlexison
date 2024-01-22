@@ -21,13 +21,24 @@ pub fn main() !u8 {
 
     try parser.lex();
 
-    try stdout_writer.print("# definitions: {d}, rules_cbs_1: {d}, rules_action_cbs: {d}, rules_cbs_2: {d}, user_code: {d}\n", .{
-        parser.context.definitions_cbs.items.len,
-        parser.context.rules_cbs_1.items.len,
-        parser.context.rules_action_cbs.items.len,
-        parser.context.rules_cbs_2.items.len,
-        parser.context.user_cbs.items.len,
-    });
+    try dumpCodeBlocks("definition_cbs", &parser.context.definitions_cbs);
+    try dumpCodeBlocks("rules_cbs_1", &parser.context.rules_cbs_1);
+    try dumpCodeBlocks("rules_action_cbs", &parser.context.rules_action_cbs);
+    try dumpCodeBlocks("rules_cbs_2", &parser.context.rules_cbs_2);
+    try dumpCodeBlocks("user_cbs", &parser.context.user_cbs);
 
     return 0;
+}
+
+fn dumpCodeBlocks(section: []const u8, cbs: *std.ArrayList(FlexParser.Context.CodeBlock)) !void {
+    std.debug.print(">>>>> code blocks of {s}\n", .{section});
+    for (cbs.items) |cbs_item| {
+        std.debug.print("##### code block: L{d}-C{d} -> L{d}-C{d}\n", .{
+            cbs_item.start.line,
+            cbs_item.start.col,
+            cbs_item.end.line,
+            cbs_item.end.col,
+        });
+        std.debug.print("      content: {s}\n", .{cbs_item.content.items});
+    }
 }
