@@ -1,6 +1,6 @@
 // zlex utils
 
-void zlex_begin(size_t start_condition) {
+void zlex_start_condition_begin(size_t start_condition) {
     yy_start = 1 + 2 * start_condition;
 }
 

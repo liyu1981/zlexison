@@ -2,214 +2,24 @@ const std = @import("std");
 
 const Parser = @This();
 
-const uint_ptr = usize;
+const ZA = @import("zlexAPI.zig");
+
+const uint_ptr = ZA.uint_ptr;
 
 pub const ParserError = error{
     InlineCodeBlockInDefinitionSection,
     NoCodeBlockAllowed,
+} || ZA.YYError;
 
-    YYScanStringFailed,
-    YYScanBytesFailed,
-    YYScanBufferFailed,
-};
-
-pub const YYBufferState = struct {
-    yy_input_file: uint_ptr, // FILE* as uint_ptr
-    yy_ch_buf: [*c]u8, // input buffer
-    yy_buf_pos: [*c]u8, // current position in input buffer
-    yy_buf_size: i64, // Size of input buffer in bytes, not including room for EOB characters.
-    yy_n_chars: i64, // Number of characters read into yy_ch_buf, not including EOB characters.
-    yy_is_our_buffer: i64, // Whether we "own" the buffer - i.e., we know we created it,
-    // and can realloc() it to grow
-    // it, and should free() it to delete it.
-    yy_is_interactive: i64, // Whether this is an "interactive" input source; if so, and
-    // if we're using stdio for input, then we want to use getc()
-    // instead of fread(), to make sure we stop fetching input after
-    // each newline.
-    yy_at_bol: i64, // Whether we're considered to be at the beginning of a line.
-    // If so, '^' rules will be active on the next match, otherwise not.
-    yy_bs_lineno: i64, // *< The line count.
-    yy_bs_column: i64, // *< The column count.
-    yy_fill_buffer: i64, // Whether to try to fill the input buffer when we reach the end of it.
-    yy_buffer_status: i64,
-
-    const YY_BUFFER_NEW = 0;
-    const YY_BUFFER_NORMAL = 1;
-    const YY_BUFFER_EOF_PENDING = 2; // When an EOF's been seen but there's still some text to process
-    // then we mark the buffer as YY_EOF_PENDING, to indicate that we
-    // shouldn't try reading from the input source any more.  We might
-    // still have a bunch of tokens to match, though, because of
-    // possible backing-up.
-    //
-    // When we actually see the EOF, we change the status to "new"
-    // (via yyrestart()), so that the user can continue scanning by
-    // just pointing yyin at a new input file.
-};
-
-pub const StartCondition = struct {
-    pub fn BEGIN(this: *const StartCondition, start_condition: usize) void {
-        _ = this;
-        zlex_begin(start_condition);
-    }
-
-    // TODO: this needs to be auto gened
-    // #define INITIAL 0
-    // #define rule 1
-    // #define user_block 2
-    // #define code_block 3
-    pub const INITIAL = 0;
-    pub const rule = 1;
-    pub const user_block = 2;
-    pub const code_block = 3;
-};
-
-// ch14, values available to the user
-pub const YY = struct {
-    text: [*c]u8 = undefined,
-    leng: usize = undefined,
-    in: uint_ptr = undefined,
-    out: uint_ptr = undefined,
-    current_buffer: *YYBufferState = undefined,
-    start: usize = undefined,
-
-    pub fn restart(this: *const YY) void {
-        _ = this;
-    }
-};
-
-// ch8, actions
-pub const Action = struct {
-    pub fn ECHO(this: *const Action) void {
-        _ = this;
-        zlex_action_echo();
-    }
-
-    pub fn BEGIN(this: *const Action) void {
-        _ = this;
-    }
-
-    pub fn REJECT(this: *const Action) void {
-        _ = this;
-    }
-
-    pub fn yymore(this: *const Action) void {
-        _ = this;
-    }
-
-    pub fn yyless(this: *const Action) void {
-        _ = this;
-    }
-
-    pub fn unput(this: *const Action) void {
-        _ = this;
-    }
-
-    pub fn input(this: *const Action) ?u8 {
-        _ = this;
-        const c = zlex_action_input();
-        if (c < 0) {
-            return null;
-        }
-        return @as(u8, @intCast(c));
-    }
-
-    pub fn YY_FLUSH_BUFFER(this: *const Action) void {
-        _ = this;
-    }
-
-    pub fn yyterminate(this: *const Action) void {
-        _ = this;
-    }
-};
-
-// TODO: state related function, ch10, start conditions
-// void yy_push_state ( int new_state )
-// void yy_pop_state ()
-// int yy_top_state ()
-
-// TODO: input buffer related functions, ch11
-pub const Buffer = struct {
-    pub fn yy_create_buffer(this: *const Buffer, f: std.c.FILE, size: usize) *YYBufferState {
-        _ = this;
-        const yybuf_intptr = zlex_yy_create_buffer(f, size);
-        return @as(*YYBufferState, @ptrFromInt(yybuf_intptr));
-    }
-
-    pub fn yy_switch_to_buffer(this: *const Buffer, new_buffer: *YYBufferState) void {
-        _ = this;
-        zlex_yy_switch_to_buffer(@as(uint_ptr, @intFromPtr(new_buffer)));
-    }
-
-    pub fn yy_delete_buffer(this: *const Buffer, buffer: *YYBufferState) void {
-        _ = this;
-        zlex_yy_delete_buffer(@as(uint_ptr, @intFromPtr(buffer)));
-    }
-
-    pub fn yypush_buffer_state(this: *const Buffer, buffer: *YYBufferState) void {
-        _ = this;
-        zlex_yypush_buffer_state(@as(uint_ptr, @intFromPtr(buffer)));
-    }
-
-    pub fn yypop_buffer_state(this: *const Buffer) void {
-        _ = this;
-        zlex_yypop_buffer_state();
-    }
-
-    pub fn yy_flush_buffer(this: *const Buffer, buffer: *YYBufferState) void {
-        _ = this;
-        zlex_yy_flush_buffer(@as(uint_ptr, @intFromPtr(buffer)));
-    }
-
-    /// yy_new_buffer is an alias for yy_create_buffer(), provided for compatibility with the C++ use of new and delete
-    /// for creating and destroying dynamic objects. We will only deal with c so skip it here.
-    pub fn yy_new_buffer(this: *const Buffer, file: std.fs.File) YYBufferState {
-        _ = this;
-        _ = file;
-        @compileError("yy_new_buffer in flex is for c++! just use yy_create_buffer.");
-    }
-
-    pub fn yy_scan_string(this: *const Buffer, str: []const u8) ParserError!*YYBufferState {
-        _ = this;
-        const yybuf_intptr = zlex_yy_scan_string(str.ptr);
-        if (yybuf_intptr == 0) {
-            return ParserError.YYScanStringFailed;
-        } else {
-            return @as(*YYBufferState, @ptrFromInt(yybuf_intptr));
-        }
-    }
-
-    pub fn yy_scan_bytes(this: *const Buffer, str: []const u8) ParserError!*YYBufferState {
-        _ = this;
-        const yybuf_intptr = zlex_yy_scan_bytes(str.ptr, str.len);
-        if (yybuf_intptr == 0) {
-            return ParserError.YYScanBytesFailed;
-        } else {
-            return @as(*YYBufferState, @ptrFromInt(yybuf_intptr));
-        }
-    }
-
-    pub fn yy_scan_buffer(this: *const Buffer, base: []u8) ParserError!*YYBufferState {
-        _ = this;
-        const yybuf_intptr = zlex_yy_scan_buffer(base.ptr, base.len);
-        if (yybuf_intptr == 0) {
-            return ParserError.YYScanBufferFailed;
-        } else {
-            return @as(*YYBufferState, @ptrFromInt(yybuf_intptr));
-        }
-    }
-};
-
-extern fn zlex_yy_create_buffer(f: std.c.FILE, size: usize) uint_ptr;
-extern fn zlex_yy_switch_to_buffer(new_buffer: uint_ptr) void;
-extern fn zlex_yy_delete_buffer(buffer: uint_ptr) void;
-extern fn zlex_yypush_buffer_state(buffer: uint_ptr) void;
-extern fn zlex_yypop_buffer_state() void;
-extern fn zlex_yy_flush_buffer(buffer: uint_ptr) void;
-extern fn zlex_yy_scan_string(str: [*c]const u8) uint_ptr;
-extern fn zlex_yy_scan_bytes(str: [*c]const u8, len: usize) uint_ptr;
-extern fn zlex_yy_scan_buffer(base: [*c]u8, size: usize) uint_ptr;
-
-// TODO: misc macros, ch13
+// TODO: this needs to be auto gened
+// #define INITIAL 0
+// #define rule 1
+// #define user_block 2
+// #define code_block 3
+pub const SC_INITIAL = 0;
+pub const SC_rule = 1;
+pub const SC_user_block = 2;
+pub const SC_code_block = 3;
 
 export fn zlex_prepare_yy(
     parser_intptr: uint_ptr,
@@ -225,28 +35,21 @@ export fn zlex_prepare_yy(
     parser.yy.leng = leng;
     parser.yy.in = in;
     parser.yy.out = out;
-    parser.yy.current_buffer = @as(*YYBufferState, @ptrFromInt(current_buffer_intptr));
+    parser.yy.current_buffer = @as(*ZA.YYBufferState, @ptrFromInt(current_buffer_intptr));
     parser.yy.start = start;
 }
 
-extern fn zlex_setup_parser(parser_intptr: uint_ptr) void;
-
-extern fn zlex_begin(start_condition: usize) void;
-extern fn zlex_action_echo() void;
-extern fn zlex_action_input() i8;
-extern fn yylex() void;
-
 pub fn lex(this: *Parser) !void {
-    zlex_setup_parser(@as(usize, @intFromPtr(this)));
-    yylex();
+    ZA.zlex_setup_parser(@as(usize, @intFromPtr(this)));
+    ZA.yylex();
 }
 
 allocator: std.mem.Allocator,
 input: ?[]const u8,
-startCondition: StartCondition = StartCondition{},
-yy: YY = YY{},
-action: Action = Action{},
-buffer: Buffer = Buffer{},
+startCondition: ZA.StartCondition = ZA.StartCondition{},
+yy: ZA.YY = .{},
+action: ZA.Action = .{},
+buffer: ZA.Buffer = .{},
 
 context: Context = undefined,
 
@@ -341,7 +144,7 @@ pub const Context = struct {
     cur_codeblock: CodeBlock = undefined,
     cur_section: Section = .Definitions,
     cur_loc: Loc = Loc{},
-    last_sc: usize = Parser.StartCondition.INITIAL,
+    last_sc: usize = SC_INITIAL,
 
     pub fn init(allocator: std.mem.Allocator) Context {
         var c = Context{
@@ -368,11 +171,11 @@ fn zlex_parser_section_impl(parser: *Parser) !void {
     switch (parser.context.cur_section) {
         .Definitions => {
             parser.context.cur_section = .Rules;
-            parser.startCondition.BEGIN(Parser.StartCondition.rule);
+            parser.startCondition.BEGIN(SC_rule);
         },
         .Rules => {
             parser.context.cur_section = .UserCode;
-            parser.startCondition.BEGIN(Parser.StartCondition.user_block);
+            parser.startCondition.BEGIN(SC_user_block);
         },
         else => {},
     }
@@ -426,20 +229,20 @@ export fn zlex_parser_code_block_start(parser_intptr: usize) u32 {
 fn zlex_parser_code_block_start_impl(parser: *Parser) !void {
     switch (parser.context.cur_section) {
         .Definitions => {
-            parser.context.last_sc = Parser.StartCondition.INITIAL;
+            parser.context.last_sc = SC_INITIAL;
         },
         .Rules => {
             if (!parser.context.cur_codeblock.isEmpty()) {
                 try parser.context.rules_action_cbs.append(parser.context.cur_codeblock);
                 parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
             }
-            parser.context.last_sc = Parser.StartCondition.rule;
+            parser.context.last_sc = SC_rule;
         },
         else => {
             return ParserError.NoCodeBlockAllowed;
         },
     }
-    parser.startCondition.BEGIN(Parser.StartCondition.code_block);
+    parser.startCondition.BEGIN(SC_code_block);
 
     // std.debug.print("code block start:{s}\n", .{parser.yy.text[0..parser.yy.leng]});
     parser.context.cur_codeblock.start.line = parser.context.cur_loc.line;
