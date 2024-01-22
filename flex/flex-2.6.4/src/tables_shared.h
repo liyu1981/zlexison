@@ -46,6 +46,8 @@ dnl  flex code (hence the name "_shared").
 #endif
 #endif
 
+#include "flexint.h"
+
 /* Structures and prototypes for serializing flex tables.  The
  * binary format is documented in the manual.
  *

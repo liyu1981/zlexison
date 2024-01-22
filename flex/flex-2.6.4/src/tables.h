@@ -35,6 +35,9 @@
 #ifndef TABLES_H
 #define TABLES_H
 
+#include <stdio.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern  "C" {
