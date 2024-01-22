@@ -1,11 +1,15 @@
 .{
-    .name = "zacc",
+    .name = "zlexison",
     .version = "0.0.0",
 
     .dependencies = .{
         .zcmd = .{
             .url = "../zcmd",
             .hash = "122057f291e9f1523a22fae620edf3a531ab44782556b4ddfc1ba43d29041a7239b9",
+        },
+        .jstring = .{
+            .url = "../jstring",
+            .hash = "1220cf150691d7269a57e031cfcafc4b879100d87bddea156341ed5059712c6fee61",
         },
     },
 
