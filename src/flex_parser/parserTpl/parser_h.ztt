@@ -1,0 +1,6 @@
+#include <stdint.h>
+#define zig_extern
+zig_extern void zlex_prepare_yy(uintptr_t const a0, uint8_t *const a1, uintptr_t const a2, uintptr_t const a3, uintptr_t const a4, uintptr_t const a5, uintptr_t const a6);
+<? for(ctx.action_fn_names) |action_fn_name| { ?>
+zig_extern uint32_t zlex_parser_<= action_fn_name: {s} =>(uintptr_t const a0);
+<? } ?>

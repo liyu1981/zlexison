@@ -1,6 +1,7 @@
 const std = @import("std");
 const tpl = @import("parserTpl/parser_ztt.zig");
 const rule_action_tpl = @import("parserTpl/ruleAction_ztt.zig");
+const parser_h_tpl = @import("parserTpl/parser_h_ztt.zig");
 
 pub fn generate(allocator: std.mem.Allocator, args: struct {
     source_name: []const u8,
@@ -27,5 +28,14 @@ pub fn generateRuleAction(allocator: std.mem.Allocator, name: []const u8, code: 
     var str_array = std.ArrayList(u8).init(allocator);
     defer str_array.deinit();
     try rule_action_tpl.render(str_array.writer(), .{ .name = name, .code = code });
+    return str_array.toOwnedSlice();
+}
+
+pub fn generateH(allocator: std.mem.Allocator, args: struct {
+    action_fn_names: []const []const u8,
+}) ![]const u8 {
+    var str_array = std.ArrayList(u8).init(allocator);
+    defer str_array.deinit();
+    try parser_h_tpl.render(str_array.writer(), .{ .action_fn_names = args.action_fn_names });
     return str_array.toOwnedSlice();
 }
