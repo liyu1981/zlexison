@@ -9,6 +9,7 @@ const uint_ptr = ZA.uint_ptr;
 pub const ParserError = error{
     InlineCodeBlockInDefinitionSection,
     NoCodeBlockAllowed,
+    InvalidStartCondition,
 } || ZA.YYError;
 
 // TODO: this needs to be auto gened
@@ -65,7 +66,7 @@ pub fn init(args: struct {
 }
 
 pub fn deinit(this: *const Parser) void {
-    _ = this;
+    this.context.deinit();
 }
 
 pub fn readRestLine(parser: *Parser) ![]u8 {
@@ -132,9 +133,29 @@ pub const Context = struct {
             }
         }
     };
+    pub const StartConditionDefinitions = struct {
+        names: std.ArrayList([]const u8),
+        name_buf: std.ArrayList(u8),
+        locs: std.ArrayList(Loc),
+
+        pub fn init(allocator: std.mem.Allocator) StartConditionDefinitions {
+            return StartConditionDefinitions{
+                .names = std.ArrayList([]const u8).init(allocator),
+                .name_buf = std.ArrayList(u8).init(allocator),
+                .locs = std.ArrayList(Loc).init(allocator),
+            };
+        }
+
+        pub fn deinit(this: *const StartConditionDefinitions) void {
+            this.names.deinit();
+            this.name_buf.deinit();
+            this.locs.deinit();
+        }
+    };
 
     allocator: std.mem.Allocator,
 
+    start_conditions: StartConditionDefinitions,
     definitions_cbs: std.ArrayList(CodeBlock),
     rules_cbs_1: std.ArrayList(CodeBlock),
     rules_action_cbs: std.ArrayList(CodeBlock),
@@ -149,14 +170,27 @@ pub const Context = struct {
     pub fn init(allocator: std.mem.Allocator) Context {
         var c = Context{
             .allocator = allocator,
+            .start_conditions = StartConditionDefinitions.init(allocator),
             .definitions_cbs = std.ArrayList(CodeBlock).init(allocator),
             .rules_cbs_1 = std.ArrayList(CodeBlock).init(allocator),
             .rules_action_cbs = std.ArrayList(CodeBlock).init(allocator),
             .rules_cbs_2 = std.ArrayList(CodeBlock).init(allocator),
             .user_cbs = std.ArrayList(CodeBlock).init(allocator),
         };
+        c.start_conditions.name_buf.appendSlice("INITIAL") catch unreachable;
+        c.start_conditions.names.append(c.start_conditions.name_buf.items[0..7]) catch unreachable;
+        c.start_conditions.locs.append(.{ .line = 0, .col = 0 }) catch unreachable;
         c.cur_codeblock = Parser.Context.CodeBlock.init(&c);
         return c;
+    }
+
+    pub fn deinit(this: *const Context) void {
+        this.start_conditions.deinit();
+        this.definitions_cbs.deinit();
+        this.rules_cbs_1.deinit();
+        this.rules_action_cbs.deinit();
+        this.rules_cbs_2.deinit();
+        this.user_cbs.deinit();
     }
 };
 
@@ -316,6 +350,34 @@ fn zlex_parser_code_block_new_line_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
+fn extractStartConditionName(line: []const u8) ![]const u8 {
+    const s = std.mem.trim(u8, line, " \t\r\n");
+    if (s.len == 0) return ParserError.InvalidStartCondition;
+    return s;
+}
+
+export fn zlex_parser_start_condition(parser_intptr: usize) u32 {
+    var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+    _ = &parser;
+    zlex_parser_start_condition_impl(parser) catch return 1;
+    return 0;
+}
+
+fn zlex_parser_start_condition_impl(parser: *Parser) !void {
+    const line = try parser.readRestLine();
+    const condition_name = try extractStartConditionName(line);
+    // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
+    const s = parser.context.start_conditions.name_buf.items.len;
+    try parser.context.start_conditions.name_buf.appendSlice(condition_name);
+    const e = parser.context.start_conditions.name_buf.items.len;
+    try parser.context.start_conditions.names.append(parser.context.start_conditions.name_buf.items[s..e]);
+    try parser.context.start_conditions.locs.append(parser.context.cur_loc);
+    // std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
+    parser.context.cur_loc.line += 1;
+    parser.context.cur_loc.col = 0;
+    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+}
+
 export fn zlex_parser_rule_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
@@ -325,9 +387,17 @@ export fn zlex_parser_rule_line(parser_intptr: usize) u32 {
 
 fn findRulePatternStop(line: []const u8) ?usize {
     var i: usize = 0;
+    var inside_class_braket: bool = false;
     while (i < line.len) {
         if ((i + 1) < line.len and line[i] == '\\' and line[i + 1] == ' ') {
             i += 2;
+            continue;
+        }
+        if (line[i] == '[') inside_class_braket = true;
+        if (line[i] == ']') inside_class_braket = false;
+        //std.debug.print("\ncheck {d}, {c}, {any}\n", .{ i, line[i], inside_class_braket });
+        if (inside_class_braket and line[i] == ' ') {
+            i += 1;
             continue;
         }
         if (line[i] == ' ' or line[i] == '\t') return i;

@@ -52,6 +52,14 @@ int last_sc = 0;
     BEGIN(last_sc);
   }
 
+<INITIAL>^%(s|x) {
+    // start condition
+    // replace me
+    printf("start condition:");
+    ECHO;
+    printf("\n");
+  }
+
 <code_block>.* {
     // code block content
     // replace me

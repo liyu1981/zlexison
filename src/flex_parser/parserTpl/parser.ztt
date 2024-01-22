@@ -1,0 +1,64 @@
+    const std = @import("std");
+    const Parser = @This();
+    const ZA = @import("zlexAPI.zig");
+    const uint_ptr = ZA.uint_ptr;
+    // start condition const
+    <= ctx.start_condition : {s} =>
+    export fn zlex_prepare_yy(
+        parser_intptr: uint_ptr,
+        text: [*c]u8,
+        leng: usize,
+        in: uint_ptr, // FILE* as uint_ptr
+        out: uint_ptr, // FIlE* as uint_ptr
+        current_buffer_intptr: uint_ptr,
+        start: usize,
+    ) void {
+        var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+        parser.yy.text = text;
+        parser.yy.leng = leng;
+        parser.yy.in = in;
+        parser.yy.out = out;
+        parser.yy.current_buffer = @as(*ZA.YYBufferState, @ptrFromInt(current_buffer_intptr));
+        parser.yy.start = start;
+    }
+    pub fn lex(this: *Parser) !void {
+        ZA.zlex_setup_parser(@as(usize, @intFromPtr(this)));
+        ZA.yylex();
+    }
+    allocator: std.mem.Allocator,
+    input: ?[]const u8,
+    startCondition: ZA.StartCondition = ZA.StartCondition{},
+    yy: ZA.YY = .{},
+    action: ZA.Action = .{},
+    buffer: ZA.Buffer = .{},
+    context: Context = undefined,
+    pub fn init(args: struct {
+        allocator: std.mem.Allocator,
+        input: ?[]const u8 = null,
+    }) Parser {
+        return Parser{
+            .allocator = args.allocator,
+            .input = args.input,
+            .context = Context.init(args.allocator),
+        };
+    }
+    pub fn deinit(this: *const Parser) void {
+        _ = this;
+    }
+    pub fn readRestLine(parser: *Parser) ![]u8 {
+        var line_array = std.ArrayList(u8).init(parser.allocator);
+        defer line_array.deinit();
+        var c = parser.action.input();
+        while (c != null and c != '\n') {
+            try line_array.append(@as(u8, @intCast(c.?)));
+            c = parser.action.input();
+        }
+        return line_array.toOwnedSlice();
+    }
+    // generated from <= ctx.source_name : {s}=>
+    // definitions + context
+    <= ctx.definitions : {s}=>
+    // rule actions
+    <= ctx.rule_actions : {s}=>
+    // user code
+    <= ctx.user_code : {s} =>
