@@ -2,10 +2,42 @@ const std = @import("std");
 
 pub const uint_ptr = usize;
 
+pub var zyy_yyg_intptr: uint_ptr = undefined;
+
 pub const YYError = error{
     YYScanStringFailed,
     YYScanBytesFailed,
     YYScanBufferFailed,
+};
+
+pub const YYGuts = struct {
+    // /* User-defined. Not touched by flex. */
+    // YY_EXTRA_TYPE yyextra_r;
+
+    yyin_r: *std.c.FILE,
+    yyout_r: *std.c.FILE,
+    yy_buffer_stack_top: isize, // /**< index of top of stack. */
+    yy_buffer_stack_max: isize, // /**< capacity of stack. */
+    yy_buffer_stack: *YYBufferState, // /**< Stack as an array. */
+    yy_hold_char: u8,
+    yy_n_chars: c_int,
+    yyleng_r: c_int,
+    yy_c_buf_p: [*c]i8,
+    yy_init: c_int,
+    yy_start: c_int,
+    yy_did_buffer_switch_on_eof: c_int,
+    yy_start_stack_ptr: c_int,
+    yy_start_stack_depth: c_int,
+    yy_start_stack: *c_int,
+    yy_last_accepting_state: c_int,
+    yy_last_accepting_cpos: [*c]i8,
+
+    yylineno_r: c_int,
+    yy_flex_debug_r: c_int,
+
+    yytext_r: [*c]i8,
+    yy_more_flag: c_int,
+    yy_more_len: c_int,
 };
 
 pub const YYBufferState = struct {
@@ -44,12 +76,13 @@ pub const YYBufferState = struct {
 pub const StartCondition = struct {
     pub fn BEGIN(this: *const StartCondition, start_condition: usize) void {
         _ = this;
-        zlex_start_condition_begin(start_condition);
+        zyy_start_condition_begin(zyy_yyg_intptr, start_condition);
     }
 };
 
 // ch14, values available to the user
 pub const YY = struct {
+    yyg: uint_ptr = undefined,
     text: [*c]u8 = undefined,
     leng: usize = undefined,
     in: uint_ptr = undefined,
@@ -66,7 +99,7 @@ pub const YY = struct {
 pub const Action = struct {
     pub fn ECHO(this: *const Action) void {
         _ = this;
-        zlex_action_echo();
+        zyy_action_echo(zyy_yyg_intptr);
     }
 
     pub fn BEGIN(this: *const Action) void {
@@ -91,7 +124,7 @@ pub const Action = struct {
 
     pub fn input(this: *const Action) ?u8 {
         _ = this;
-        const c = zlex_action_input();
+        const c = zyy_action_input(zyy_yyg_intptr);
         if (c < 0) {
             return null;
         }
@@ -116,33 +149,33 @@ pub const Action = struct {
 pub const Buffer = struct {
     pub fn yy_create_buffer(this: *const Buffer, f: std.c.FILE, size: usize) *YYBufferState {
         _ = this;
-        const yybuf_intptr = zlex_yy_create_buffer(f, size);
+        const yybuf_intptr = zyy_yy_create_buffer(zyy_yyg_intptr, f, size);
         return @as(*YYBufferState, @ptrFromInt(yybuf_intptr));
     }
 
     pub fn yy_switch_to_buffer(this: *const Buffer, new_buffer: *YYBufferState) void {
         _ = this;
-        zlex_yy_switch_to_buffer(@as(uint_ptr, @intFromPtr(new_buffer)));
+        zyy_yy_switch_to_buffer(zyy_yyg_intptr, @as(uint_ptr, @intFromPtr(new_buffer)));
     }
 
     pub fn yy_delete_buffer(this: *const Buffer, buffer: *YYBufferState) void {
         _ = this;
-        zlex_yy_delete_buffer(@as(uint_ptr, @intFromPtr(buffer)));
+        zyy_yy_delete_buffer(zyy_yyg_intptr, @as(uint_ptr, @intFromPtr(buffer)));
     }
 
     pub fn yypush_buffer_state(this: *const Buffer, buffer: *YYBufferState) void {
         _ = this;
-        zlex_yypush_buffer_state(@as(uint_ptr, @intFromPtr(buffer)));
+        zyy_yypush_buffer_state(zyy_yyg_intptr, @as(uint_ptr, @intFromPtr(buffer)));
     }
 
     pub fn yypop_buffer_state(this: *const Buffer) void {
         _ = this;
-        zlex_yypop_buffer_state();
+        zyy_yypop_buffer_state(zyy_yyg_intptr);
     }
 
     pub fn yy_flush_buffer(this: *const Buffer, buffer: *YYBufferState) void {
         _ = this;
-        zlex_yy_flush_buffer(@as(uint_ptr, @intFromPtr(buffer)));
+        zyy_yy_flush_buffer(zyy_yyg_intptr, @as(uint_ptr, @intFromPtr(buffer)));
     }
 
     /// yy_new_buffer is an alias for yy_create_buffer(), provided for compatibility with the C++ use of new and delete
@@ -155,7 +188,7 @@ pub const Buffer = struct {
 
     pub fn yy_scan_string(this: *const Buffer, str: []const u8) YYError!*YYBufferState {
         _ = this;
-        const yybuf_intptr = zlex_yy_scan_string(str.ptr);
+        const yybuf_intptr = zyy_yy_scan_string(zyy_yyg_intptr, str.ptr);
         if (yybuf_intptr == 0) {
             return YYError.YYScanStringFailed;
         } else {
@@ -165,7 +198,7 @@ pub const Buffer = struct {
 
     pub fn yy_scan_bytes(this: *const Buffer, str: []const u8) YYError!*YYBufferState {
         _ = this;
-        const yybuf_intptr = zlex_yy_scan_bytes(str.ptr, str.len);
+        const yybuf_intptr = zyy_yy_scan_bytes(zyy_yyg_intptr, str.ptr, str.len);
         if (yybuf_intptr == 0) {
             return YYError.YYScanBytesFailed;
         } else {
@@ -175,7 +208,7 @@ pub const Buffer = struct {
 
     pub fn yy_scan_buffer(this: *const Buffer, base: []u8) YYError!*YYBufferState {
         _ = this;
-        const yybuf_intptr = zlex_yy_scan_buffer(base.ptr, base.len);
+        const yybuf_intptr = zyy_yy_scan_buffer(zyy_yyg_intptr, base.ptr, base.len);
         if (yybuf_intptr == 0) {
             return YYError.YYScanBufferFailed;
         } else {
@@ -184,22 +217,26 @@ pub const Buffer = struct {
     }
 };
 
-extern fn zlex_yy_create_buffer(f: std.c.FILE, size: usize) uint_ptr;
-extern fn zlex_yy_switch_to_buffer(new_buffer: uint_ptr) void;
-extern fn zlex_yy_delete_buffer(buffer: uint_ptr) void;
-extern fn zlex_yypush_buffer_state(buffer: uint_ptr) void;
-extern fn zlex_yypop_buffer_state() void;
-extern fn zlex_yy_flush_buffer(buffer: uint_ptr) void;
-extern fn zlex_yy_scan_string(str: [*c]const u8) uint_ptr;
-extern fn zlex_yy_scan_bytes(str: [*c]const u8, len: usize) uint_ptr;
-extern fn zlex_yy_scan_buffer(base: [*c]u8, size: usize) uint_ptr;
+extern fn zyy_yy_create_buffer(yyg_intptr: uint_ptr, f: std.c.FILE, size: usize) uint_ptr;
+extern fn zyy_yy_switch_to_buffer(yyg_intptr: uint_ptr, new_buffer: uint_ptr) void;
+extern fn zyy_yy_delete_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
+extern fn zyy_yypush_buffer_state(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
+extern fn zyy_yypop_buffer_state(
+    yyg_intptr: uint_ptr,
+) void;
+extern fn zyy_yy_flush_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
+extern fn zyy_yy_scan_string(yyg_intptr: uint_ptr, str: [*c]const u8) uint_ptr;
+extern fn zyy_yy_scan_bytes(yyg_intptr: uint_ptr, str: [*c]const u8, len: usize) uint_ptr;
+extern fn zyy_yy_scan_buffer(yyg_intptr: uint_ptr, base: [*c]u8, size: usize) uint_ptr;
 
 // TODO: misc macros, ch13
 
-pub extern fn zlex_setup_parser(parser_intptr: uint_ptr) void;
+pub extern fn zyy_setup_parser(parser_intptr: uint_ptr) void;
 
-pub extern fn zlex_start_condition_begin(start_condition: usize) void;
-pub extern fn zlex_action_echo() void;
-pub extern fn zlex_action_input() i8;
+pub extern fn zyy_start_condition_begin(yyg_intptr: uint_ptr, start_condition: usize) void;
+pub extern fn zyy_action_echo(yyg_intptr: uint_ptr) void;
+pub extern fn zyy_action_input(yyg_intptr: uint_ptr) c_int;
 
-pub extern fn zlex_yylex() void;
+pub extern fn zyylex_init(yyg: [*c]?*anyopaque) c_int;
+pub extern fn zyylex(yyg: ?*anyopaque) c_int;
+pub extern fn zyylex_destroy(yyg: ?*anyopaque) c_int;

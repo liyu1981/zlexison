@@ -4,8 +4,9 @@
     const uint_ptr = ZA.uint_ptr;
     // start condition const
     <= ctx.start_condition : {s} =>
-    export fn zlex_prepare_yy(
+    export fn <= ctx.prefix : {s} =>_prepare_yy(
         parser_intptr: uint_ptr,
+        yyg: uint_ptr,
         text: [*c]u8,
         leng: usize,
         in: uint_ptr, // FILE* as uint_ptr
@@ -14,6 +15,9 @@
         start: usize,
     ) void {
         var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+        parser.yy.yyg = yyg;
+        // copy twice to avoid circular import
+        ZA.zyy_yyg_intptr = yyg;
         parser.yy.text = text;
         parser.yy.leng = leng;
         parser.yy.in = in;
@@ -22,8 +26,18 @@
         parser.yy.start = start;
     }
     pub fn lex(this: *Parser) !void {
-        ZA.zlex_setup_parser(@as(usize, @intFromPtr(this)));
-        ZA.yylex();
+        ZA.zyy_setup_parser(@as(usize, @intFromPtr(this)));
+        _ = ZA.zyylex_init(@as([*c]?*anyopaque, @ptrCast(&this.yy.yyg)));
+
+        // TODO: this is ugly...
+        Parser.ZA.zyy_yyg_intptr = this.yy.yyg;
+
+        if (this.input) |input| {
+            _ = try this.buffer.yy_scan_bytes(input);
+        }
+
+        _ = ZA.zyylex(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
+        _ = ZA.zyylex_destroy(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
     }
     allocator: std.mem.Allocator,
     input: ?[]const u8,
@@ -35,15 +49,37 @@
     pub fn init(args: struct {
         allocator: std.mem.Allocator,
         input: ?[]const u8 = null,
+        prefix: ?[]const u8 = null,
     }) Parser {
         return Parser{
             .allocator = args.allocator,
             .input = args.input,
             .context = Context.init(args.allocator),
+            .prefix = brk: {
+                if (args.prefix) |prefix| {
+                    if (std.mem.startsWith(u8, prefix, "0123456789")) {
+                        @panic("parser prefix can not start with digits");
+                    }
+                    if (std.mem.containsAtLeast(u8, prefix, 1, " \t\r\n")) {
+                        @panic("parser prefix can not contain spaces or newlines");
+                    }
+                    const trimed = std.mem.trim(u8, prefix, " \t\r\n");
+                    if (trimed.len == 0) {
+                        @panic("parser prefix can not be empty or string with only spaces.");
+                    }
+                    break :brk args.allocator.dupe(u8, trimed) catch @panic("OOM!");
+                }
+
+                var buf_arr = std.ArrayList(u8).init(args.allocator);
+                defer buf_arr.deinit();
+                buf_arr.writer().print("zyy{d}", .{std.time.microTimestamp()}) catch @panic("OOM!");
+                break :brk buf_arr.toOwnedSlice() catch @panic("OOM!");
+            },
         };
     }
     pub fn deinit(this: *const Parser) void {
-        _ = this;
+        this.context.deinit();
+        this.allocator.free(this.prefix);
     }
     pub fn readRestLine(parser: *Parser) ![]u8 {
         var line_array = std.ArrayList(u8).init(parser.allocator);

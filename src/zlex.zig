@@ -85,9 +85,9 @@ pub fn main() !u8 {
 
     var parser = FlexParser.init(.{
         .allocator = allocator,
+        .input = content,
     });
     defer parser.deinit();
-    _ = try parser.buffer.yy_scan_bytes(content);
 
     try parser.lex();
 
@@ -275,11 +275,16 @@ fn generateYYcMainScannerLine(
     _ = codeblocks_map;
     _ = line_no;
     _ = flex_generated_lines;
-    _ = parser;
     var str_arr = std.ArrayList(u8).init(allocator);
     defer str_arr.deinit();
     var writer = str_arr.writer();
-    try writer.print("{s}\n{s}\n", .{ try ParserTpl.generateZlexUtilsC(allocator), line });
+    try writer.print("{s}\n{s}\n", .{
+        try ParserTpl.generateZlexUtilsC(
+            allocator,
+            .{ .prefix = parser.prefix },
+        ),
+        line,
+    });
     return .{
         .line = try str_arr.toOwnedSlice(),
         .next_i = i + 1,
@@ -298,12 +303,17 @@ fn generateYYcLine1(
     _ = codeblocks_map;
     _ = line_no;
     _ = flex_generated_lines;
-    _ = parser;
     var str_arr = std.ArrayList(u8).init(allocator);
     defer str_arr.deinit();
     var writer = str_arr.writer();
     const basename = std.fs.path.basename(opts.input_file_path);
-    try writer.print("{s}\n{s}\n", .{ line, try ParserTpl.generateYYcHeader(allocator, basename) });
+    try writer.print("{s}\n{s}\n", .{
+        line,
+        try ParserTpl.generateYYcHeader(allocator, .{
+            .name = basename,
+            .prefix = parser.prefix,
+        }),
+    });
     return .{
         .line = try str_arr.toOwnedSlice(),
         .next_i = i + 1,
@@ -324,13 +334,17 @@ fn generateParserH(allocator: std.mem.Allocator, parser: *const FlexParser, stdo
         try action_fn_names_arr.append(name_buf.items[s..e]);
     }
 
-    const generated = try ParserTpl.generateH(allocator, .{ .action_fn_names = action_fn_names_arr.items });
+    const generated = try ParserTpl.generateH(allocator, .{
+        .prefix = parser.prefix,
+        .action_fn_names = action_fn_names_arr.items,
+    });
     defer allocator.free(generated);
     try stdout_writer.print("{s}\n", .{generated});
 }
 
 fn generateParserZig(allocator: std.mem.Allocator, parser: *const FlexParser, stdout_writer: std.fs.File.Writer) !void {
     const generated = try ParserTpl.generateParser(allocator, .{
+        .prefix = parser.prefix,
         .source_name = "flex.zig.l",
         .start_condition_consts = try generateStartConditionConsts(allocator, parser),
         .definitions = try generateDefinitions(allocator, parser),
@@ -394,7 +408,14 @@ fn generateRuleActions(allocator: std.mem.Allocator, parser: *const FlexParser) 
             item.end.col,
         });
         const name = try std.fmt.bufPrint(&name_buf, "line{d}col{d}", .{ item.start.line, item.start.col });
-        const action_str = try ParserTpl.generateRuleAction(allocator, name, item.content.items);
+        const action_str = try ParserTpl.generateRuleAction(
+            allocator,
+            .{
+                .prefix = parser.prefix,
+                .name = name,
+                .code = item.content.items,
+            },
+        );
         try writer.print("{s}\n", .{action_str});
     }
 

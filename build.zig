@@ -27,8 +27,10 @@ pub fn build(b: *std.Build) void {
     zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
 
-    zlex_exe.addCSourceFile(.{
-        .file = .{ .path = "src/zlex/flex.yy.c" },
+    zlex_exe.addCSourceFiles(.{
+        .files = &[_][]const u8{
+            "src/zlex/flex.zyy.c",
+        },
         .flags = &c_flags,
     });
 

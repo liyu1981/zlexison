@@ -37,7 +37,7 @@ int last_sc = 0;
       printf("code block start:");
       ECHO;
       printf("\n");
-      input();
+      input(yyg);
       BEGIN(code_block);
       last_sc = INITIAL;
   }
@@ -48,7 +48,7 @@ int last_sc = 0;
     printf("code block stop:");
     ECHO;
     printf("\n");
-    input();
+    input(yyg);
     BEGIN(last_sc);
   }
 
@@ -80,7 +80,7 @@ int last_sc = 0;
       printf("code block start(rule):");
       ECHO;
       printf("\n");
-      input();
+      input(yyg);
       BEGIN(code_block);
       last_sc = rule;
   }
@@ -112,3 +112,15 @@ int last_sc = 0;
   }
 
 %%
+
+int zyywrap(yyscan_t yyscanner) {
+    return 1;
+}
+
+int main() {
+  yyscan_t scanner;
+  yylex_init(&scanner);
+  int r = yylex(scanner);
+  yylex_destroy(scanner);
+  return r;
+}

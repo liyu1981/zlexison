@@ -22,8 +22,9 @@ pub const SC_rule = 1;
 pub const SC_user_block = 2;
 pub const SC_code_block = 3;
 
-export fn zlex_prepare_yy(
+export fn zyy_prepare_yy(
     parser_intptr: uint_ptr,
+    yyg: uint_ptr,
     text: [*c]u8,
     leng: usize,
     in: uint_ptr, // FILE* as uint_ptr
@@ -32,6 +33,9 @@ export fn zlex_prepare_yy(
     start: usize,
 ) void {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
+    parser.yy.yyg = yyg;
+    // copy twice to avoid circular import
+    ZA.zyy_yyg_intptr = yyg;
     parser.yy.text = text;
     parser.yy.leng = leng;
     parser.yy.in = in;
@@ -41,12 +45,23 @@ export fn zlex_prepare_yy(
 }
 
 pub fn lex(this: *Parser) !void {
-    ZA.zlex_setup_parser(@as(usize, @intFromPtr(this)));
-    ZA.zlex_yylex();
+    ZA.zyy_setup_parser(@as(usize, @intFromPtr(this)));
+    _ = ZA.zyylex_init(@as([*c]?*anyopaque, @ptrCast(&this.yy.yyg)));
+
+    // TODO: this is ugly...
+    Parser.ZA.zyy_yyg_intptr = this.yy.yyg;
+
+    if (this.input) |input| {
+        _ = try this.buffer.yy_scan_bytes(input);
+    }
+
+    _ = ZA.zyylex(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
+    _ = ZA.zyylex_destroy(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
 }
 
 allocator: std.mem.Allocator,
 input: ?[]const u8,
+prefix: []const u8,
 startCondition: ZA.StartCondition = ZA.StartCondition{},
 yy: ZA.YY = .{},
 action: ZA.Action = .{},
@@ -57,16 +72,38 @@ context: Context = undefined,
 pub fn init(args: struct {
     allocator: std.mem.Allocator,
     input: ?[]const u8 = null,
+    prefix: ?[]const u8 = null,
 }) Parser {
     return Parser{
         .allocator = args.allocator,
         .input = args.input,
         .context = Context.init(args.allocator),
+        .prefix = brk: {
+            if (args.prefix) |prefix| {
+                if (std.mem.startsWith(u8, prefix, "0123456789")) {
+                    @panic("parser prefix can not start with digits");
+                }
+                if (std.mem.containsAtLeast(u8, prefix, 1, " \t\r\n")) {
+                    @panic("parser prefix can not contain spaces or newlines");
+                }
+                const trimed = std.mem.trim(u8, prefix, " \t\r\n");
+                if (trimed.len == 0) {
+                    @panic("parser prefix can not be empty or string with only spaces.");
+                }
+                break :brk args.allocator.dupe(u8, trimed) catch @panic("OOM!");
+            }
+
+            var buf_arr = std.ArrayList(u8).init(args.allocator);
+            defer buf_arr.deinit();
+            buf_arr.writer().print("zyy{d}", .{std.time.microTimestamp()}) catch @panic("OOM!");
+            break :brk buf_arr.toOwnedSlice() catch @panic("OOM!");
+        },
     };
 }
 
 pub fn deinit(this: *const Parser) void {
     this.context.deinit();
+    this.allocator.free(this.prefix);
 }
 
 pub fn readRestLine(parser: *Parser) ![]u8 {
@@ -194,14 +231,14 @@ pub const Context = struct {
     }
 };
 
-export fn zlex_parser_section(parser_intptr: usize) u32 {
+export fn zyy_parser_section(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_section_impl(parser) catch return 1;
+    zyy_parser_section_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_section_impl(parser: *Parser) !void {
+fn zyy_parser_section_impl(parser: *Parser) !void {
     switch (parser.context.cur_section) {
         .Definitions => {
             parser.context.cur_section = .Rules;
@@ -218,14 +255,14 @@ fn zlex_parser_section_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_code_block_inline(parser_intptr: usize) u32 {
+export fn zyy_parser_code_block_inline(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_code_block_inline_impl(parser) catch return 1;
+    zyy_parser_code_block_inline_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_code_block_inline_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_inline_impl(parser: *Parser) !void {
     parser.context.cur_codeblock.start = .{
         .line = parser.context.cur_loc.line,
         .col = 0,
@@ -253,14 +290,14 @@ fn zlex_parser_code_block_inline_impl(parser: *Parser) !void {
     parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
 }
 
-export fn zlex_parser_code_block_start(parser_intptr: usize) u32 {
+export fn zyy_parser_code_block_start(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_code_block_start_impl(parser) catch return 1;
+    zyy_parser_code_block_start_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_code_block_start_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_start_impl(parser: *Parser) !void {
     switch (parser.context.cur_section) {
         .Definitions => {
             parser.context.last_sc = SC_INITIAL;
@@ -285,14 +322,14 @@ fn zlex_parser_code_block_start_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_code_block_stop(parser_intptr: usize) u32 {
+export fn zyy_parser_code_block_stop(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_code_block_stop_impl(parser) catch return 1;
+    zyy_parser_code_block_stop_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_code_block_stop_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_stop_impl(parser: *Parser) !void {
     switch (parser.context.cur_section) {
         .Definitions => {
             try parser.context.definitions_cbs.append(parser.context.cur_codeblock);
@@ -317,14 +354,14 @@ fn zlex_parser_code_block_stop_impl(parser: *Parser) !void {
     parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
 }
 
-export fn zlex_parser_code_block_content(parser_intptr: usize) u32 {
+export fn zyy_parser_code_block_content(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_code_block_content_impl(parser) catch return 1;
+    zyy_parser_code_block_content_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_code_block_content_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_content_impl(parser: *Parser) !void {
     try parser.context.cur_codeblock.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
     parser.context.cur_codeblock.end.line = parser.context.cur_loc.line;
     parser.context.cur_codeblock.end.col = parser.yy.leng;
@@ -333,14 +370,14 @@ fn zlex_parser_code_block_content_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_code_block_new_line(parser_intptr: usize) u32 {
+export fn zyy_parser_code_block_new_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_code_block_new_line_impl(parser) catch return 1;
+    zyy_parser_code_block_new_line_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_code_block_new_line_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_new_line_impl(parser: *Parser) !void {
     try parser.context.cur_codeblock.content.append('\n');
     parser.context.cur_codeblock.end.line += 1;
     parser.context.cur_codeblock.end.col = 0;
@@ -356,14 +393,14 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     return s;
 }
 
-export fn zlex_parser_start_condition(parser_intptr: usize) u32 {
+export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_start_condition_impl(parser) catch return 1;
+    zyy_parser_start_condition_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_start_condition_impl(parser: *Parser) !void {
+fn zyy_parser_start_condition_impl(parser: *Parser) !void {
     const line = try parser.readRestLine();
     const condition_name = try extractStartConditionName(line);
     // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
@@ -378,10 +415,10 @@ fn zlex_parser_start_condition_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_rule_line(parser_intptr: usize) u32 {
+export fn zyy_parser_rule_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_rule_line_impl(parser) catch return 1;
+    zyy_parser_rule_line_impl(parser) catch return 1;
     return 0;
 }
 
@@ -406,7 +443,7 @@ fn findRulePatternStop(line: []const u8) ?usize {
     return null;
 }
 
-fn zlex_parser_rule_line_impl(parser: *Parser) !void {
+fn zyy_parser_rule_line_impl(parser: *Parser) !void {
     const line = parser.yy.text[0..parser.yy.leng];
     const maybe_pattern_stop = findRulePatternStop(line);
     if (maybe_pattern_stop) |pattern_stop| {
@@ -443,14 +480,14 @@ fn zlex_parser_rule_line_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_rule_new_line(parser_intptr: usize) u32 {
+export fn zyy_parser_rule_new_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_rule_new_line_impl(parser) catch return 1;
+    zyy_parser_rule_new_line_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_rule_new_line_impl(parser: *Parser) !void {
+fn zyy_parser_rule_new_line_impl(parser: *Parser) !void {
     try parser.context.cur_codeblock.content.append('\n');
     // std.debug.print("rule new line:\n", .{});
     parser.context.cur_loc.line += 1;
@@ -458,14 +495,14 @@ fn zlex_parser_rule_new_line_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_default_rule(parser_intptr: usize) u32 {
+export fn zyy_parser_default_rule(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zlex_parser_default_rule_impl(parser) catch return 1;
+    zyy_parser_default_rule_impl(parser) catch return 1;
     return 0;
 }
 
-fn zlex_parser_default_rule_impl(parser: *Parser) !void {
+fn zyy_parser_default_rule_impl(parser: *Parser) !void {
     if (parser.yy.leng == 1 and parser.yy.text[0] == '\n') {
         parser.context.cur_loc.line += 1;
         parser.context.cur_loc.col = 0;
@@ -475,7 +512,7 @@ fn zlex_parser_default_rule_impl(parser: *Parser) !void {
     // std.debug.print("default now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-export fn zlex_parser_user_code_block(parser_ptr: *void) u32 {
+export fn zyy_parser_user_code_block(parser_ptr: *void) u32 {
     _ = parser_ptr;
     return 0;
 }

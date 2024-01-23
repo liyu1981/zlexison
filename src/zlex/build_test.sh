@@ -1,2 +1,2 @@
-flex -o flex_test.yy.c flex_test.l
-zig cc -g flex_test.yy.c -L /opt/homebrew/opt/flex/lib -lfl
+flex -o flex_test.zyy.c --prefix=zyy -R flex_test.l
+zig cc -g flex_test.zyy.c
