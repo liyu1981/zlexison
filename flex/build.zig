@@ -37,6 +37,8 @@ const flex_srcs_c = [_][]const u8{
     "flex-2.6.4/src/tblcmp.c",
     "flex-2.6.4/src/version.h",
     "flex-2.6.4/src/yylex.c",
+    "flex-2.6.4/src/scan.c",
+    "flex-2.6.4/src/parse.c",
 };
 
 pub fn build(b: *std.Build) void {

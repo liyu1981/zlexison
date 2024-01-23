@@ -5,7 +5,11 @@ const jstring = @import("jstring");
 const FlexParser = @import("zlex/flexParser.zig");
 const ParserTpl = @import("zlex/parserTpl.zig");
 
-const usage = "usage: zlex -t [parser_h|parser_zig|parser_yy_c] <input_file_path>";
+const usage =
+    \\ usage: zlex -t [parser_h|parser_zig|parser_yy_c] <input_file_path>
+    \\        zlex flex <all_flex_options>
+    \\
+;
 
 const OutputType = enum(u8) {
     parser_zig,
@@ -27,6 +31,9 @@ fn parseArgs(args: [][:0]u8) !MainOptions {
     const args1 = args[1..];
     var i: usize = 0;
     if (args1.len == 0) return MainOptionError.InvalidOption;
+    if (std.mem.eql(u8, args1[0], "flex")) {
+        run_as_flex(args1); // there is no turning back :)
+    }
     while (i < args1.len) {
         const arg = args1[i];
         if (std.mem.eql(u8, arg, "-t")) {
@@ -103,6 +110,28 @@ pub fn main() !u8 {
     }
 
     return 0;
+}
+
+extern fn flex_main(argc: usize, argv: [*c]const u8) u8;
+
+fn run_as_flex(args: [][:0]const u8) void {
+    var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // later there is no going back, so Cool Guys Don't Look At Explosions
+    // defer arena_allocator.deinit();
+    const arena = arena_allocator.allocator();
+    const argv_buf = arena.allocSentinel(?[*:0]const u8, args.len, null) catch {
+        @panic("Oops! OOM!");
+    };
+    for (args, 0..) |arg, i| {
+        const duped = arena.dupeZ(u8, arg) catch {
+            @panic("Oops! OOM!");
+        };
+        argv_buf[i] = duped.ptr;
+    }
+    std.os.exit(flex_main(
+        args.len,
+        @as([*c]const u8, @ptrCast(argv_buf.ptr)),
+    ));
 }
 
 const GenerateCodeBlockHashMap = std.AutoHashMap(usize, FlexParser.Context.CodeBlock);

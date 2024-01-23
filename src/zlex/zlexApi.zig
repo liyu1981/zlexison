@@ -202,4 +202,4 @@ pub extern fn zlex_start_condition_begin(start_condition: usize) void;
 pub extern fn zlex_action_echo() void;
 pub extern fn zlex_action_input() i8;
 
-pub extern fn yylex() void;
+pub extern fn zlex_yylex() void;

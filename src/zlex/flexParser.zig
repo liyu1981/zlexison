@@ -42,7 +42,7 @@ export fn zlex_prepare_yy(
 
 pub fn lex(this: *Parser) !void {
     ZA.zlex_setup_parser(@as(usize, @intFromPtr(this)));
-    ZA.yylex();
+    ZA.zlex_yylex();
 }
 
 allocator: std.mem.Allocator,

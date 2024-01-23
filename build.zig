@@ -32,7 +32,8 @@ pub fn build(b: *std.Build) void {
         .flags = &c_flags,
     });
 
-    zlex_exe.addObjectFile(.{ .path = "/opt/homebrew/opt/flex/lib/libfl.a" });
+    // zlex_exe.addObjectFile(.{ .path = "/opt/homebrew/opt/flex/lib/libfl.a" });
+    zlex_exe.addObjectFile(.{ .path = "./flex/zig-out/lib/libflex.a" });
 
     b.installArtifact(zlex_exe);
 
