@@ -34,6 +34,9 @@ fn parseArgs(args: [][:0]u8) !MainOptions {
     if (std.mem.eql(u8, args1[0], "flex")) {
         run_as_flex(args1); // there is no turning back :)
     }
+    if (std.mem.eql(u8, args1[0], "exp")) {
+        try run_exp(args1);
+    }
     while (i < args1.len) {
         const arg = args1[i];
         if (std.mem.eql(u8, arg, "-t")) {
@@ -110,6 +113,12 @@ pub fn main() !u8 {
     }
 
     return 0;
+}
+
+fn run_exp(args: [][:0]const u8) !void {
+    const flex_parser = @import("zlex/flex_parser.zig");
+    try flex_parser.parse(args);
+    std.os.exit(0);
 }
 
 extern fn flex_main(argc: usize, argv: [*c]const u8) u8;

@@ -4,9 +4,15 @@ const jstring_build = @import("jstring");
 const common_flags = [_][]const u8{
     "-g",
     "-Wall",
+    // "-fsanitize=address",
 };
 
 const c_flags = [_][]const u8{} ++ common_flags;
+
+const zlex_srcs_c = [_][]const u8{
+    "src/zlex/flex.yy.c",
+    "src/zlex/flex_parser.c",
+};
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -27,10 +33,7 @@ pub fn build(b: *std.Build) void {
     zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
 
-    zlex_exe.addCSourceFile(.{
-        .file = .{ .path = "src/zlex/flex.yy.c" },
-        .flags = &c_flags,
-    });
+    zlex_exe.addCSourceFiles(.{ .files = &zlex_srcs_c, .flags = &c_flags });
 
     // zlex_exe.addObjectFile(.{ .path = "/opt/homebrew/opt/flex/lib/libfl.a" });
     zlex_exe.addObjectFile(.{ .path = "./flex/zig-out/lib/libflex.a" });
