@@ -639,7 +639,7 @@ static const flex_int16_t yy_chk[61] =
 #line 1 "flex_test.l"
 #line 2 "flex_test.l"
 #include <stdint.h>
-#define zig_extern
+#define zig_extern extern
 zig_extern void zyy_prepare_yy(uintptr_t const a0, uintptr_t const a1, uint8_t *const a2, uintptr_t const a3, uintptr_t const a4, uintptr_t const a5, uintptr_t const a6, uintptr_t const a7);
 zig_extern uint32_t zyy_parser_section(uintptr_t const a0);
 zig_extern uint32_t zyy_parser_code_block_inline(uintptr_t const a0);
@@ -894,14 +894,31 @@ void zyy_start_condition_begin(uintptr_t yyg_intptr, size_t start_condition) {
     yyg->yy_start = 1 + 2 * start_condition;
 }
 
+void zyy_action_echo(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    ECHO;
+}
+
+void zyy_action_yyless(uintptr_t yyg_intptr, size_t n) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    // yyless(n);
+}
+
+void zyy_action_unput(uintptr_t yyg_intptr, char c) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    unput(c);
+}
+
 int8_t zyy_action_input(uintptr_t yyg_intptr) {
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;
     return (int8_t)input(yyscanner);
 }
 
-void zyy_action_echo(uintptr_t yyg_intptr) {
+void zyy_action_YY_FLUSH_BUFFER(uintptr_t yyg_intptr) {
     struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    ECHO;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    YY_FLUSH_BUFFER;
 }
 
 uintptr_t zyy_yy_create_buffer(uintptr_t yyg_intptr, FILE *f, size_t size) {
