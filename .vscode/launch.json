@@ -15,6 +15,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug zlex dump_parse",
+      "program": "${workspaceFolder}/zig-out/bin/zlex",
+      "args": ["-t", "dump_parse", "src/zlex/flex.zig.l"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug main.out",
       "program": "${workspaceFolder}/src/flex_parser/main.out",
       "args": [],

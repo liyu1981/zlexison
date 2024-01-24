@@ -125,12 +125,12 @@ pub const Context = struct {
         LexSyntaxError,
     };
 
-    const Section = enum {
+    pub const Section = enum {
         Definitions,
         Rules,
         UserCode,
     };
-    const Loc = struct {
+    pub const Loc = struct {
         line: usize = 0,
         col: usize = 0,
     };
@@ -147,6 +147,12 @@ pub const Context = struct {
                 .start = context.cur_loc,
                 .end = context.cur_loc,
             };
+        }
+
+        pub fn reset(this: *CodeBlock, context: *const Context) void {
+            this.content.clearAndFree();
+            this.start = context.cur_loc;
+            this.end = context.cur_loc;
         }
 
         pub fn isEmpty(this: *const CodeBlock) bool {
@@ -241,10 +247,15 @@ export fn zyy_parser_section(parser_intptr: usize) u32 {
 fn zyy_parser_section_impl(parser: *Parser) !void {
     switch (parser.context.cur_section) {
         .Definitions => {
+            parser.context.cur_codeblock.reset(&parser.context);
             parser.context.cur_section = .Rules;
             parser.startCondition.BEGIN(SC_rule);
         },
         .Rules => {
+            if (!parser.context.cur_codeblock.isEmpty()) {
+                try parser.context.rules_action_cbs.append(parser.context.cur_codeblock);
+                parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+            }
             parser.context.cur_section = .UserCode;
             parser.startCondition.BEGIN(SC_user_block);
         },
@@ -454,7 +465,8 @@ fn zyy_parser_rule_line_impl(parser: *Parser) !void {
             parser.context.cur_codeblock.end.col = parser.yy.leng;
         } else {
             const trimed_action_line = std.mem.trimLeft(u8, line[pattern_stop..], " \t");
-            const action_line_start = pattern_stop + (line.len - trimed_action_line.len);
+            const action_line_start = line.len - trimed_action_line.len + 1;
+            // std.debug.print("action_line_start: {d}\n", .{action_line_start});
             if (!parser.context.cur_codeblock.isEmpty()) {
                 // std.debug.print("append last cur_codeblock: {d},{any}\n", .{ parser.context.cur_codeblock.content.items.len, parser.context.cur_codeblock.content.items });
                 try parser.context.rules_action_cbs.append(parser.context.cur_codeblock);
@@ -462,9 +474,13 @@ fn zyy_parser_rule_line_impl(parser: *Parser) !void {
                 parser.context.cur_codeblock.start.col = action_line_start;
             }
             // std.debug.print("rule pattern with action:{s},{s}, {d},{d} {d},{d}\n", .{ line[0..pattern_stop], line[pattern_stop..], parser.context.cur_loc.line, parser.context.cur_loc.col, parser.context.cur_codeblock.start.line, parser.context.cur_codeblock.start.col });
+            parser.context.cur_codeblock.content.clearAndFree();
             try parser.context.cur_codeblock.content.appendSlice(trimed_action_line);
-            parser.context.cur_codeblock.end.line = parser.context.cur_loc.line;
-            parser.context.cur_codeblock.end.col = parser.yy.leng;
+            parser.context.cur_codeblock.start = .{
+                .line = parser.context.cur_loc.line,
+                .col = action_line_start,
+            };
+            parser.context.cur_codeblock.end = parser.context.cur_codeblock.start;
         }
     } else {
         if (!parser.context.cur_codeblock.isEmpty()) {

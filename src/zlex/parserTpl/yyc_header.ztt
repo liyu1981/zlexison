@@ -1,7 +1,6 @@
-#include "<= ctx.name : {s} =>.h"
 #define ZLEX_CAST_U8PTR(x) ((uint8_t *)(void *)(x))
 #define ZLEX_CAST_UINTPTR(x) ((uintptr_t)(void *)(x))
 uintptr_t <= ctx.prefix : {s} =>_parser_intptr = 0;
-void <= ctx.name : {s} =>_setup_parser(intptr_t ptr) {
-    <= ctx.name : {s} =>_parser_intptr = ptr;
+void <= ctx.prefix : {s} =>_setup_parser(intptr_t ptr) {
+    <= ctx.prefix : {s} =>_parser_intptr = ptr;
 }

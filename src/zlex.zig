@@ -6,7 +6,7 @@ const FlexParser = @import("zlex/flexParser.zig");
 const ParserTpl = @import("zlex/parserTpl.zig");
 
 const usage =
-    \\ usage: zlex -t [parser_h|parser_zig|parser_yy_c] <input_file_path>
+    \\ usage: zlex -t [parser_h|parser_zig|parser_yy_c] -p <prefix> <input_file_path>
     \\        zlex flex <all_flex_options>
     \\
 ;
@@ -15,19 +15,29 @@ const OutputType = enum(u8) {
     parser_zig,
     parser_h,
     parser_yy_c,
+    dump_parse,
+    dump_generated_l,
 };
 
 const MainOptions = struct {
     input_file_path: []const u8,
     output_type: OutputType,
+    prefix: ?[]const u8 = null,
+};
+
+const ZlexError = error{
+    FlexSyntaxError,
 };
 
 const MainOptionError = error{
     InvalidOption,
 };
 
+var zlex_exe: []const u8 = undefined;
+
 fn parseArgs(args: [][:0]u8) !MainOptions {
     var r: MainOptions = .{ .input_file_path = "", .output_type = .parser_zig };
+    zlex_exe = args[0];
     const args1 = args[1..];
     var i: usize = 0;
     if (args1.len == 0) return MainOptionError.InvalidOption;
@@ -46,6 +56,14 @@ fn parseArgs(args: [][:0]u8) !MainOptions {
                 } else {
                     return MainOptionError.InvalidOption;
                 }
+            } else {
+                return MainOptionError.InvalidOption;
+            }
+        } else if (std.mem.eql(u8, arg, "-p")) {
+            if (i + 1 < args1.len) {
+                r.prefix = args1[i + 1];
+                i += 2;
+                continue;
             } else {
                 return MainOptionError.InvalidOption;
             }
@@ -89,13 +107,11 @@ pub fn main() !u8 {
     });
     defer parser.deinit();
 
-    try parser.lex();
+    if (opts.prefix) |prefix| {
+        parser.prefix = try parser.allocator.dupe(u8, prefix);
+    }
 
-    // try dumpCodeBlocks("definition_cbs", &parser.context.definitions_cbs);
-    // try dumpCodeBlocks("rules_cbs_1", &parser.context.rules_cbs_1);
-    // try dumpCodeBlocks("rules_action_cbs", &parser.context.rules_action_cbs);
-    // try dumpCodeBlocks("rules_cbs_2", &parser.context.rules_cbs_2);
-    // try dumpCodeBlocks("user_cbs", &parser.context.user_cbs);
+    try parser.lex();
 
     switch (opts.output_type) {
         .parser_zig => {
@@ -105,6 +121,13 @@ pub fn main() !u8 {
             try generateParserH(allocator, &parser, stdout_writer);
         },
         .parser_yy_c => {
+            try generateParserYYc(allocator, &parser, stdout_writer);
+        },
+        .dump_parse => {
+            try dump(allocator, &parser, stdout_writer);
+        },
+        .dump_generated_l => {
+            generateParserYYc_stop_after_generate_l = true;
             try generateParserYYc(allocator, &parser, stdout_writer);
         },
     }
@@ -136,188 +159,270 @@ fn run_as_flex(args: [][:0]const u8) void {
 
 const GenerateCodeBlockHashMap = std.AutoHashMap(usize, FlexParser.Context.CodeBlock);
 
+var generateParserYYc_stop_after_generate_l: bool = false;
+
 fn generateParserYYc(allocator: std.mem.Allocator, parser: *const FlexParser, stdout_writer: std.fs.File.Writer) !void {
-    const result = try zcmd.run(.{
-        .allocator = allocator,
-        .commands = &[_][]const []const u8{
-            &.{ "flex", "-t", opts.input_file_path },
-        },
-    });
-    defer result.deinit();
-    result.assertSucceededPanic(.{});
+    var aa = jstring.ArenaAllocator.init(allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
 
-    // try stdout_writer.print("{s}\n", .{result.trimedStdout()});
-    var flex_generated_str = try jstring.JString.newFromSlice(allocator, result.trimedStdout());
-    defer flex_generated_str.deinit();
-    const flex_generated_lines = try flex_generated_str.split("\n", -1);
-    defer jstring.freeJStringArray(flex_generated_lines);
-    // try stdout_writer.print("got {d} lines\n", .{flex_generated_lines.len});
-
-    var generated = std.ArrayList(u8).init(allocator);
-    defer generated.deinit();
-
-    const codeblocks_map = brk: {
-        var m = GenerateCodeBlockHashMap.init(allocator);
-        // unfortunately flex's line no starts from 1, not 0
-        for (parser.context.definitions_cbs.items) |item| try m.put(item.start.line + 1, item);
-        for (parser.context.rules_cbs_1.items) |item| try m.put(item.start.line + 1, item);
-        for (parser.context.rules_action_cbs.items) |item| try m.put(item.start.line + 1, item);
-        for (parser.context.rules_cbs_2.items) |item| try m.put(item.start.line + 1, item);
-        for (parser.context.user_cbs.items) |item| try m.put(item.start.line + 1, item);
-        var it = m.keyIterator();
-        std.debug.print("keys: ", .{});
-        while (it.next()) |k| {
-            std.debug.print("{d},", .{k.*});
+    // first we run flex once to find whether this .l file with any syntax problem
+    {
+        const prefix_opt = try jstring.JString.newFromFormat(arena, "--prefix={s}", .{parser.prefix});
+        const result = try zcmd.run(.{
+            .allocator = arena,
+            .commands = &[_][]const []const u8{
+                &.{ "flex", "-t", prefix_opt.valueOf(), "-R", opts.input_file_path },
+            },
+        });
+        result.assertSucceededPanic(.{ .check_stderr_empty = false });
+        if (result.stderr) |se| {
+            try std.io.getStdErr().writer().print("{s}\n", .{se});
         }
-        std.debug.print("\n", .{});
+    }
+
+    // no problem, then try to replace zig codes in .l with generated c code and run flex again
+    const generated_parser_h = brk: {
+        const result = try zcmd.run(.{
+            .allocator = arena,
+            .commands = &[_][]const []const u8{
+                &.{ zlex_exe, "-t", "parser_h", "-p", parser.prefix, opts.input_file_path },
+            },
+        });
+        result.assertSucceededPanic(.{});
+        break :brk result.stdout.?;
+    };
+    // std.debug.print("\n{s}\n", .{generated_parser_h});
+
+    const CodeBlockType = enum {
+        DefinitionCb,
+        RulesCb1,
+        RulesActionCb,
+        RulesCb2,
+        UserCodeCb,
+    };
+    const CodeBlockEntry = struct {
+        type: CodeBlockType,
+        line_count: usize,
+        cb: FlexParser.Context.CodeBlock,
+    };
+    const CodeBlockHashMap = std.AutoArrayHashMap(usize, CodeBlockEntry);
+    const cbmap = brk: {
+        var m = CodeBlockHashMap.init(arena);
+        for (parser.context.definitions_cbs.items) |cb| try m.put(cb.start.line, .{
+            .type = CodeBlockType.DefinitionCb,
+            .line_count = cb.end.line - cb.start.line,
+            .cb = cb,
+        });
+        for (parser.context.rules_cbs_1.items) |cb| try m.put(cb.start.line, .{
+            .type = CodeBlockType.RulesCb1,
+            .line_count = cb.end.line - cb.start.line,
+            .cb = cb,
+        });
+        for (parser.context.rules_action_cbs.items) |cb| try m.put(cb.start.line, .{
+            .type = CodeBlockType.RulesActionCb,
+            .line_count = cb.end.line - cb.start.line,
+            .cb = cb,
+        });
+        for (parser.context.rules_cbs_2.items) |cb| try m.put(cb.start.line, .{
+            .type = CodeBlockType.RulesCb2,
+            .line_count = cb.end.line - cb.start.line,
+            .cb = cb,
+        });
+        for (parser.context.user_cbs.items) |cb| try m.put(cb.start.line, .{
+            .type = CodeBlockType.UserCodeCb,
+            .line_count = cb.end.line - cb.start.line,
+            .cb = cb,
+        });
         break :brk m;
     };
 
+    const input_file_lines = brk: {
+        const f = try std.fs.cwd().openFile(opts.input_file_path, .{});
+        defer f.close();
+        const s = try f.readToEndAlloc(arena, std.math.maxInt(usize));
+        var js = try jstring.JString.newFromSlice(arena, s);
+        break :brk try js.split("\n", -1);
+    };
+
+    const yyc_header = try ParserTpl.generateYYcHeader(arena, .{ .prefix = parser.prefix });
+
+    var generated_l_file = std.ArrayList(u8).init(arena);
+    const generated_writer = generated_l_file.writer();
+
+    var cur_section: FlexParser.Context.Section = FlexParser.Context.Section.Definitions;
     var i: usize = 0;
-    while (i < flex_generated_lines.len) {
-        const line = flex_generated_lines[i];
-        const is_main_scanner_line = line.startsWithSlice("/** The main scanner function");
-        const m = try line.match("^#line (?<line>\\d+) \"(?<file>.+?)\"", 0, true, 0, 0);
-        const has_interest = brk: {
-            // this line is special, we will use it for inserting zlex_utils.c
-            if (is_main_scanner_line) break :brk true;
-            // otherwise we try to find : #line <no> "<file>"
-            if (m.matchSucceed()) {
-                const maybe_line_r = m.getGroupResultByName("line");
-                const maybe_file_r = m.getGroupResultByName("file");
-                if (maybe_line_r == null or maybe_file_r == null) break :brk false;
-                if (maybe_file_r) |file_r| {
-                    break :brk std.mem.eql(u8, opts.input_file_path, line.valueOf()[file_r.start .. file_r.start + file_r.len]);
-                } else {
-                    break :brk false;
-                }
+    while (i < input_file_lines.len) {
+        var line = input_file_lines[i];
+
+        // insert zlex_utils_c right after enter rules section
+        if (line.startsWithSlice("%%")) {
+            if (cur_section == FlexParser.Context.Section.Definitions) {
+                try generated_writer.print("{s}\n", .{line});
+                // try generated_l_file.appendSlice("%{\n");
+                // try generated_writer.print("{s}\n", .{zlex_utils_c});
+                // try generated_l_file.appendSlice("%}\n");
+                cur_section = FlexParser.Context.Section.Rules;
+                i += 1;
+                continue;
+            } else if (cur_section == FlexParser.Context.Section.Rules) {
+                cur_section = FlexParser.Context.Section.UserCode;
+                try generated_writer.print("{s}\n", .{line});
+                i += 1;
+                continue;
             } else {
-                break :brk false;
+                // very unlikely as we have validate before, but anyway
+                std.debug.print("FlexSyntaxError, really?: {d}", .{i});
+                return ZlexError.FlexSyntaxError;
             }
-        };
-        if (has_interest) {
-            const line_no = brk: {
-                if (is_main_scanner_line) {
-                    break :brk 0;
-                } else {
-                    const line_r = m.getGroupResultByName("line").?;
-                    const line_no_str = line.valueOf()[line_r.start .. line_r.start + line_r.len];
-                    break :brk try std.fmt.parseInt(usize, line_no_str, 10);
-                }
-            };
-            const generated_r = try generateYYc(
-                allocator,
-                parser,
-                &codeblocks_map,
-                flex_generated_lines,
-                line,
-                i,
-                line_no,
-                is_main_scanner_line,
-            );
-            try generated.appendSlice(generated_r.line);
-            i = generated_r.next_i;
-            try generated.append('\n');
+        }
+
+        // for first line, insert generated_parser_h before it
+        if (i == 0) {
+            try generated_l_file.appendSlice("%{\n");
+            try generated_writer.print("{s}\n{s}\n", .{ generated_parser_h, yyc_header });
+            try generated_l_file.appendSlice("%}\n");
+        }
+
+        if (cbmap.get(i)) |cb_entry| {
+            switch (cur_section) {
+                .Definitions => {
+                    i += cb_entry.line_count + 1;
+                    continue;
+                },
+                .Rules => switch (cb_entry.type) {
+                    .RulesCb1, .RulesCb2 => {
+                        try generated_l_file.appendSlice("%{\n");
+                        try generated_writer.print(
+                            "{s}\n",
+                            .{
+                                try ParserTpl.generateCodeBlockCaller(
+                                    arena,
+                                    .not_action,
+                                    .{
+                                        .prefix = parser.prefix,
+                                        .name = try genCbName(arena, cb_entry.cb),
+                                    },
+                                ),
+                            },
+                        );
+                        try generated_l_file.appendSlice("%}\n");
+                        i += cb_entry.line_count + 1;
+                        continue;
+                    },
+                    .RulesActionCb => {
+                        if (cb_entry.line_count == 0) {
+                            try generated_writer.print("{s} ", .{line.valueOf()[0..cb_entry.cb.start.col]});
+                            try generated_l_file.append('{');
+                            try generated_writer.print(
+                                " {s} ",
+                                .{
+                                    try ParserTpl.generateCodeBlockCaller(
+                                        arena,
+                                        .action,
+                                        .{
+                                            .prefix = parser.prefix,
+                                            .name = try genCbName(arena, cb_entry.cb),
+                                        },
+                                    ),
+                                },
+                            );
+                            try generated_l_file.append('}');
+                            i += 1;
+                            continue;
+                        } else {
+                            try generated_writer.print("{s} ", .{line.valueOf()[0 .. cb_entry.cb.start.col - 1]});
+                            try generated_l_file.appendSlice(" {\n");
+                            const gened = try ParserTpl.generateCodeBlockCaller(
+                                arena,
+                                .action,
+                                .{
+                                    .prefix = parser.prefix,
+                                    .name = try genCbName(arena, cb_entry.cb),
+                                },
+                            );
+                            try generated_writer.print(" {s}\n", .{gened});
+                            try generated_l_file.appendSlice("    }\n");
+                            i += cb_entry.line_count + 1;
+                            continue;
+                        }
+                    },
+                    else => {
+                        return ZlexError.FlexSyntaxError;
+                    },
+                },
+                .UserCode => {
+                    try generated_l_file.appendSlice("%{\n");
+                    try generated_writer.print(
+                        "{s}\n",
+                        .{
+                            try ParserTpl.generateCodeBlockCaller(
+                                arena,
+                                .not_action,
+                                .{
+                                    .prefix = parser.prefix,
+                                    .name = try genCbName(arena, cb_entry.cb),
+                                },
+                            ),
+                        },
+                    );
+                    try generated_l_file.appendSlice("%}\n");
+                },
+            }
         } else {
-            try generated.appendSlice(line.valueOf());
-            try generated.append('\n');
+            try generated_writer.print("{s}\n", .{line});
             i += 1;
+            continue;
         }
     }
 
-    try stdout_writer.print("{s}\n", .{generated.items});
-}
-
-const GenerateYYcResult = struct {
-    line: []const u8,
-    next_i: usize,
-};
-
-fn generateYYc(
-    allocator: std.mem.Allocator,
-    parser: *const FlexParser,
-    codeblocks_map: *const GenerateCodeBlockHashMap,
-    flex_generated_lines: []const jstring.JString,
-    line: jstring.JString,
-    i: usize,
-    line_no: usize,
-    is_main_scanner_line: bool,
-) !GenerateYYcResult {
-    if (is_main_scanner_line) {
-        return try generateYYcMainScannerLine(allocator, parser, codeblocks_map, flex_generated_lines, line, i, line_no);
-    } else {
-        switch (line_no) {
-            1 => {
-                return try generateYYcLine1(allocator, parser, codeblocks_map, flex_generated_lines, line, i, line_no);
-            },
-            else => {
-                if (codeblocks_map.contains(line_no)) {
-                    std.debug.print("will generateYYc for line: {d}\n", .{line_no});
-                }
-            },
-        }
-        return .{
-            .line = line.valueOf(),
-            .next_i = i + 1,
-        };
-    }
-}
-
-fn generateYYcMainScannerLine(
-    allocator: std.mem.Allocator,
-    parser: *const FlexParser,
-    codeblocks_map: *const GenerateCodeBlockHashMap,
-    flex_generated_lines: []const jstring.JString,
-    line: jstring.JString,
-    i: usize,
-    line_no: usize,
-) !GenerateYYcResult {
-    _ = codeblocks_map;
-    _ = line_no;
-    _ = flex_generated_lines;
-    var str_arr = std.ArrayList(u8).init(allocator);
-    defer str_arr.deinit();
-    var writer = str_arr.writer();
-    try writer.print("{s}\n{s}\n", .{
-        try ParserTpl.generateZlexUtilsC(
-            allocator,
+    try generated_writer.print(
+        "{s}\n",
+        .{try ParserTpl.generateYywrapEtc(
+            arena,
             .{ .prefix = parser.prefix },
-        ),
-        line,
-    });
-    return .{
-        .line = try str_arr.toOwnedSlice(),
-        .next_i = i + 1,
-    };
-}
+        )},
+    );
 
-fn generateYYcLine1(
-    allocator: std.mem.Allocator,
-    parser: *const FlexParser,
-    codeblocks_map: *const GenerateCodeBlockHashMap,
-    flex_generated_lines: []const jstring.JString,
-    line: jstring.JString,
-    i: usize,
-    line_no: usize,
-) !GenerateYYcResult {
-    _ = codeblocks_map;
-    _ = line_no;
-    _ = flex_generated_lines;
-    var str_arr = std.ArrayList(u8).init(allocator);
-    defer str_arr.deinit();
-    var writer = str_arr.writer();
-    const basename = std.fs.path.basename(opts.input_file_path);
-    try writer.print("{s}\n{s}\n", .{
-        line,
-        try ParserTpl.generateYYcHeader(allocator, .{
-            .name = basename,
-            .prefix = parser.prefix,
-        }),
-    });
-    return .{
-        .line = try str_arr.toOwnedSlice(),
-        .next_i = i + 1,
+    if (generateParserYYc_stop_after_generate_l) {
+        try stdout_writer.print("{s}\n", .{generated_l_file.items});
+        return;
+    }
+
+    // now just rerun flex to the final .yy.c
+    const yyc_candidate = brk: {
+        const prefix_opt = try jstring.JString.newFromFormat(arena, "--prefix={s}", .{parser.prefix});
+        const result = try zcmd.run(.{
+            .allocator = arena,
+            .commands = &[_][]const []const u8{
+                &.{ "flex", "-t", prefix_opt.valueOf(), "-R" },
+            },
+            .stdin_input = generated_l_file.items,
+        });
+        result.assertSucceededPanic(.{});
+        break :brk result.stdout.?;
     };
+
+    // and finally inject zlex_utils_c
+    const yyc_final = brk: {
+        var arr_buf = std.ArrayList(u8).init(arena);
+        const yyc_candidate_js = try jstring.JString.newFromSlice(arena, yyc_candidate);
+        const pos = yyc_candidate_js.indexOf("/** The main scanner function which does all the work.", 0);
+        const zlex_utils_c = try ParserTpl.generateZlexUtilsC(arena, .{ .prefix = parser.prefix });
+        if (pos < 0) {
+            // no main scanner line ??!
+            unreachable;
+        } else {
+            try arr_buf.writer().print("{s}\n{s}\n{s}", .{
+                yyc_candidate_js.valueOf()[0..@as(usize, @intCast(pos))],
+                zlex_utils_c,
+                yyc_candidate_js.valueOf()[@as(usize, @intCast(pos))..],
+            });
+            break :brk try arr_buf.toOwnedSlice();
+        }
+    };
+
+    try stdout_writer.print("{s}\n", .{yyc_final});
 }
 
 fn generateParserH(allocator: std.mem.Allocator, parser: *const FlexParser, stdout_writer: std.fs.File.Writer) !void {
@@ -326,7 +431,21 @@ fn generateParserH(allocator: std.mem.Allocator, parser: *const FlexParser, stdo
     var name_buf = std.ArrayList(u8).init(allocator);
     defer name_buf.deinit();
     var buf: [256]u8 = undefined;
+    for (parser.context.rules_cbs_1.items) |item| {
+        const s = name_buf.items.len;
+        const name = try std.fmt.bufPrint(&buf, "line{d}col{d}", .{ item.start.line, item.start.col });
+        try name_buf.appendSlice(name);
+        const e = name_buf.items.len;
+        try action_fn_names_arr.append(name_buf.items[s..e]);
+    }
     for (parser.context.rules_action_cbs.items) |item| {
+        const s = name_buf.items.len;
+        const name = try std.fmt.bufPrint(&buf, "line{d}col{d}", .{ item.start.line, item.start.col });
+        try name_buf.appendSlice(name);
+        const e = name_buf.items.len;
+        try action_fn_names_arr.append(name_buf.items[s..e]);
+    }
+    for (parser.context.rules_cbs_2.items) |item| {
         const s = name_buf.items.len;
         const name = try std.fmt.bufPrint(&buf, "line{d}col{d}", .{ item.start.line, item.start.col });
         try name_buf.appendSlice(name);
@@ -384,6 +503,10 @@ fn generateDefinitions(allocator: std.mem.Allocator, parser: *const FlexParser) 
     return str.toOwnedSlice();
 }
 
+fn genCbName(allocator: std.mem.Allocator, cb: FlexParser.Context.CodeBlock) ![]const u8 {
+    return std.fmt.allocPrint(allocator, "line{d}col{d}", .{ cb.start.line, cb.start.col });
+}
+
 fn generateRuleActions(allocator: std.mem.Allocator, parser: *const FlexParser) ![]const u8 {
     var str = std.ArrayList(u8).init(allocator);
     defer str.deinit();
@@ -399,7 +522,6 @@ fn generateRuleActions(allocator: std.mem.Allocator, parser: *const FlexParser) 
         try writer.print("{s}\n", .{item.content.items});
     }
 
-    var name_buf: [256]u8 = undefined;
     for (parser.context.rules_action_cbs.items) |item| {
         try writer.print("// generated from line {d}, col {d} --> line {d}, col {d}\n", .{
             item.start.line,
@@ -407,7 +529,8 @@ fn generateRuleActions(allocator: std.mem.Allocator, parser: *const FlexParser) 
             item.end.line,
             item.end.col,
         });
-        const name = try std.fmt.bufPrint(&name_buf, "line{d}col{d}", .{ item.start.line, item.start.col });
+        const name = try genCbName(allocator, item);
+        defer allocator.free(name);
         const action_str = try ParserTpl.generateRuleAction(
             allocator,
             .{
@@ -448,7 +571,17 @@ fn generateUserCode(allocator: std.mem.Allocator, parser: *const FlexParser) ![]
     return str.toOwnedSlice();
 }
 
-fn dumpCodeBlocks(section: []const u8, cbs: *std.ArrayList(FlexParser.Context.CodeBlock)) !void {
+fn dump(allocator: std.mem.Allocator, parser: *const FlexParser, stdout_writer: std.fs.File.Writer) !void {
+    _ = allocator;
+    _ = stdout_writer;
+    try dumpCodeBlocks("definition_cbs", &parser.context.definitions_cbs);
+    try dumpCodeBlocks("rules_cbs_1", &parser.context.rules_cbs_1);
+    try dumpCodeBlocks("rules_action_cbs", &parser.context.rules_action_cbs);
+    try dumpCodeBlocks("rules_cbs_2", &parser.context.rules_cbs_2);
+    try dumpCodeBlocks("user_cbs", &parser.context.user_cbs);
+}
+
+fn dumpCodeBlocks(section: []const u8, cbs: *const std.ArrayList(FlexParser.Context.CodeBlock)) !void {
     std.debug.print(">>>>> code blocks of {s}\n", .{section});
     for (cbs.items) |cbs_item| {
         std.debug.print("##### code block: L{d}-C{d} -> L{d}-C{d}\n", .{
