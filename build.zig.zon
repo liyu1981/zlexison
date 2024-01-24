@@ -11,6 +11,9 @@
             .url = "../jstring",
             .hash = "1220cf150691d7269a57e031cfcafc4b879100d87bddea156341ed5059712c6fee61",
         },
+        .flex = .{
+            .path = "./flex",
+        },
     },
 
     .paths = .{

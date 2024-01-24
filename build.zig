@@ -14,6 +14,8 @@ pub fn build(b: *std.Build) void {
 
     const zcmd_dep = b.dependency("zcmd", .{});
     var jstring_dep = b.dependency("jstring", .{});
+    const flex_dep = b.dependency("flex", .{});
+    const libflex_a = flex_dep.artifact("libflex");
 
     var zlex_exe = b.addExecutable(.{
         .name = "zlex",
@@ -21,6 +23,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    zlex_exe.step.dependOn(&libflex_a.step);
 
     zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
 
@@ -34,8 +38,7 @@ pub fn build(b: *std.Build) void {
         .flags = &c_flags,
     });
 
-    // zlex_exe.addObjectFile(.{ .path = "/opt/homebrew/opt/flex/lib/libfl.a" });
-    zlex_exe.addObjectFile(.{ .path = "./flex/zig-out/lib/libflex.a" });
+    zlex_exe.addObjectFile(libflex_a.getEmittedBin());
 
     b.installArtifact(zlex_exe);
 
