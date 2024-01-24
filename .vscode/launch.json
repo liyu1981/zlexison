@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Debug zlex",
       "program": "${workspaceFolder}/zig-out/bin/zlex",
-      "args": ["-t", "parser_yy_c", "src/zlex/flex.zig.l"],
+      "args": ["-t", "zig", "src/zlex/flex.zig.l"],
       "cwd": "${workspaceFolder}"
     },
     {

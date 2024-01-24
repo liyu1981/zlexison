@@ -7,9 +7,11 @@ const yyc_header_tpl = @import("parserTpl/yyc_header_ztt.zig");
 const action_caller_tpl = @import("parserTpl/action_caller_ztt.zig");
 const no_action_caller_tpl = @import("parserTpl/no_action_caller_ztt.zig");
 const yywrap_etc_tpl = @import("parserTpl/yywrap_etc_ztt.zig");
+const zlex_api_tpl = @import("parserTpl/zlex_api_ztt.zig");
 
 pub fn generateParser(allocator: std.mem.Allocator, args: struct {
     prefix: []const u8,
+    za: []const u8,
     source_name: []const u8,
     start_condition_consts: ?[]const u8 = null,
     definitions: ?[]const u8 = null,
@@ -21,6 +23,7 @@ pub fn generateParser(allocator: std.mem.Allocator, args: struct {
 
     try parser_tpl.render(str_array.writer(), .{
         .prefix = args.prefix,
+        .za = args.za,
         .start_condition = if (args.start_condition_consts) |scc| scc else "",
         .source_name = args.source_name,
         .definitions = if (args.definitions) |d| d else "",
@@ -104,6 +107,17 @@ pub fn generateYywrapEtc(allocator: std.mem.Allocator, args: struct {
     var str_array = std.ArrayList(u8).init(allocator);
     defer str_array.deinit();
     try yywrap_etc_tpl.render(str_array.writer(), .{
+        .prefix = args.prefix,
+    });
+    return str_array.toOwnedSlice();
+}
+
+pub fn generateZlexApi(allocator: std.mem.Allocator, args: struct {
+    prefix: []const u8,
+}) ![]const u8 {
+    var str_array = std.ArrayList(u8).init(allocator);
+    defer str_array.deinit();
+    try zlex_api_tpl.render(str_array.writer(), .{
         .prefix = args.prefix,
     });
     return str_array.toOwnedSlice();

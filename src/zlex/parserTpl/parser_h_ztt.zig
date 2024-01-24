@@ -7,7 +7,7 @@ pub fn render(stream: anytype, ctx: anytype) !void {
   // here comes the actual content
     try stream.writeAll("#include ");
     try stream.writeAll("<s");
-    try stream.writeAll("tdint.h>\n#define zig_extern\nzig_extern void ");
+    try stream.writeAll("tdint.h>\n#define zig_extern extern\nzig_extern void ");
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_prepare_yy(uintptr_t const a0, uintptr_t const a1, uint8_t *const a2, uintptr_t const a3, uintptr_t const a4, uintptr_t const a5, uintptr_t const a6, uintptr_t const a7);\n");
 for(ctx.action_fn_names) |action_fn_name| {

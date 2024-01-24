@@ -6,15 +6,17 @@ const FlexParser = @import("zlex/flexParser.zig");
 const ParserTpl = @import("zlex/parserTpl.zig");
 
 const usage =
-    \\ usage: zlex -t [parser_h|parser_zig|parser_yy_c] -p <prefix> <input_file_path>
+    \\ usage: zlex -o <output_file_prefix> <input_file_path>
+    \\        zlex -t [h|zig|yyc] -p <prefix> <input_file_path>
     \\        zlex flex <all_flex_options>
     \\
 ;
 
 const OutputType = enum(u8) {
-    parser_zig,
-    parser_h,
-    parser_yy_c,
+    all,
+    zig,
+    h,
+    yyc,
     dump_parse,
     dump_generated_l,
 };
@@ -23,6 +25,7 @@ const MainOptions = struct {
     input_file_path: []const u8,
     output_type: OutputType,
     prefix: ?[]const u8 = null,
+    output_file_prefix: ?[]const u8 = null,
 };
 
 const ZlexError = error{
@@ -36,7 +39,7 @@ const MainOptionError = error{
 var zlex_exe: []const u8 = undefined;
 
 fn parseArgs(args: [][:0]u8) !MainOptions {
-    var r: MainOptions = .{ .input_file_path = "", .output_type = .parser_zig };
+    var r: MainOptions = .{ .input_file_path = "", .output_type = .all };
     zlex_exe = args[0];
     const args1 = args[1..];
     var i: usize = 0;
@@ -67,6 +70,14 @@ fn parseArgs(args: [][:0]u8) !MainOptions {
             } else {
                 return MainOptionError.InvalidOption;
             }
+        } else if (std.mem.eql(u8, arg, "-o")) {
+            if (i + 1 < args1.len) {
+                r.output_file_prefix = args1[i + 1];
+                i += 2;
+                continue;
+            } else {
+                return MainOptionError.InvalidOption;
+            }
         }
 
         if (r.input_file_path.len > 0) {
@@ -90,8 +101,15 @@ pub fn main() !u8 {
         std.os.exit(1);
     };
 
-    const allocator = std.heap.page_allocator;
+    if (opts.output_type == OutputType.all) {
+        if (opts.output_file_prefix == null) {
+            try std.io.getStdErr().writer().print("{s}\n", .{usage});
+            std.os.exit(1);
+        }
+        return generateAll();
+    }
 
+    const allocator = std.heap.page_allocator;
     const stdout_writer = std.io.getStdOut().writer();
 
     var f = try std.fs.cwd().openFile(opts.input_file_path, .{});
@@ -114,13 +132,13 @@ pub fn main() !u8 {
     try parser.lex();
 
     switch (opts.output_type) {
-        .parser_zig => {
+        .zig => {
             try generateParserZig(allocator, &parser, stdout_writer);
         },
-        .parser_h => {
+        .h => {
             try generateParserH(allocator, &parser, stdout_writer);
         },
-        .parser_yy_c => {
+        .yyc => {
             try generateParserYYc(allocator, &parser, stdout_writer);
         },
         .dump_parse => {
@@ -130,6 +148,7 @@ pub fn main() !u8 {
             generateParserYYc_stop_after_generate_l = true;
             try generateParserYYc(allocator, &parser, stdout_writer);
         },
+        else => {},
     }
 
     return 0;
@@ -157,6 +176,44 @@ fn run_as_flex(args: [][:0]const u8) void {
     ));
 }
 
+fn generateAll() !u8 {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    // a fake instance, just use for generate prefix
+    const parser = FlexParser.init(.{
+        .allocator = allocator,
+        .input = "",
+    });
+    {
+        const result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &.{ zlex_exe, "-t", "zig", "-p", parser.prefix, opts.input_file_path },
+            },
+        });
+        result.assertSucceededPanic(.{});
+        const zig_file_name = try jstring.JString.newFromFormat(allocator, "{s}.zig", .{opts.output_file_prefix.?});
+        var f = try std.fs.cwd().createFile(zig_file_name.valueOf(), .{});
+        defer f.close();
+        try f.writeAll(result.stdout.?);
+    }
+    {
+        const result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &.{ zlex_exe, "-t", "yyc", "-p", parser.prefix, opts.input_file_path },
+            },
+        });
+        result.assertSucceededPanic(.{});
+        const yyc_file_name = try jstring.JString.newFromFormat(allocator, "{s}.yy.c", .{opts.output_file_prefix.?});
+        var f = try std.fs.cwd().createFile(yyc_file_name.valueOf(), .{});
+        defer f.close();
+        try f.writeAll(result.stdout.?);
+    }
+    return 0;
+}
+
 const GenerateCodeBlockHashMap = std.AutoHashMap(usize, FlexParser.Context.CodeBlock);
 
 var generateParserYYc_stop_after_generate_l: bool = false;
@@ -172,7 +229,7 @@ fn generateParserYYc(allocator: std.mem.Allocator, parser: *const FlexParser, st
         const result = try zcmd.run(.{
             .allocator = arena,
             .commands = &[_][]const []const u8{
-                &.{ "flex", "-t", prefix_opt.valueOf(), "-R", opts.input_file_path },
+                &.{ zlex_exe, "flex", "-t", prefix_opt.valueOf(), "-R", opts.input_file_path },
             },
         });
         result.assertSucceededPanic(.{ .check_stderr_empty = false });
@@ -186,7 +243,7 @@ fn generateParserYYc(allocator: std.mem.Allocator, parser: *const FlexParser, st
         const result = try zcmd.run(.{
             .allocator = arena,
             .commands = &[_][]const []const u8{
-                &.{ zlex_exe, "-t", "parser_h", "-p", parser.prefix, opts.input_file_path },
+                &.{ zlex_exe, "-t", "h", "-p", parser.prefix, opts.input_file_path },
             },
         });
         result.assertSucceededPanic(.{});
@@ -395,7 +452,7 @@ fn generateParserYYc(allocator: std.mem.Allocator, parser: *const FlexParser, st
         const result = try zcmd.run(.{
             .allocator = arena,
             .commands = &[_][]const []const u8{
-                &.{ "flex", "-t", prefix_opt.valueOf(), "-R" },
+                &.{ zlex_exe, "flex", "-t", prefix_opt.valueOf(), "-R" },
             },
             .stdin_input = generated_l_file.items,
         });
@@ -464,7 +521,8 @@ fn generateParserH(allocator: std.mem.Allocator, parser: *const FlexParser, stdo
 fn generateParserZig(allocator: std.mem.Allocator, parser: *const FlexParser, stdout_writer: std.fs.File.Writer) !void {
     const generated = try ParserTpl.generateParser(allocator, .{
         .prefix = parser.prefix,
-        .source_name = "flex.zig.l",
+        .source_name = opts.input_file_path,
+        .za = try ParserTpl.generateZlexApi(allocator, .{ .prefix = parser.prefix }),
         .start_condition_consts = try generateStartConditionConsts(allocator, parser),
         .definitions = try generateDefinitions(allocator, parser),
         .rule_actions = try generateRuleActions(allocator, parser),
@@ -512,17 +570,13 @@ fn generateRuleActions(allocator: std.mem.Allocator, parser: *const FlexParser) 
     defer str.deinit();
     var writer = str.writer();
 
-    for (parser.context.rules_cbs_1.items) |item| {
-        try writer.print("// generated from line {d}, col {d} --> line {d}, col {d}\n", .{
-            item.start.line,
-            item.start.col,
-            item.end.line,
-            item.end.col,
-        });
-        try writer.print("{s}\n", .{item.content.items});
-    }
+    var all_cbs = std.ArrayList(FlexParser.Context.CodeBlock).init(allocator);
+    defer all_cbs.deinit();
+    try all_cbs.appendSlice(parser.context.rules_cbs_1.items);
+    try all_cbs.appendSlice(parser.context.rules_action_cbs.items);
+    try all_cbs.appendSlice(parser.context.rules_cbs_2.items);
 
-    for (parser.context.rules_action_cbs.items) |item| {
+    for (all_cbs.items) |item| {
         try writer.print("// generated from line {d}, col {d} --> line {d}, col {d}\n", .{
             item.start.line,
             item.start.col,
@@ -540,16 +594,6 @@ fn generateRuleActions(allocator: std.mem.Allocator, parser: *const FlexParser) 
             },
         );
         try writer.print("{s}\n", .{action_str});
-    }
-
-    for (parser.context.rules_cbs_2.items) |item| {
-        try writer.print("// generated from line {d}, col {d} --> line {d}, col {d}\n", .{
-            item.start.line,
-            item.start.col,
-            item.end.line,
-            item.end.col,
-        });
-        try writer.print("{s}\n", .{item.content.items});
     }
 
     return str.toOwnedSlice();

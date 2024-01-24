@@ -4,12 +4,12 @@ pub const Context = struct {
         LexSyntaxError,
     };
 
-    const Section = enum {
+    pub const Section = enum {
         Definitions,
         Rules,
         UserCode,
     };
-    const Loc = struct {
+    pub const Loc = struct {
         line: usize = 0,
         col: usize = 0,
     };
@@ -26,6 +26,12 @@ pub const Context = struct {
                 .start = context.cur_loc,
                 .end = context.cur_loc,
             };
+        }
+
+        pub fn reset(this: *CodeBlock, context: *const Context) void {
+            this.content.clearAndFree();
+            this.start = context.cur_loc;
+            this.end = context.cur_loc;
         }
 
         pub fn isEmpty(this: *const CodeBlock) bool {
@@ -49,9 +55,29 @@ pub const Context = struct {
             }
         }
     };
+    pub const StartConditionDefinitions = struct {
+        names: std.ArrayList([]const u8),
+        name_buf: std.ArrayList(u8),
+        locs: std.ArrayList(Loc),
+
+        pub fn init(allocator: std.mem.Allocator) StartConditionDefinitions {
+            return StartConditionDefinitions{
+                .names = std.ArrayList([]const u8).init(allocator),
+                .name_buf = std.ArrayList(u8).init(allocator),
+                .locs = std.ArrayList(Loc).init(allocator),
+            };
+        }
+
+        pub fn deinit(this: *const StartConditionDefinitions) void {
+            this.names.deinit();
+            this.name_buf.deinit();
+            this.locs.deinit();
+        }
+    };
 
     allocator: std.mem.Allocator,
 
+    start_conditions: StartConditionDefinitions,
     definitions_cbs: std.ArrayList(CodeBlock),
     rules_cbs_1: std.ArrayList(CodeBlock),
     rules_action_cbs: std.ArrayList(CodeBlock),
@@ -66,14 +92,27 @@ pub const Context = struct {
     pub fn init(allocator: std.mem.Allocator) Context {
         var c = Context{
             .allocator = allocator,
+            .start_conditions = StartConditionDefinitions.init(allocator),
             .definitions_cbs = std.ArrayList(CodeBlock).init(allocator),
             .rules_cbs_1 = std.ArrayList(CodeBlock).init(allocator),
             .rules_action_cbs = std.ArrayList(CodeBlock).init(allocator),
             .rules_cbs_2 = std.ArrayList(CodeBlock).init(allocator),
             .user_cbs = std.ArrayList(CodeBlock).init(allocator),
         };
+        c.start_conditions.name_buf.appendSlice("INITIAL") catch unreachable;
+        c.start_conditions.names.append(c.start_conditions.name_buf.items[0..7]) catch unreachable;
+        c.start_conditions.locs.append(.{ .line = 0, .col = 0 }) catch unreachable;
         c.cur_codeblock = Parser.Context.CodeBlock.init(&c);
         return c;
+    }
+
+    pub fn deinit(this: *const Context) void {
+        this.start_conditions.deinit();
+        this.definitions_cbs.deinit();
+        this.rules_cbs_1.deinit();
+        this.rules_action_cbs.deinit();
+        this.rules_cbs_2.deinit();
+        this.user_cbs.deinit();
     }
 };
 %}
@@ -82,14 +121,9 @@ pub const Context = struct {
 pub const ParserError = error{
     InlineCodeBlockInDefinitionSection,
     NoCodeBlockAllowed,
+    InvalidStartCondition,
 } || ZA.YYError;
 %}
-
-%x rule
-%x user_block
-%x code_block
-
-%%
 
 %{
 fn findRulePatternStop(line: []const u8) ?usize {
@@ -112,15 +146,32 @@ fn findRulePatternStop(line: []const u8) ?usize {
     }
     return null;
 }
+
+fn extractStartConditionName(line: []const u8) ![]const u8 {
+    const s = std.mem.trim(u8, line, " \t\r\n");
+    if (s.len == 0) return ParserError.InvalidStartCondition;
+    return s;
+}
 %}
+
+%x rule
+%x user_block
+%x code_block
+
+%%
 
 <*>^\%\%$    {
     switch (parser.context.cur_section) {
         .Definitions => {
+            parser.context.cur_codeblock.reset(&parser.context);
             parser.context.cur_section = .Rules;
             parser.startCondition.BEGIN(SC_rule);
         },
         .Rules => {
+            if (!parser.context.cur_codeblock.isEmpty()) {
+                try parser.context.rules_action_cbs.append(parser.context.cur_codeblock);
+                parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+            }
             parser.context.cur_section = .UserCode;
             parser.startCondition.BEGIN(SC_user_block);
         },
@@ -264,7 +315,8 @@ fn findRulePatternStop(line: []const u8) ?usize {
             parser.context.cur_codeblock.end.col = parser.yy.leng;
         } else {
             const trimed_action_line = std.mem.trimLeft(u8, line[pattern_stop..], " \t");
-            const action_line_start = pattern_stop + (line.len - trimed_action_line.len);
+            const action_line_start = line.len - trimed_action_line.len + 1;
+            // std.debug.print("action_line_start: {d}\n", .{action_line_start});
             if (!parser.context.cur_codeblock.isEmpty()) {
                 // std.debug.print("append last cur_codeblock: {d},{any}\n", .{ parser.context.cur_codeblock.content.items.len, parser.context.cur_codeblock.content.items });
                 try parser.context.rules_action_cbs.append(parser.context.cur_codeblock);
@@ -272,9 +324,13 @@ fn findRulePatternStop(line: []const u8) ?usize {
                 parser.context.cur_codeblock.start.col = action_line_start;
             }
             // std.debug.print("rule pattern with action:{s},{s}, {d},{d} {d},{d}\n", .{ line[0..pattern_stop], line[pattern_stop..], parser.context.cur_loc.line, parser.context.cur_loc.col, parser.context.cur_codeblock.start.line, parser.context.cur_codeblock.start.col });
+            parser.context.cur_codeblock.content.clearAndFree();
             try parser.context.cur_codeblock.content.appendSlice(trimed_action_line);
-            parser.context.cur_codeblock.end.line = parser.context.cur_loc.line;
-            parser.context.cur_codeblock.end.col = parser.yy.leng;
+            parser.context.cur_codeblock.start = .{
+                .line = parser.context.cur_loc.line,
+                .col = action_line_start,
+            };
+            parser.context.cur_codeblock.end = parser.context.cur_codeblock.start;
         }
     } else {
         if (!parser.context.cur_codeblock.isEmpty()) {

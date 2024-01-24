@@ -237,6 +237,33 @@ pub const Context = struct {
     }
 };
 
+fn findRulePatternStop(line: []const u8) ?usize {
+    var i: usize = 0;
+    var inside_class_braket: bool = false;
+    while (i < line.len) {
+        if ((i + 1) < line.len and line[i] == '\\' and line[i + 1] == ' ') {
+            i += 2;
+            continue;
+        }
+        if (line[i] == '[') inside_class_braket = true;
+        if (line[i] == ']') inside_class_braket = false;
+        //std.debug.print("\ncheck {d}, {c}, {any}\n", .{ i, line[i], inside_class_braket });
+        if (inside_class_braket and line[i] == ' ') {
+            i += 1;
+            continue;
+        }
+        if (line[i] == ' ' or line[i] == '\t') return i;
+        i += 1;
+    }
+    return null;
+}
+
+fn extractStartConditionName(line: []const u8) ![]const u8 {
+    const s = std.mem.trim(u8, line, " \t\r\n");
+    if (s.len == 0) return ParserError.InvalidStartCondition;
+    return s;
+}
+
 export fn zyy_parser_section(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
@@ -398,12 +425,6 @@ fn zyy_parser_code_block_new_line_impl(parser: *Parser) !void {
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
-fn extractStartConditionName(line: []const u8) ![]const u8 {
-    const s = std.mem.trim(u8, line, " \t\r\n");
-    if (s.len == 0) return ParserError.InvalidStartCondition;
-    return s;
-}
-
 export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
@@ -431,27 +452,6 @@ export fn zyy_parser_rule_line(parser_intptr: usize) u32 {
     _ = &parser;
     zyy_parser_rule_line_impl(parser) catch return 1;
     return 0;
-}
-
-fn findRulePatternStop(line: []const u8) ?usize {
-    var i: usize = 0;
-    var inside_class_braket: bool = false;
-    while (i < line.len) {
-        if ((i + 1) < line.len and line[i] == '\\' and line[i + 1] == ' ') {
-            i += 2;
-            continue;
-        }
-        if (line[i] == '[') inside_class_braket = true;
-        if (line[i] == ']') inside_class_braket = false;
-        //std.debug.print("\ncheck {d}, {c}, {any}\n", .{ i, line[i], inside_class_braket });
-        if (inside_class_braket and line[i] == ' ') {
-            i += 1;
-            continue;
-        }
-        if (line[i] == ' ' or line[i] == '\t') return i;
-        i += 1;
-    }
-    return null;
 }
 
 fn zyy_parser_rule_line_impl(parser: *Parser) !void {

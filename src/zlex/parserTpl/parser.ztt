@@ -1,7 +1,6 @@
     const std = @import("std");
     const Parser = @This();
-    const ZA = @import("zlexAPI.zig");
-    const uint_ptr = ZA.uint_ptr;
+    <= ctx.za : {s} =>
     // start condition const
     <= ctx.start_condition : {s} =>
     export fn <= ctx.prefix : {s} =>_prepare_yy(
@@ -41,6 +40,7 @@
     }
     allocator: std.mem.Allocator,
     input: ?[]const u8,
+    prefix: []const u8,
     startCondition: ZA.StartCondition = ZA.StartCondition{},
     yy: ZA.YY = .{},
     action: ZA.Action = .{},

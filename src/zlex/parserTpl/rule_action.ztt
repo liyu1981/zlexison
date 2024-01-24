@@ -1,4 +1,4 @@
-export fn <= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>_start(parser_intptr: usize) u32 {
+export fn <= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser) catch return 1;

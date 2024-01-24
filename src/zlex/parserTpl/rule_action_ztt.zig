@@ -9,7 +9,7 @@ pub fn render(stream: anytype, ctx: anytype) !void {
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_");
     try stream.print("{s}", .{ctx.name});
-    try stream.writeAll("_start(parser_intptr: usize) u32 {\n    var parser = @as(*Parser, @ptrFromInt(parser_intptr));\n    _ = &parser;\n    ");
+    try stream.writeAll("(parser_intptr: usize) u32 {\n    var parser = @as(*Parser, @ptrFromInt(parser_intptr));\n    _ = &parser;\n    ");
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_");
     try stream.print("{s}", .{ctx.name});
