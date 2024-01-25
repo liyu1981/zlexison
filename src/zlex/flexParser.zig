@@ -79,22 +79,22 @@ const ZA = struct {
     pub const StartCondition = struct {
         pub fn BEGIN(this: *const StartCondition, start_condition: usize) void {
             _ = this;
-            zyy_start_condition_begin(zyy_yyg_intptr, start_condition);
+            zyy_begin(zyy_yyg_intptr, start_condition);
         }
 
         pub fn yy_push_state(this: *const StartCondition, new_state: usize) void {
             _ = this;
-            zyy_start_condition_yy_push_state(zyy_yyg_intptr, new_state);
+            zyy_yy_push_state(zyy_yyg_intptr, new_state);
         }
 
         pub fn yy_pop_state(this: *const StartCondition) void {
             _ = this;
-            zyy_start_condition_yy_pop_state(zyy_yyg_intptr);
+            zyy_yy_pop_state(zyy_yyg_intptr);
         }
 
         pub fn yy_top_state(this: *const StartCondition) usize {
             _ = this;
-            return zyy_start_condition_yy_top_state(zyy_yyg_intptr);
+            return zyy_yy_top_state(zyy_yyg_intptr);
         }
     };
 
@@ -109,6 +109,7 @@ const ZA = struct {
         start: usize = undefined,
 
         pub fn restart(this: *const YY) void {
+            // TODO:
             _ = this;
         }
     };
@@ -117,7 +118,7 @@ const ZA = struct {
     pub const Action = struct {
         pub fn ECHO(this: *const Action) void {
             _ = this;
-            zyy_action_echo(zyy_yyg_intptr);
+            zyy_echo(zyy_yyg_intptr);
         }
 
         pub fn REJECT(this: *const Action) void {
@@ -126,25 +127,24 @@ const ZA = struct {
         }
 
         pub fn yymore(this: *const Action) void {
-            // TODO:
             _ = this;
+            zyy_yymore();
         }
 
         pub fn yyless(this: *const Action, n: usize) void {
             // TODO:
             _ = this;
-            _ = n;
-            // zyy_action_yyless(zyy_yyg_intptr, n);
+            zyy_yyless(zyy_yyg_intptr, n);
         }
 
         pub fn unput(this: *const Action, c: u8) void {
             _ = this;
-            zyy_action_unput(zyy_yyg_intptr, c);
+            zyy_unput(zyy_yyg_intptr, c);
         }
 
         pub fn input(this: *const Action) ?u8 {
             _ = this;
-            const c = zyy_action_input(zyy_yyg_intptr);
+            const c = zyy_input(zyy_yyg_intptr);
             if (c < 0) {
                 return null;
             }
@@ -153,7 +153,7 @@ const ZA = struct {
 
         pub fn YY_FLUSH_BUFFER(this: *const Action) void {
             _ = this;
-            zyy_action_YY_FLUSH_BUFFER(zyy_yyg_intptr);
+            zyy_YY_FLUSH_BUFFER(zyy_yyg_intptr);
         }
 
         pub fn yyterminate(this: *const Action) void {
@@ -162,12 +162,6 @@ const ZA = struct {
         }
     };
 
-    // TODO: state related function, ch10, start conditions
-    // void yy_push_state ( int new_state )
-    // void yy_pop_state ()
-    // int yy_top_state ()
-
-    // TODO: input buffer related functions, ch11
     pub const Buffer = struct {
         pub fn yy_create_buffer(this: *const Buffer, f: std.c.FILE, size: usize) *YYBufferState {
             _ = this;
@@ -239,6 +233,32 @@ const ZA = struct {
         }
     };
 
+    pub const UserActionFn = *const fn (parser: *Parser) void;
+    pub const UserInitFn = *const fn (parser: *Parser) void;
+
+    pub const Misc = struct {
+        // TODO:
+        YY_USER_ACTION: ?UserActionFn = null,
+        // TODO:
+        YY_USER_INIT: ?UserInitFn = null,
+
+        // yy_set_interactive
+        // skip this as our parser will never be interactive
+
+        pub fn yy_set_bol(this: *const Misc, at_bol: isize) void {
+            _ = this;
+            zyy_yy_set_bol(zyy_yyg_intptr, at_bol);
+        }
+
+        pub fn YY_AT_BOL(this: *const Misc) bool {
+            _ = this;
+            return zyy_YY_AT_BOL(zyy_yyg_intptr) != 0;
+        }
+
+        // YYBREAK
+        // skip this too :)
+    };
+
     pub extern fn zyy_yy_create_buffer(yyg_intptr: uint_ptr, f: std.c.FILE, size: usize) uint_ptr;
     pub extern fn zyy_yy_switch_to_buffer(yyg_intptr: uint_ptr, new_buffer: uint_ptr) void;
     pub extern fn zyy_yy_delete_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
@@ -249,23 +269,28 @@ const ZA = struct {
     pub extern fn zyy_yy_scan_bytes(yyg_intptr: uint_ptr, str: [*c]const u8, len: usize) uint_ptr;
     pub extern fn zyy_yy_scan_buffer(yyg_intptr: uint_ptr, base: [*c]u8, size: usize) uint_ptr;
 
-    // TODO: misc macros, ch13
+    pub extern fn zyy_begin(yyg_intptr: uint_ptr, start_condition: usize) void;
+    pub extern fn zyy_yy_push_state(yyg_intptr: uint_ptr, new_state: usize) void;
+    pub extern fn zyy_yy_pop_state(yyg_intptr: uint_ptr) void;
+    pub extern fn zyy_yy_top_state(yyg_intptr: uint_ptr) usize;
 
-    pub extern fn zyy_setup_parser(parser_intptr: uint_ptr) void;
+    pub extern fn zyy_echo(yyg_intptr: uint_ptr) void;
+    // REJECT
+    pub extern fn zyy_yymore(yyg_intptr: uint_ptr) void;
+    pub extern fn zyy_yyless(yyg_intptr: uint_ptr, n: c_int) void;
+    pub extern fn zyy_unput(yyg_intptr: uint_ptr, c: u8) void;
+    pub extern fn zyy_input(yyg_intptr: uint_ptr) c_int;
+    pub extern fn zyy_YY_FLUSH_BUFFER(yyg_intptr: uint_ptr) void;
+    // yyterminate
 
-    pub extern fn zyy_start_condition_begin(yyg_intptr: uint_ptr, start_condition: usize) void;
-    pub extern fn zyy_start_condition_yy_push_state(yyg_intptr: uint_ptr, new_state: usize) void;
-    pub extern fn zyy_start_condition_yy_pop_state(yyg_intptr: uint_ptr) void;
-    pub extern fn zyy_start_condition_yy_top_state(yyg_intptr: uint_ptr) usize;
-
-    pub extern fn zyy_action_echo(yyg_intptr: uint_ptr) void;
-    pub extern fn zyy_action_input(yyg_intptr: uint_ptr) c_int;
-    pub extern fn zyy_action_unput(yyg_intptr: uint_ptr, c: u8) void;
-    pub extern fn zyy_action_YY_FLUSH_BUFFER(yyg_intptr: uint_ptr) void;
+    pub extern fn zyy_yy_set_bol(yyg_intptr: uint_ptr, at_bol: c_int) void;
+    pub extern fn zyy_YY_AT_BOL(yyg_intptr: uint_ptr) c_int;
 
     pub extern fn zyylex_init(yyg: [*c]?*anyopaque) c_int;
     pub extern fn zyylex(yyg: ?*anyopaque) c_int;
     pub extern fn zyylex_destroy(yyg: ?*anyopaque) c_int;
+
+    pub extern fn zyy_setup_parser(parser_intptr: uint_ptr) void;
 };
 
 pub const ParserError = error{
@@ -328,6 +353,7 @@ startCondition: ZA.StartCondition = ZA.StartCondition{},
 yy: ZA.YY = .{},
 action: ZA.Action = .{},
 buffer: ZA.Buffer = .{},
+misc: ZA.Misc = .{},
 
 context: Context = undefined,
 

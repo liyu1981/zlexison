@@ -920,53 +920,6 @@ extern int yylex(yyscan_t yyscanner);
 
 // zlex utils
 
-void zyy_start_condition_begin(uintptr_t yyg_intptr, size_t start_condition) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    yyg->yy_start = 1 + 2 * start_condition;
-}
-
-void zyy_start_condition_yy_push_state(uintptr_t yyg_intptr, size_t new_state) {
-    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    yy_push_state(new_state, yyscanner);
-}
-
-void zyy_start_condition_yy_pop_state(uintptr_t yyg_intptr) {
-    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    yy_pop_state(yyscanner);
-}
-
-size_t zyy_start_condition_yy_top_state(uintptr_t yyg_intptr) {
-    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    return yy_top_state(yyscanner);
-}
-
-void zyy_action_echo(uintptr_t yyg_intptr) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    ECHO;
-}
-
-void zyy_action_yyless(uintptr_t yyg_intptr, size_t n) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    // yyless(n);
-}
-
-void zyy_action_unput(uintptr_t yyg_intptr, char c) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    unput(c);
-}
-
-int8_t zyy_action_input(uintptr_t yyg_intptr) {
-    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    return (int8_t)input(yyscanner);
-}
-
-void zyy_action_YY_FLUSH_BUFFER(uintptr_t yyg_intptr) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    YY_FLUSH_BUFFER;
-}
-
 uintptr_t zyy_yy_create_buffer(uintptr_t yyg_intptr, FILE *f, size_t size) {
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;
     return ZLEX_CAST_UINTPTR(yy_create_buffer(f, size, yyscanner));
@@ -1010,6 +963,69 @@ uintptr_t zyy_yy_scan_bytes(uintptr_t yyg_intptr, const char *str, size_t len) {
 uintptr_t zyy_yy_scan_buffer(uintptr_t yyg_intptr, char *base, size_t size) {
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;
     return ZLEX_CAST_UINTPTR(yy_scan_buffer(base, size, yyscanner));
+}
+
+void zyy_begin(uintptr_t yyg_intptr, size_t start_condition) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyg->yy_start = 1 + 2 * start_condition;
+}
+
+void zyy_yy_push_state(uintptr_t yyg_intptr, size_t new_state) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_push_state(new_state, yyscanner);
+}
+
+void zyy_yy_pop_state(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_pop_state(yyscanner);
+}
+
+size_t zyy_yy_top_state(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return yy_top_state(yyscanner);
+}
+
+void zyy_echo(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    ECHO;
+}
+
+void zyy_yymore(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yymore();
+}
+
+void zyy_yyless(uintptr_t yyg_intptr, int n) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    // TODO:
+}
+
+void zyy_unput(uintptr_t yyg_intptr, char c) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    unput(c);
+}
+
+int8_t zyy_input(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return (int8_t)input(yyscanner);
+}
+
+void zyy_YY_FLUSH_BUFFER(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    YY_FLUSH_BUFFER;
+}
+
+void zyy_yy_set_bol(uintptr_t yyg_intptr, int at_bol) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_set_bol(at_bol);
+}
+
+int zyy_YY_AT_BOL(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    return YY_AT_BOL();
 }
 
 /** The main scanner function which does all the work.
