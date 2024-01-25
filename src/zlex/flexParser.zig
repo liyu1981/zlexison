@@ -13,6 +13,17 @@ const ZA = struct {
         YYScanBufferFailed,
     };
 
+    pub const YYControl = struct {
+        const E = error{
+            REJECT,
+            TERMINATE,
+            YYLESS,
+        };
+        pub const REJECT = 1;
+        pub const TERMINATE = 2;
+        pub const YYLESS = 3;
+    };
+
     pub const YYGuts = extern struct {
         // /* User-defined. Not touched by flex. */
         // YY_EXTRA_TYPE yyextra_r;
@@ -108,33 +119,40 @@ const ZA = struct {
         current_buffer: *YYBufferState = undefined,
         start: usize = undefined,
 
-        pub fn restart(this: *const YY) void {
-            // TODO:
+        pub fn restart(this: *const YY, f: *std.c.FILE) void {
             _ = this;
+            zyy_yyrestart(zyy_yyg_intptr, f);
         }
     };
+
+    pub fn yyget_lineno() usize {
+        return zyy_yyget_lineno(zyy_yyg_intptr);
+    }
+
+    pub fn yyget_column() usize {
+        return zyy_yyget_column(zyy_yyg_intptr);
+    }
 
     // ch8, actions
     pub const Action = struct {
         pub fn ECHO(this: *const Action) void {
             _ = this;
-            zyy_echo(zyy_yyg_intptr);
+            zyy_ECHO(zyy_yyg_intptr);
         }
 
-        pub fn REJECT(this: *const Action) void {
-            // TODO:
-            _ = this;
-        }
+        // use REJECT as
+        //     `return ZA.YYControl.E.REJECT;`
 
         pub fn yymore(this: *const Action) void {
             _ = this;
             zyy_yymore();
         }
 
+        // use yyless as
+        //     `ZA.Action.yyless(n); return ZA.YYControl.E.YYLESS;`
         pub fn yyless(this: *const Action, n: usize) void {
-            // TODO:
             _ = this;
-            zyy_yyless(zyy_yyg_intptr, n);
+            zyy_set_parser_param_reg(0, @as(c_int, @intCast(n)));
         }
 
         pub fn unput(this: *const Action, c: u8) void {
@@ -156,10 +174,8 @@ const ZA = struct {
             zyy_YY_FLUSH_BUFFER(zyy_yyg_intptr);
         }
 
-        pub fn yyterminate(this: *const Action) void {
-            // TODO:
-            _ = this;
-        }
+        // use yyterminate as:
+        //     `return ZA.YYControl.E.TERMINATE;`
     };
 
     pub const Buffer = struct {
@@ -233,15 +249,10 @@ const ZA = struct {
         }
     };
 
-    pub const UserActionFn = *const fn (parser: *Parser) void;
-    pub const UserInitFn = *const fn (parser: *Parser) void;
+    pub var YY_USER_ACTION: ?UserActionFn = null;
+    pub var YY_USER_INIT: ?UserInitFn = null;
 
     pub const Misc = struct {
-        // TODO:
-        YY_USER_ACTION: ?UserActionFn = null,
-        // TODO:
-        YY_USER_INIT: ?UserInitFn = null,
-
         // yy_set_interactive
         // skip this as our parser will never be interactive
 
@@ -259,6 +270,10 @@ const ZA = struct {
         // skip this too :)
     };
 
+    pub extern fn zyy_yyget_lineno(yyg_intptr: uint_ptr) usize;
+    pub extern fn zyy_yyget_column(yyg_intptr: uint_ptr) usize;
+    pub extern fn zyy_yyrestart(yyg_intptr: uint_ptr, f: *std.c.FILE) void;
+
     pub extern fn zyy_yy_create_buffer(yyg_intptr: uint_ptr, f: std.c.FILE, size: usize) uint_ptr;
     pub extern fn zyy_yy_switch_to_buffer(yyg_intptr: uint_ptr, new_buffer: uint_ptr) void;
     pub extern fn zyy_yy_delete_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
@@ -274,10 +289,10 @@ const ZA = struct {
     pub extern fn zyy_yy_pop_state(yyg_intptr: uint_ptr) void;
     pub extern fn zyy_yy_top_state(yyg_intptr: uint_ptr) usize;
 
-    pub extern fn zyy_echo(yyg_intptr: uint_ptr) void;
-    // REJECT
+    pub extern fn zyy_ECHO(yyg_intptr: uint_ptr) void;
+    // pub extern fn zyy_REJECT(yyg_intptr: uint_ptr) void;
     pub extern fn zyy_yymore(yyg_intptr: uint_ptr) void;
-    pub extern fn zyy_yyless(yyg_intptr: uint_ptr, n: c_int) void;
+    // pub extern fn zyy_yyless(yyg_intptr: uint_ptr, n: c_int) void;
     pub extern fn zyy_unput(yyg_intptr: uint_ptr, c: u8) void;
     pub extern fn zyy_input(yyg_intptr: uint_ptr) c_int;
     pub extern fn zyy_YY_FLUSH_BUFFER(yyg_intptr: uint_ptr) void;
@@ -291,7 +306,20 @@ const ZA = struct {
     pub extern fn zyylex_destroy(yyg: ?*anyopaque) c_int;
 
     pub extern fn zyy_setup_parser(parser_intptr: uint_ptr) void;
+    pub extern fn zyy_set_parser_param_reg(index: usize, value: c_int) void;
 };
+const UserActionFn = *const fn (parser: *Parser) void;
+const UserInitFn = *const fn (parser: *Parser) void;
+pub export fn zyy_call_user_action(parser_intptr: uint_ptr) void {
+    if (ZA.YY_USER_ACTION) |user_action_fn| {
+        user_action_fn(@as(*Parser, @ptrFromInt(parser_intptr)));
+    }
+}
+pub export fn zyy_call_user_init(parser_intptr: uint_ptr) void {
+    if (ZA.YY_USER_INIT) |user_init_fn| {
+        user_init_fn(@as(*Parser, @ptrFromInt(parser_intptr)));
+    }
+}
 
 pub const ParserError = error{
     InlineCodeBlockInDefinitionSection,
@@ -299,7 +327,6 @@ pub const ParserError = error{
     InvalidStartCondition,
 } || ZA.YYError;
 
-// TODO: this needs to be auto gened
 // #define INITIAL 0
 // #define rule 1
 // #define user_block 2
@@ -555,11 +582,19 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
 export fn zyy_parser_section(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_section_impl(parser) catch return 1;
+    zyy_parser_section_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_section_impl(parser: *Parser) !void {
+fn zyy_parser_section_impl(parser: *Parser) anyerror!void {
     switch (parser.context.cur_section) {
         .Definitions => {
             parser.context.cur_codeblock.reset(&parser.context);
@@ -584,11 +619,19 @@ fn zyy_parser_section_impl(parser: *Parser) !void {
 export fn zyy_parser_code_block_inline(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_code_block_inline_impl(parser) catch return 1;
+    zyy_parser_code_block_inline_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_code_block_inline_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_inline_impl(parser: *Parser) anyerror!void {
     parser.context.cur_codeblock.start = .{
         .line = parser.context.cur_loc.line,
         .col = 0,
@@ -619,11 +662,19 @@ fn zyy_parser_code_block_inline_impl(parser: *Parser) !void {
 export fn zyy_parser_code_block_start(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_code_block_start_impl(parser) catch return 1;
+    zyy_parser_code_block_start_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_code_block_start_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_start_impl(parser: *Parser) anyerror!void {
     switch (parser.context.cur_section) {
         .Definitions => {
             parser.context.last_sc = SC_INITIAL;
@@ -651,11 +702,19 @@ fn zyy_parser_code_block_start_impl(parser: *Parser) !void {
 export fn zyy_parser_code_block_stop(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_code_block_stop_impl(parser) catch return 1;
+    zyy_parser_code_block_stop_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_code_block_stop_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_stop_impl(parser: *Parser) anyerror!void {
     switch (parser.context.cur_section) {
         .Definitions => {
             try parser.context.definitions_cbs.append(parser.context.cur_codeblock);
@@ -683,11 +742,19 @@ fn zyy_parser_code_block_stop_impl(parser: *Parser) !void {
 export fn zyy_parser_code_block_content(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_code_block_content_impl(parser) catch return 1;
+    zyy_parser_code_block_content_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_code_block_content_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_content_impl(parser: *Parser) anyerror!void {
     try parser.context.cur_codeblock.content.appendSlice(parser.yy.text[0..parser.yy.leng]);
     parser.context.cur_codeblock.end.line = parser.context.cur_loc.line;
     parser.context.cur_codeblock.end.col = parser.yy.leng;
@@ -699,11 +766,19 @@ fn zyy_parser_code_block_content_impl(parser: *Parser) !void {
 export fn zyy_parser_code_block_new_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_code_block_new_line_impl(parser) catch return 1;
+    zyy_parser_code_block_new_line_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_code_block_new_line_impl(parser: *Parser) !void {
+fn zyy_parser_code_block_new_line_impl(parser: *Parser) anyerror!void {
     try parser.context.cur_codeblock.content.append('\n');
     parser.context.cur_codeblock.end.line += 1;
     parser.context.cur_codeblock.end.col = 0;
@@ -716,11 +791,19 @@ fn zyy_parser_code_block_new_line_impl(parser: *Parser) !void {
 export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_start_condition_impl(parser) catch return 1;
+    zyy_parser_start_condition_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_start_condition_impl(parser: *Parser) !void {
+fn zyy_parser_start_condition_impl(parser: *Parser) anyerror!void {
     const line = try parser.readRestLine();
     const condition_name = try extractStartConditionName(line);
     // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
@@ -738,11 +821,18 @@ fn zyy_parser_start_condition_impl(parser: *Parser) !void {
 export fn zyy_parser_rule_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_rule_line_impl(parser) catch return 1;
+    zyy_parser_rule_line_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_rule_line_impl(parser: *Parser) !void {
+fn zyy_parser_rule_line_impl(parser: *Parser) anyerror!void {
     const line = parser.yy.text[0..parser.yy.leng];
     const maybe_pattern_stop = findRulePatternStop(line);
     if (maybe_pattern_stop) |pattern_stop| {
@@ -787,11 +877,19 @@ fn zyy_parser_rule_line_impl(parser: *Parser) !void {
 export fn zyy_parser_rule_new_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_rule_new_line_impl(parser) catch return 1;
+    zyy_parser_rule_new_line_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_rule_new_line_impl(parser: *Parser) !void {
+fn zyy_parser_rule_new_line_impl(parser: *Parser) anyerror!void {
     try parser.context.cur_codeblock.content.append('\n');
     // std.debug.print("rule new line:\n", .{});
     parser.context.cur_loc.line += 1;
@@ -802,11 +900,19 @@ fn zyy_parser_rule_new_line_impl(parser: *Parser) !void {
 export fn zyy_parser_default_rule(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    zyy_parser_default_rule_impl(parser) catch return 1;
+    zyy_parser_default_rule_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
 
-fn zyy_parser_default_rule_impl(parser: *Parser) !void {
+fn zyy_parser_default_rule_impl(parser: *Parser) anyerror!void {
     if (parser.yy.leng == 1 and parser.yy.text[0] == '\n') {
         parser.context.cur_loc.line += 1;
         parser.context.cur_loc.col = 0;

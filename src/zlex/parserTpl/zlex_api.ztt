@@ -8,6 +8,17 @@ const ZA = struct {
         YYScanBufferFailed,
     };
 
+    pub const YYControl = struct {
+        const E = error{
+            REJECT,
+            TERMINATE,
+            YYLESS,
+        };
+        pub const REJECT = 1;
+        pub const TERMINATE = 2;
+        pub const YYLESS = 3;
+    };
+
     pub const YYGuts = struct {
         // /* User-defined. Not touched by flex. */
         // YY_EXTRA_TYPE yyextra_r;
@@ -75,6 +86,21 @@ const ZA = struct {
         pub fn BEGIN(this: *const StartCondition, start_condition: usize) void {
             _ = this;
             zyy_start_condition_begin(zyy_yyg_intptr, start_condition);
+        }
+
+        pub fn yy_push_state(this: *const StartCondition, new_state: usize) void {
+            _ = this;
+            zyy_yy_push_state(zyy_yyg_intptr, new_state);
+        }
+
+        pub fn yy_pop_state(this: *const StartCondition) void {
+            _ = this;
+            zyy_yy_pop_state(zyy_yyg_intptr);
+        }
+
+        pub fn yy_top_state(this: *const StartCondition) usize {
+            _ = this;
+            return zyy_yy_top_state(zyy_yyg_intptr);
         }
     };
 

@@ -668,10 +668,39 @@ zig_extern uint32_t zyy_parser_user_code_block(uintptr_t const a0);
 zig_extern uint32_t zyy_parser_default_rule(uintptr_t const a0);
 #define ZLEX_CAST_U8PTR(x) ((uint8_t *)(void *)(x))
 #define ZLEX_CAST_UINTPTR(x) ((uintptr_t)(void *)(x))
-uintptr_t zyy_parser_intptr = 0;
+static uintptr_t zyy_parser_intptr = 0;
+static int zyy_parser_param_reg[8];
 void zyy_setup_parser(intptr_t ptr) {
     zyy_parser_intptr = ptr;
 }
+void zyy_set_parser_param_reg(int index, int v) {
+    zyy_parser_param_reg[index] = v;
+}
+extern void zyy_call_user_action(uintptr_t zyy_parser_intptr);
+extern void zyy_call_user_init(uintptr_t zyy_parser_intptr);
+#define ZLEX_CONTROL(x)                          \
+    do {                                         \
+        switch ((x)) {                           \
+            case 1 /*REJECT*/: {                 \
+                REJECT;                          \
+            } break;                             \
+            case 2 /*TERMINATE*/: {              \
+                yyterminate();                   \
+            } break;                             \
+            case 3 /*YYLESS*/: {                 \
+                yyless(zyy_parser_param_reg[0]); \
+            } break;                             \
+        }                                        \
+    } while (0)
+#define YY_USER_ACTION                           \
+    do {                                         \
+        zyy_call_user_action(zyy_parser_intptr); \
+    } while (0);
+#define YY_USER_INIT                           \
+    do {                                       \
+        zyy_call_user_init(zyy_parser_intptr); \
+    } while (0);
+
 #line 670 "src/zlex/flex.zyy.c"
 
 #line 672 "src/zlex/flex.zyy.c"
@@ -920,6 +949,21 @@ extern int yylex(yyscan_t yyscanner);
 
 // zlex utils
 
+size_t zyy_yyget_lineno(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return yyget_lineno(yyscanner);
+}
+
+size_t zyy_yyget_column(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return yyget_column(yyscanner);
+}
+
+void zyy_yyrestart(uintptr_t yyg_intptr, FILE *f) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yyrestart(f, yyscanner);
+}
+
 uintptr_t zyy_yy_create_buffer(uintptr_t yyg_intptr, FILE *f, size_t size) {
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;
     return ZLEX_CAST_UINTPTR(yy_create_buffer(f, size, yyscanner));
@@ -985,9 +1029,15 @@ size_t zyy_yy_top_state(uintptr_t yyg_intptr) {
     return yy_top_state(yyscanner);
 }
 
-void zyy_echo(uintptr_t yyg_intptr) {
+void zyy_ECHO(uintptr_t yyg_intptr) {
     struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
     ECHO;
+}
+
+void zyy_REJECT(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    // what about yy_cp
+    // REJECT();
 }
 
 void zyy_yymore(uintptr_t yyg_intptr) {
@@ -1141,7 +1191,7 @@ YY_DECL {
 #line 17 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_section(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_section(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 2:
@@ -1152,7 +1202,7 @@ YY_DECL {
 #line 31 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_code_block_inline(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_code_block_inline(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 3:
@@ -1163,7 +1213,7 @@ YY_DECL {
 #line 39 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_code_block_start(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_code_block_start(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 4:
@@ -1174,7 +1224,7 @@ YY_DECL {
 #line 50 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_code_block_stop(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_code_block_stop(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 5:
@@ -1182,7 +1232,7 @@ YY_DECL {
 #line 60 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_start_condition(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_start_condition(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 6:
@@ -1190,7 +1240,7 @@ YY_DECL {
 #line 68 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_code_block_content(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_code_block_content(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 7:
@@ -1199,7 +1249,7 @@ YY_DECL {
 #line 75 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_code_block_new_line(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_code_block_new_line(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 8:
@@ -1210,7 +1260,7 @@ YY_DECL {
 #line 82 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_code_block_start(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_code_block_start(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 9:
@@ -1218,7 +1268,7 @@ YY_DECL {
 #line 93 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_rule_line(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_rule_line(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 10:
@@ -1227,7 +1277,7 @@ YY_DECL {
 #line 102 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_rule_new_line(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_rule_new_line(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 11:
@@ -1236,7 +1286,7 @@ YY_DECL {
 #line 107 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_user_code_block(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_user_code_block(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 12:
@@ -1245,7 +1295,7 @@ YY_DECL {
 #line 115 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-                        zyy_parser_default_rule(zyy_parser_intptr);
+                        ZLEX_CONTROL(zyy_parser_default_rule(zyy_parser_intptr));
                     }
                     YY_BREAK
                 case 13:
