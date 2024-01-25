@@ -81,6 +81,21 @@ const ZA = struct {
             _ = this;
             zyy_start_condition_begin(zyy_yyg_intptr, start_condition);
         }
+
+        pub fn yy_push_state(this: *const StartCondition, new_state: usize) void {
+            _ = this;
+            zyy_start_condition_yy_push_state(zyy_yyg_intptr, new_state);
+        }
+
+        pub fn yy_pop_state(this: *const StartCondition) void {
+            _ = this;
+            zyy_start_condition_yy_pop_state(zyy_yyg_intptr);
+        }
+
+        pub fn yy_top_state(this: *const StartCondition) usize {
+            _ = this;
+            return zyy_start_condition_yy_top_state(zyy_yyg_intptr);
+        }
     };
 
     // ch14, values available to the user
@@ -239,6 +254,9 @@ const ZA = struct {
     pub extern fn zyy_setup_parser(parser_intptr: uint_ptr) void;
 
     pub extern fn zyy_start_condition_begin(yyg_intptr: uint_ptr, start_condition: usize) void;
+    pub extern fn zyy_start_condition_yy_push_state(yyg_intptr: uint_ptr, new_state: usize) void;
+    pub extern fn zyy_start_condition_yy_pop_state(yyg_intptr: uint_ptr) void;
+    pub extern fn zyy_start_condition_yy_top_state(yyg_intptr: uint_ptr) usize;
 
     pub extern fn zyy_action_echo(yyg_intptr: uint_ptr) void;
     pub extern fn zyy_action_input(yyg_intptr: uint_ptr) c_int;

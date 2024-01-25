@@ -3,6 +3,11 @@ int section = 0; // 0 - before rules, 1 - rules, 2 - user code
 int last_sc = 0;
 %}
 
+%option reject
+%option yymore
+%option unput
+%option stack
+
 %x rule
 %x user_block
 %x code_block

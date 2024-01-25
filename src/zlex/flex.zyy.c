@@ -536,11 +536,12 @@ static void yynoreturn yy_fatal_error(const char *msg, yyscan_t yyscanner);
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up yytext.
  */
-#define YY_DO_BEFORE_ACTION        \
-    yyg->yytext_ptr = yy_bp;       \
-    yyleng = (int)(yy_cp - yy_bp); \
-    yyg->yy_hold_char = *yy_cp;    \
-    *yy_cp = '\0';                 \
+#define YY_DO_BEFORE_ACTION                  \
+    yyg->yytext_ptr = yy_bp;                 \
+    yyg->yytext_ptr -= yyg->yy_more_len;     \
+    yyleng = (int)(yy_cp - yyg->yytext_ptr); \
+    yyg->yy_hold_char = *yy_cp;              \
+    *yy_cp = '\0';                           \
     yyg->yy_c_buf_p = yy_cp;
 #define YY_NUM_RULES 13
 #define YY_END_OF_BUFFER 14
@@ -550,13 +551,22 @@ struct yy_trans_info {
     flex_int32_t yy_verify;
     flex_int32_t yy_nxt;
 };
-static const flex_int16_t yy_accept[46] =
+static const flex_int16_t yy_acclist[56] =
     {0,
-     0, 0, 9, 9, 11, 11, 6, 6, 14, 12,
-     12, 12, 9, 10, 9, 11, 11, 6, 7, 6,
-     0, 0, 2, 0, 5, 0, 0, 9, 9, 9,
-     11, 11, 6, 6, 6, 1, 0, 3, 0, 4,
-     9, 8, 1, 6, 0};
+     9, 9, 11, 11, 6, 6, 14, 12, 13, 12,
+     13, 12, 13, 9, 12, 13, 10, 12, 13, 9,
+     12, 13, 11, 12, 13, 11, 12, 13, 6, 12,
+     13, 7, 12, 13, 6, 12, 13, 2, 5, 9,
+     9, 9, 11, 11, 6, 6, 6, 1, 3, 4,
+     9, 8, 1, 11, 6};
+
+static const flex_int16_t yy_accept[47] =
+    {0,
+     1, 1, 1, 2, 3, 4, 5, 6, 7, 8,
+     10, 12, 14, 17, 20, 23, 26, 29, 32, 35,
+     38, 38, 38, 39, 39, 40, 40, 40, 41, 42,
+     43, 44, 45, 46, 47, 48, 49, 49, 50, 50,
+     51, 52, 53, 55, 56, 56};
 
 static const YY_CHAR yy_ec[256] =
     {0,
@@ -629,12 +639,16 @@ static const flex_int16_t yy_chk[61] =
      49, 49, 50, 50, 52, 52, 17, 9, 7, 6,
      3, 45, 45, 45, 45, 45, 45, 45, 45, 45};
 
-/* The intent behind this definition is that it'll catch
- * any uses of REJECT which flex missed.
- */
-#define REJECT reject_used_but_not_detected
-#define yymore() yymore_used_but_not_detected
-#define YY_MORE_ADJ 0
+#define REJECT                                                              \
+    {                                                                       \
+        *yy_cp = yyg->yy_hold_char; /* undo effects of setting up yytext */ \
+        yy_cp = yyg->yy_full_match; /* restore poss. backed-over text */    \
+        ++yyg->yy_lp;                                                       \
+        goto find_rule;                                                     \
+    }
+
+#define yymore() (yyg->yy_more_flag = 1)
+#define YY_MORE_ADJ yyg->yy_more_len
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "flex_test.l"
 #line 2 "flex_test.l"
@@ -658,9 +672,9 @@ uintptr_t zyy_parser_intptr = 0;
 void zyy_setup_parser(intptr_t ptr) {
     zyy_parser_intptr = ptr;
 }
-#line 655 "src/zlex/flex.zyy.c"
+#line 670 "src/zlex/flex.zyy.c"
 
-#line 657 "src/zlex/flex.zyy.c"
+#line 672 "src/zlex/flex.zyy.c"
 
 #define INITIAL 0
 #define rule 1
@@ -704,6 +718,17 @@ struct yyguts_t {
 
     int yylineno_r;
     int yy_flex_debug_r;
+
+    yy_state_type *yy_state_buf;
+    yy_state_type *yy_state_ptr;
+    char *yy_full_match;
+    int yy_lp;
+
+    /* These are only needed for trailing context rules,
+     * but there's no conditional variable for that yet. */
+    int yy_looking_for_trail_begin;
+    int yy_full_lp;
+    int *yy_full_state;
 
     char *yytext_r;
     int yy_more_flag;
@@ -784,6 +809,12 @@ static int input(yyscan_t yyscanner);
 #endif
 
 #endif
+
+static void yy_push_state(int _new_state, yyscan_t yyscanner);
+
+static void yy_pop_state(yyscan_t yyscanner);
+
+static int yy_top_state(yyscan_t yyscanner);
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
@@ -894,6 +925,21 @@ void zyy_start_condition_begin(uintptr_t yyg_intptr, size_t start_condition) {
     yyg->yy_start = 1 + 2 * start_condition;
 }
 
+void zyy_start_condition_yy_push_state(uintptr_t yyg_intptr, size_t new_state) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_push_state(new_state, yyscanner);
+}
+
+void zyy_start_condition_yy_pop_state(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_pop_state(yyscanner);
+}
+
+size_t zyy_start_condition_yy_top_state(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return yy_top_state(yyscanner);
+}
+
 void zyy_action_echo(uintptr_t yyg_intptr) {
     struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
     ECHO;
@@ -981,6 +1027,12 @@ YY_DECL {
         YY_USER_INIT;
 #endif
 
+        /* Create the reject buffer large enough to save one state per allowed character. */
+        if (!yyg->yy_state_buf)
+            yyg->yy_state_buf = (yy_state_type *)yyalloc(YY_STATE_BUF_SIZE, yyscanner);
+        if (!yyg->yy_state_buf)
+            YY_FATAL_ERROR("out of dynamic memory in yylex()");
+
         if (!yyg->yy_start)
             yyg->yy_start = 1; /* first start state */
 
@@ -1000,12 +1052,17 @@ YY_DECL {
     }
 
     {
-#line 10 "flex_test.l"
+#line 15 "flex_test.l"
 
-#line 926 "src/zlex/flex.zyy.c"
+#line 964 "src/zlex/flex.zyy.c"
 
         while (/*CONSTCOND*/ 1) /* loops until end-of-file is reached */
         {
+            yyg->yy_more_len = 0;
+            if (yyg->yy_more_flag) {
+                yyg->yy_more_len = (int)(yyg->yy_c_buf_p - yyg->yytext_ptr);
+                yyg->yy_more_flag = 0;
+            }
             yy_cp = yyg->yy_c_buf_p;
 
             /* Support of yytext. */
@@ -1018,28 +1075,41 @@ YY_DECL {
 
             yy_current_state = yyg->yy_start;
             yy_current_state += YY_AT_BOL();
+
+            yyg->yy_state_ptr = yyg->yy_state_buf;
+            *yyg->yy_state_ptr++ = yy_current_state;
+
         yy_match:
             do {
                 YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
-                if (yy_accept[yy_current_state]) {
-                    yyg->yy_last_accepting_state = yy_current_state;
-                    yyg->yy_last_accepting_cpos = yy_cp;
-                }
                 while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
                     yy_current_state = (int)yy_def[yy_current_state];
                     if (yy_current_state >= 46)
                         yy_c = yy_meta[yy_c];
                 }
                 yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
+                *yyg->yy_state_ptr++ = yy_current_state;
                 ++yy_cp;
             } while (yy_base[yy_current_state] != 52);
 
         yy_find_action:
-            yy_act = yy_accept[yy_current_state];
-            if (yy_act == 0) { /* have to back up */
-                yy_cp = yyg->yy_last_accepting_cpos;
-                yy_current_state = yyg->yy_last_accepting_state;
-                yy_act = yy_accept[yy_current_state];
+            yy_current_state = *--yyg->yy_state_ptr;
+            yyg->yy_lp = yy_accept[yy_current_state];
+
+        find_rule: /* we branch to this label when backing up */
+
+            for (;;) /* until we find what rule we matched */
+            {
+                if (yyg->yy_lp && yyg->yy_lp < yy_accept[yy_current_state + 1]) {
+                    yy_act = yy_acclist[yyg->yy_lp];
+                    {
+                        yyg->yy_full_match = yy_cp;
+                        break;
+                    }
+                }
+                --yy_cp;
+                yy_current_state = *--yyg->yy_state_ptr;
+                yyg->yy_lp = yy_accept[yy_current_state];
             }
 
             YY_DO_BEFORE_ACTION;
@@ -1047,19 +1117,12 @@ YY_DECL {
         do_action: /* This label is used only to access EOF actions. */
 
             switch (yy_act) { /* beginning of action switch */
-                case 0:       /* must back up */
-                    /* undo the effects of YY_DO_BEFORE_ACTION */
-                    *yy_cp = yyg->yy_hold_char;
-                    yy_cp = yyg->yy_last_accepting_cpos;
-                    yy_current_state = yyg->yy_last_accepting_state;
-                    goto yy_find_action;
-
                 case 1:
                     *yy_cp = yyg->yy_hold_char; /* undo effects of setting up yytext */
                     yyg->yy_c_buf_p = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
-#line 12 "flex_test.l"
+#line 17 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_section(zyy_parser_intptr);
@@ -1070,7 +1133,7 @@ YY_DECL {
                     yyg->yy_c_buf_p = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
-#line 26 "flex_test.l"
+#line 31 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_code_block_inline(zyy_parser_intptr);
@@ -1081,7 +1144,7 @@ YY_DECL {
                     yyg->yy_c_buf_p = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
-#line 34 "flex_test.l"
+#line 39 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_code_block_start(zyy_parser_intptr);
@@ -1092,7 +1155,7 @@ YY_DECL {
                     yyg->yy_c_buf_p = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
-#line 45 "flex_test.l"
+#line 50 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_code_block_stop(zyy_parser_intptr);
@@ -1100,7 +1163,7 @@ YY_DECL {
                     YY_BREAK
                 case 5:
                     YY_RULE_SETUP
-#line 55 "flex_test.l"
+#line 60 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_start_condition(zyy_parser_intptr);
@@ -1108,7 +1171,7 @@ YY_DECL {
                     YY_BREAK
                 case 6:
                     YY_RULE_SETUP
-#line 63 "flex_test.l"
+#line 68 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_code_block_content(zyy_parser_intptr);
@@ -1117,7 +1180,7 @@ YY_DECL {
                 case 7:
                     /* rule 7 can match eol */
                     YY_RULE_SETUP
-#line 70 "flex_test.l"
+#line 75 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_code_block_new_line(zyy_parser_intptr);
@@ -1128,7 +1191,7 @@ YY_DECL {
                     yyg->yy_c_buf_p = yy_cp -= 1;
                     YY_DO_BEFORE_ACTION; /* set up yytext again */
                     YY_RULE_SETUP
-#line 77 "flex_test.l"
+#line 82 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_code_block_start(zyy_parser_intptr);
@@ -1136,7 +1199,7 @@ YY_DECL {
                     YY_BREAK
                 case 9:
                     YY_RULE_SETUP
-#line 88 "flex_test.l"
+#line 93 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_rule_line(zyy_parser_intptr);
@@ -1145,7 +1208,7 @@ YY_DECL {
                 case 10:
                     /* rule 10 can match eol */
                     YY_RULE_SETUP
-#line 97 "flex_test.l"
+#line 102 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_rule_new_line(zyy_parser_intptr);
@@ -1154,7 +1217,7 @@ YY_DECL {
                 case 11:
                     /* rule 11 can match eol */
                     YY_RULE_SETUP
-#line 102 "flex_test.l"
+#line 107 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_user_code_block(zyy_parser_intptr);
@@ -1163,7 +1226,7 @@ YY_DECL {
                 case 12:
                     /* rule 12 can match eol */
                     YY_RULE_SETUP
-#line 110 "flex_test.l"
+#line 115 "flex_test.l"
                     {
                         zyy_prepare_yy(zyy_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
                         zyy_parser_default_rule(zyy_parser_intptr);
@@ -1171,10 +1234,10 @@ YY_DECL {
                     YY_BREAK
                 case 13:
                     YY_RULE_SETUP
-#line 114 "flex_test.l"
+#line 119 "flex_test.l"
                     ECHO;
                     YY_BREAK
-#line 1145 "src/zlex/flex.zyy.c"
+#line 1194 "src/zlex/flex.zyy.c"
                 case YY_STATE_EOF(INITIAL):
                 case YY_STATE_EOF(rule):
                 case YY_STATE_EOF(user_block):
@@ -1357,36 +1420,8 @@ static int yy_get_next_buffer(yyscan_t yyscanner) {
 
         while (num_to_read <= 0) { /* Not enough room in the buffer - grow it. */
 
-            /* just a shorter name for the current buffer */
-            YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
-
-            int yy_c_buf_p_offset =
-                (int)(yyg->yy_c_buf_p - b->yy_ch_buf);
-
-            if (b->yy_is_our_buffer) {
-                int new_size = b->yy_buf_size * 2;
-
-                if (new_size <= 0)
-                    b->yy_buf_size += b->yy_buf_size / 8;
-                else
-                    b->yy_buf_size *= 2;
-
-                b->yy_ch_buf = (char *)
-                    /* Include room in for 2 EOB chars. */
-                    yyrealloc((void *)b->yy_ch_buf,
-                              (yy_size_t)(b->yy_buf_size + 2), yyscanner);
-            } else
-                /* Can't grow it, we don't own it. */
-                b->yy_ch_buf = NULL;
-
-            if (!b->yy_ch_buf)
-                YY_FATAL_ERROR(
-                    "fatal error - scanner input buffer overflow");
-
-            yyg->yy_c_buf_p = &b->yy_ch_buf[yy_c_buf_p_offset];
-
-            num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
-                          number_to_move - 1;
+            YY_FATAL_ERROR(
+                "input buffer overflow, can't enlarge buffer because scanner uses REJECT");
         }
 
         if (num_to_read > YY_READ_BUF_SIZE)
@@ -1445,18 +1480,18 @@ static yy_state_type yy_get_previous_state(yyscan_t yyscanner) {
     yy_current_state = yyg->yy_start;
     yy_current_state += YY_AT_BOL();
 
+    yyg->yy_state_ptr = yyg->yy_state_buf;
+    *yyg->yy_state_ptr++ = yy_current_state;
+
     for (yy_cp = yyg->yytext_ptr + YY_MORE_ADJ; yy_cp < yyg->yy_c_buf_p; ++yy_cp) {
         YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
-        if (yy_accept[yy_current_state]) {
-            yyg->yy_last_accepting_state = yy_current_state;
-            yyg->yy_last_accepting_cpos = yy_cp;
-        }
         while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
             yy_current_state = (int)yy_def[yy_current_state];
             if (yy_current_state >= 46)
                 yy_c = yy_meta[yy_c];
         }
         yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
+        *yyg->yy_state_ptr++ = yy_current_state;
     }
 
     return yy_current_state;
@@ -1470,13 +1505,8 @@ static yy_state_type yy_get_previous_state(yyscan_t yyscanner) {
 static yy_state_type yy_try_NUL_trans(yy_state_type yy_current_state, yyscan_t yyscanner) {
     int yy_is_jam;
     struct yyguts_t *yyg = (struct yyguts_t *)yyscanner; /* This var may be unused depending upon options. */
-    char *yy_cp = yyg->yy_c_buf_p;
 
     YY_CHAR yy_c = 1;
-    if (yy_accept[yy_current_state]) {
-        yyg->yy_last_accepting_state = yy_current_state;
-        yyg->yy_last_accepting_cpos = yy_cp;
-    }
     while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
         yy_current_state = (int)yy_def[yy_current_state];
         if (yy_current_state >= 46)
@@ -1484,6 +1514,8 @@ static yy_state_type yy_try_NUL_trans(yy_state_type yy_current_state, yyscan_t y
     }
     yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
     yy_is_jam = (yy_current_state == 45);
+    if (!yy_is_jam)
+        *yyg->yy_state_ptr++ = yy_current_state;
 
     (void)yyg;
     return yy_is_jam ? 0 : yy_current_state;
@@ -1938,6 +1970,43 @@ YY_BUFFER_STATE yy_scan_bytes(const char *yybytes, int _yybytes_len, yyscan_t yy
     return b;
 }
 
+static void yy_push_state(int _new_state, yyscan_t yyscanner) {
+    struct yyguts_t *yyg = (struct yyguts_t *)yyscanner;
+    if (yyg->yy_start_stack_ptr >= yyg->yy_start_stack_depth) {
+        yy_size_t new_size;
+
+        yyg->yy_start_stack_depth += YY_START_STACK_INCR;
+        new_size = (yy_size_t)yyg->yy_start_stack_depth * sizeof(int);
+
+        if (!yyg->yy_start_stack)
+            yyg->yy_start_stack = (int *)yyalloc(new_size, yyscanner);
+
+        else
+            yyg->yy_start_stack = (int *)yyrealloc(
+                (void *)yyg->yy_start_stack, new_size, yyscanner);
+
+        if (!yyg->yy_start_stack)
+            YY_FATAL_ERROR("out of memory expanding start-condition stack");
+    }
+
+    yyg->yy_start_stack[yyg->yy_start_stack_ptr++] = YY_START;
+
+    BEGIN(_new_state);
+}
+
+static void yy_pop_state(yyscan_t yyscanner) {
+    struct yyguts_t *yyg = (struct yyguts_t *)yyscanner;
+    if (--yyg->yy_start_stack_ptr < 0)
+        YY_FATAL_ERROR("start-condition stack underflow");
+
+    BEGIN(yyg->yy_start_stack[yyg->yy_start_stack_ptr]);
+}
+
+static int yy_top_state(yyscan_t yyscanner) {
+    struct yyguts_t *yyg = (struct yyguts_t *)yyscanner;
+    return yyg->yy_start_stack[yyg->yy_start_stack_ptr - 1];
+}
+
 #ifndef YY_EXIT_FAILURE
 #define YY_EXIT_FAILURE 2
 #endif
@@ -2171,6 +2240,11 @@ static int yy_init_globals(yyscan_t yyscanner) {
     yyg->yy_start_stack_depth = 0;
     yyg->yy_start_stack = NULL;
 
+    yyg->yy_state_buf = 0;
+    yyg->yy_state_ptr = 0;
+    yyg->yy_full_match = 0;
+    yyg->yy_lp = 0;
+
 /* Defined in main.c */
 #ifdef YY_STDINIT
     yyin = stdin;
@@ -2204,6 +2278,9 @@ int yylex_destroy(yyscan_t yyscanner) {
     /* Destroy the start condition stack. */
     yyfree(yyg->yy_start_stack, yyscanner);
     yyg->yy_start_stack = NULL;
+
+    yyfree(yyg->yy_state_buf, yyscanner);
+    yyg->yy_state_buf = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * yylex() is called, initialization will occur. */
@@ -2268,7 +2345,7 @@ void yyfree(void *ptr, yyscan_t yyscanner) {
 
 #define YYTABLES_NAME "yytables"
 
-#line 114 "flex_test.l"
+#line 119 "flex_test.l"
 
 int zyywrap(yyscan_t yyscanner) {
     return 1;
