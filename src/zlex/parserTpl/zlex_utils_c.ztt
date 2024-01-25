@@ -1,18 +1,18 @@
 // zlex utils
 
-void <= ctx.prefix : {s} =>_start_condition_begin(uintptr_t yyg_intptr, size_t start_condition) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    yyg->yy_start = 1 + 2 * start_condition;
-}
-
-int8_t <= ctx.prefix : {s} =>_action_input(uintptr_t yyg_intptr) {
+size_t <= ctx.prefix : {s} =>_yyget_lineno(uintptr_t yyg_intptr) {
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;
-    return (int8_t)input(yyscanner);
+    return yyget_lineno(yyscanner);
 }
 
-void <= ctx.prefix : {s} =>_action_echo(uintptr_t yyg_intptr) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    ECHO;
+size_t <= ctx.prefix : {s} =>_yyget_column(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return yyget_column(yyscanner);
+}
+
+void <= ctx.prefix : {s} =>_yyrestart(uintptr_t yyg_intptr, FILE *f) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yyrestart(f, yyscanner);
 }
 
 uintptr_t <= ctx.prefix : {s} =>_yy_create_buffer(uintptr_t yyg_intptr, FILE *f, size_t size) {
@@ -58,4 +58,62 @@ uintptr_t <= ctx.prefix : {s} =>_yy_scan_bytes(uintptr_t yyg_intptr, const char 
 uintptr_t <= ctx.prefix : {s} =>_yy_scan_buffer(uintptr_t yyg_intptr, char *base, size_t size) {
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;
     return ZLEX_CAST_UINTPTR(yy_scan_buffer(base, size, yyscanner));
+}
+
+void <= ctx.prefix : {s} =>_begin(uintptr_t yyg_intptr, size_t start_condition) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyg->yy_start = 1 + 2 * start_condition;
+}
+
+void <= ctx.prefix : {s} =>_yy_push_state(uintptr_t yyg_intptr, size_t new_state) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_push_state(new_state, yyscanner);
+}
+
+void <= ctx.prefix : {s} =>_yy_pop_state(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_pop_state(yyscanner);
+}
+
+size_t <= ctx.prefix : {s} =>_yy_top_state(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return yy_top_state(yyscanner);
+}
+
+void <= ctx.prefix : {s} =>_ECHO(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    ECHO;
+}
+
+void <= ctx.prefix : {s} =>_yymore(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yymore();
+}
+
+void <= ctx.prefix : {s} =>_unput(uintptr_t yyg_intptr, char c) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    unput(c);
+}
+
+int8_t <= ctx.prefix : {s} =>_input(uintptr_t yyg_intptr) {
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    return (int8_t)input(yyscanner);
+}
+
+void <= ctx.prefix : {s} =>_YY_FLUSH_BUFFER(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    YY_FLUSH_BUFFER;
+}
+
+void <= ctx.prefix : {s} =>_yy_set_bol(uintptr_t yyg_intptr, int at_bol) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    yyscan_t yyscanner = (yyscan_t)yyg_intptr;
+    yy_set_bol(at_bol);
+}
+
+int <= ctx.prefix : {s} =>_YY_AT_BOL(uintptr_t yyg_intptr) {
+    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
+    return YY_AT_BOL();
 }

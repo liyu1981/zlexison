@@ -1,2 +1,2 @@
     <= ctx.prefix : {s} =>_prepare_yy(<= ctx.prefix : {s} =>_parser_intptr, ZLEX_CAST_UINTPTR(yyg), ZLEX_CAST_U8PTR(yytext), yyleng, ZLEX_CAST_UINTPTR(yyin), ZLEX_CAST_UINTPTR(yyout), ZLEX_CAST_UINTPTR(YY_CURRENT_BUFFER), YY_START);
-    <= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>(<= ctx.prefix : {s} =>_parser_intptr);
+    ZLEX_CONTROL(<= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>(<= ctx.prefix : {s} =>_parser_intptr));

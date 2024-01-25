@@ -1,9 +1,17 @@
 export fn <= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
-    <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser) catch return 1;
+    <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser) catch |err| switch (err) {
+        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        else => {
+            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            @panic("parser crashed");
+        },
+    };
     return 0;
 }
-fn <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser: *Parser) !void {
+fn <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser: *Parser) anyerror!void {
 <= ctx.code: {s} =>
 }

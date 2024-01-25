@@ -307,6 +307,13 @@ fn generateParserYYc(allocator: std.mem.Allocator, parser: *const FlexParser, st
     var generated_l_file = std.ArrayList(u8).init(arena);
     const generated_writer = generated_l_file.writer();
 
+    try generated_writer.print("{s}\n{s}\n{s}\n{s}\n", .{
+        "%option reject",
+        "%option yymore",
+        "%option unput",
+        "%option stack",
+    });
+
     var cur_section: FlexParser.Context.Section = FlexParser.Context.Section.Definitions;
     var i: usize = 0;
     while (i < input_file_lines.len) {

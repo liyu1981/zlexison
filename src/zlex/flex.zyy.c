@@ -1045,11 +1045,6 @@ void zyy_yymore(uintptr_t yyg_intptr) {
     yymore();
 }
 
-void zyy_yyless(uintptr_t yyg_intptr, int n) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    // TODO:
-}
-
 void zyy_unput(uintptr_t yyg_intptr, char c) {
     struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
     yyscan_t yyscanner = (yyscan_t)yyg_intptr;

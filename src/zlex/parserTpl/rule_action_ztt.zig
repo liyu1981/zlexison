@@ -13,11 +13,11 @@ pub fn render(stream: anytype, ctx: anytype) !void {
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_");
     try stream.print("{s}", .{ctx.name});
-    try stream.writeAll("_impl(parser) catch return 1;\n    return 0;\n}\nfn ");
+    try stream.writeAll("_impl(parser) catch |err| switch (err) {\n        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,\n        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,\n        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,\n        else => {\n            std.io.getStdErr().writer().print(\"{any}\\n\", .{err}) catch {};\n            @panic(\"parser crashed\");\n        },\n    };\n    return 0;\n}\nfn ");
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_");
     try stream.print("{s}", .{ctx.name});
-    try stream.writeAll("_impl(parser: *Parser) !void {\n");
+    try stream.writeAll("_impl(parser: *Parser) anyerror!void {\n");
     try stream.print("{s}", .{ctx.code});
     try stream.writeAll("\n}\n");
 }

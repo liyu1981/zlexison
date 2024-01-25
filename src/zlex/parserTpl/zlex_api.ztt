@@ -85,7 +85,7 @@ const ZA = struct {
     pub const StartCondition = struct {
         pub fn BEGIN(this: *const StartCondition, start_condition: usize) void {
             _ = this;
-            zyy_start_condition_begin(zyy_yyg_intptr, start_condition);
+            zyy_begin(zyy_yyg_intptr, start_condition);
         }
 
         pub fn yy_push_state(this: *const StartCondition, new_state: usize) void {
@@ -114,41 +114,50 @@ const ZA = struct {
         current_buffer: *YYBufferState = undefined,
         start: usize = undefined,
 
-        pub fn restart(this: *const YY) void {
+        pub fn restart(this: *const YY, f: *std.c.FILE) void {
             _ = this;
+            zyy_yyrestart(zyy_yyg_intptr, f);
         }
     };
+
+    pub fn yyget_lineno() usize {
+        return zyy_yyget_lineno(zyy_yyg_intptr);
+    }
+
+    pub fn yyget_column() usize {
+        return zyy_yyget_column(zyy_yyg_intptr);
+    }
 
     // ch8, actions
     pub const Action = struct {
         pub fn ECHO(this: *const Action) void {
             _ = this;
-            zyy_action_echo(zyy_yyg_intptr);
+            zyy_ECHO(zyy_yyg_intptr);
         }
 
-        pub fn BEGIN(this: *const Action) void {
-            _ = this;
-        }
-
-        pub fn REJECT(this: *const Action) void {
-            _ = this;
-        }
+        // use REJECT as
+        //     `return ZA.YYControl.E.REJECT;`
 
         pub fn yymore(this: *const Action) void {
             _ = this;
+            zyy_yymore();
         }
 
-        pub fn yyless(this: *const Action) void {
+        // use yyless as
+        //     `ZA.Action.yyless(n); return ZA.YYControl.E.YYLESS;`
+        pub fn yyless(this: *const Action, n: usize) void {
             _ = this;
+            zyy_set_parser_param_reg(0, @as(c_int, @intCast(n)));
         }
 
-        pub fn unput(this: *const Action) void {
+        pub fn unput(this: *const Action, c: u8) void {
             _ = this;
+            zyy_unput(zyy_yyg_intptr, c);
         }
 
         pub fn input(this: *const Action) ?u8 {
             _ = this;
-            const c = zyy_action_input(zyy_yyg_intptr);
+            const c = zyy_input(zyy_yyg_intptr);
             if (c < 0) {
                 return null;
             }
@@ -157,19 +166,13 @@ const ZA = struct {
 
         pub fn YY_FLUSH_BUFFER(this: *const Action) void {
             _ = this;
+            zyy_YY_FLUSH_BUFFER(zyy_yyg_intptr);
         }
 
-        pub fn yyterminate(this: *const Action) void {
-            _ = this;
-        }
+        // use yyterminate as:
+        //     `return ZA.YYControl.E.TERMINATE;`
     };
 
-    // TODO: state related function, ch10, start conditions
-    // void yy_push_state ( int new_state )
-    // void yy_pop_state ()
-    // int yy_top_state ()
-
-    // TODO: input buffer related functions, ch11
     pub const Buffer = struct {
         pub fn yy_create_buffer(this: *const Buffer, f: std.c.FILE, size: usize) *YYBufferState {
             _ = this;
@@ -241,8 +244,34 @@ const ZA = struct {
         }
     };
 
+    pub var YY_USER_ACTION: ?UserActionFn = null;
+    pub var YY_USER_INIT: ?UserInitFn = null;
+
+    pub const Misc = struct {
+        // yy_set_interactive
+        // skip this as our parser will never be interactive
+
+        pub fn yy_set_bol(this: *const Misc, at_bol: isize) void {
+            _ = this;
+            zyy_yy_set_bol(zyy_yyg_intptr, at_bol);
+        }
+
+        pub fn YY_AT_BOL(this: *const Misc) bool {
+            _ = this;
+            return zyy_YY_AT_BOL(zyy_yyg_intptr) != 0;
+        }
+
+        // YYBREAK
+        // skip this too :)
+    };
+
     // alias
 
+    pub const zyy_yyget_lineno = <= ctx.prefix : {s} =>_yyget_lineno;
+    pub const zyy_yyget_column = <= ctx.prefix : {s} =>_yyget_column;
+    pub const zyy_yyrestart = <= ctx.prefix : {s} =>_yyrestart;
+
+    pub const zyy_yy_create_buffer = <= ctx.prefix : {s} =>_yy_create_buffer;
     pub const zyy_yy_switch_to_buffer = <= ctx.prefix : {s} =>_yy_switch_to_buffer;
     pub const zyy_yy_delete_buffer = <= ctx.prefix : {s} =>_yy_delete_buffer;
     pub const zyy_yypush_buffer_state = <= ctx.prefix : {s} =>_yypush_buffer_state;
@@ -251,39 +280,78 @@ const ZA = struct {
     pub const zyy_yy_scan_string = <= ctx.prefix : {s} =>_yy_scan_string;
     pub const zyy_yy_scan_bytes = <= ctx.prefix : {s} =>_yy_scan_bytes;
     pub const zyy_yy_scan_buffer = <= ctx.prefix : {s} =>_yy_scan_buffer;
-    pub const zyy_yy_create_buffer = <= ctx.prefix : {s} =>_yy_create_buffer;
 
-    pub const zyy_setup_parser = <= ctx.prefix : {s} =>_setup_parser;
+    pub const zyy_begin = <= ctx.prefix : {s} =>_begin;
+    pub const zyy_yy_push_state = <= ctx.prefix : {s} =>_yy_push_state;
+    pub const zyy_yy_pop_state = <= ctx.prefix : {s} =>_yy_pop_state;
+    pub const zyy_yy_top_state = <= ctx.prefix : {s} =>_yy_top_state;
 
-    pub const zyy_start_condition_begin = <= ctx.prefix : {s} =>_start_condition_begin;
-    pub const zyy_action_echo = <= ctx.prefix : {s} =>_action_echo;
-    pub const zyy_action_input = <= ctx.prefix : {s} =>_action_input;
+    pub const zyy_ECHO = <= ctx.prefix : {s} =>_ECHO;
+    pub const zyy_yymore = <= ctx.prefix : {s} =>_yymore;
+    pub const zyy_unput = <= ctx.prefix : {s} =>_unput;
+    pub const zyy_input = <= ctx.prefix : {s} =>_input;
+    pub const zyy_YY_FLUSH_BUFFER = <= ctx.prefix : {s} =>_YY_FLUSH_BUFFER;
+
+    pub const zyy_yy_set_bol = <= ctx.prefix : {s} =>_yy_set_bol;
+    pub const zyy_YY_AT_BOL = <= ctx.prefix : {s} =>_YY_AT_BOL;
 
     pub const zyylex_init = <= ctx.prefix : {s} =>lex_init;
     pub const zyylex = <= ctx.prefix : {s} =>lex;
     pub const zyylex_destroy = <= ctx.prefix : {s} =>lex_destroy;
 
+    pub const zyy_setup_parser = <= ctx.prefix : {s} =>_setup_parser;
+    pub const zyy_set_parser_param_reg = <= ctx.prefix : {s} =>_set_parser_param_reg;
+
     // externs
 
-    extern fn <= ctx.prefix : {s} =>_yy_switch_to_buffer(yyg_intptr: uint_ptr, new_buffer: uint_ptr) void;
-    extern fn <= ctx.prefix : {s} =>_yy_delete_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
-    extern fn <= ctx.prefix : {s} =>_yypush_buffer_state(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
-    extern fn <= ctx.prefix : {s} =>_yypop_buffer_state(yyg_intptr: uint_ptr) void;
-    extern fn <= ctx.prefix : {s} =>_yy_flush_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
-    extern fn <= ctx.prefix : {s} =>_yy_scan_string(yyg_intptr: uint_ptr, str: [*c]const u8) uint_ptr;
-    extern fn <= ctx.prefix : {s} =>_yy_scan_bytes(yyg_intptr: uint_ptr, str: [*c]const u8, len: usize) uint_ptr;
-    extern fn <= ctx.prefix : {s} =>_yy_scan_buffer(yyg_intptr: uint_ptr, base: [*c]u8, size: usize) uint_ptr;
-    extern fn <= ctx.prefix : {s} =>_yy_create_buffer(yyg_intptr: uint_ptr, f: std.c.FILE, size: usize) uint_ptr;
+    pub extern fn <= ctx.prefix : {s} =>_yyget_lineno(yyg_intptr: uint_ptr) usize;
+    pub extern fn <= ctx.prefix : {s} =>_yyget_column(yyg_intptr: uint_ptr) usize;
+    pub extern fn <= ctx.prefix : {s} =>_yyrestart(yyg_intptr: uint_ptr, f: *std.c.FILE) void;
 
-    // TODO: misc macros, ch13
+    pub extern fn <= ctx.prefix : {s} =>_yy_create_buffer(yyg_intptr: uint_ptr, f: std.c.FILE, size: usize) uint_ptr;
+    pub extern fn <= ctx.prefix : {s} =>_yy_switch_to_buffer(yyg_intptr: uint_ptr, new_buffer: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yy_delete_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yypush_buffer_state(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yypop_buffer_state(yyg_intptr: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yy_flush_buffer(yyg_intptr: uint_ptr, buffer: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yy_scan_string(yyg_intptr: uint_ptr, str: [*c]const u8) uint_ptr;
+    pub extern fn <= ctx.prefix : {s} =>_yy_scan_bytes(yyg_intptr: uint_ptr, str: [*c]const u8, len: usize) uint_ptr;
+    pub extern fn <= ctx.prefix : {s} =>_yy_scan_buffer(yyg_intptr: uint_ptr, base: [*c]u8, size: usize) uint_ptr;
 
-    extern fn <= ctx.prefix : {s} =>_setup_parser(parser_intptr: uint_ptr) void;
+    extern fn <= ctx.prefix : {s} =>_begin(yyg_intptr: uint_ptr, start_condition: usize) void;
+    pub extern fn <= ctx.prefix : {s} =>_yy_push_state(yyg_intptr: uint_ptr, new_state: usize) void;
+    pub extern fn <= ctx.prefix : {s} =>_yy_pop_state(yyg_intptr: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yy_top_state(yyg_intptr: uint_ptr) usize;
 
-    extern fn <= ctx.prefix : {s} =>_start_condition_begin(yyg_intptr: uint_ptr, start_condition: usize) void;
-    extern fn <= ctx.prefix : {s} =>_action_echo(yyg_intptr: uint_ptr) void;
-    extern fn <= ctx.prefix : {s} =>_action_input(yyg_intptr: uint_ptr) c_int;
+    extern fn <= ctx.prefix : {s} =>_ECHO(yyg_intptr: uint_ptr) void;
+    // pub extern fn zyy_REJECT(yyg_intptr: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_yymore(yyg_intptr: uint_ptr) void;
+    // pub extern fn zyy_yyless(yyg_intptr: uint_ptr, n: c_int) void;
+    pub extern fn <= ctx.prefix : {s} =>_unput(yyg_intptr: uint_ptr, c: u8) void;
+    pub extern fn <= ctx.prefix : {s} =>_input(yyg_intptr: uint_ptr) c_int;
+    pub extern fn <= ctx.prefix : {s} =>_YY_FLUSH_BUFFER(yyg_intptr: uint_ptr) void;
+    // yyterminate
 
-    extern fn <= ctx.prefix : {s} =>lex_init(yyg: [*c]?*anyopaque) c_int;
-    extern fn <= ctx.prefix : {s} =>lex(yyg: ?*anyopaque) c_int;
-    extern fn <= ctx.prefix : {s} =>lex_destroy(yyg: ?*anyopaque) c_int;
+    pub extern fn <= ctx.prefix : {s} =>_yy_set_bol(yyg_intptr: uint_ptr, at_bol: c_int) void;
+    pub extern fn <= ctx.prefix : {s} =>_YY_AT_BOL(yyg_intptr: uint_ptr) c_int;
+
+
+    pub extern fn <= ctx.prefix : {s} =>lex_init(yyg: [*c]?*anyopaque) c_int;
+    pub extern fn <= ctx.prefix : {s} =>lex(yyg: ?*anyopaque) c_int;
+    pub extern fn <= ctx.prefix : {s} =>lex_destroy(yyg: ?*anyopaque) c_int;
+
+    pub extern fn <= ctx.prefix : {s} =>_setup_parser(parser_intptr: uint_ptr) void;
+    pub extern fn <= ctx.prefix : {s} =>_set_parser_param_reg(index: usize, value: c_int) void;
 };
+const UserActionFn = *const fn (parser: *Parser) void;
+const UserInitFn = *const fn (parser: *Parser) void;
+pub export fn <= ctx.prefix : {s} =>_call_user_action(parser_intptr: uint_ptr) void {
+    if (ZA.YY_USER_ACTION) |user_action_fn| {
+        user_action_fn(@as(*Parser, @ptrFromInt(parser_intptr)));
+    }
+}
+pub export fn <= ctx.prefix : {s} =>_call_user_init(parser_intptr: uint_ptr) void {
+    if (ZA.YY_USER_INIT) |user_init_fn| {
+        user_init_fn(@as(*Parser, @ptrFromInt(parser_intptr)));
+    }
+}
