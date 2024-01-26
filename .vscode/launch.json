@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Debug zlex",
       "program": "${workspaceFolder}/zig-out/bin/zlex",
-      "args": ["-t", "zig", "src/zlex/flex.zig.l"],
+      "args": ["-t", "sanitize", "tests/zlex_sanitize/multi_context.l"],
       "cwd": "${workspaceFolder}"
     },
     {

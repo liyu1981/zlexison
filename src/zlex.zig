@@ -2,12 +2,6 @@ const std = @import("std");
 const zcmd = @import("zcmd");
 const jstring = @import("jstring");
 
-const run_as_flex = @import("zlex/runAsFlex.zig").run_as_flex;
-const generateYYc = @import("zlex/generateYYc.zig").generateYYc;
-const generateH = @import("zlex/generateH.zig").generateH;
-const generateZig = @import("zlex/generateZig.zig").generateZig;
-const dump = @import("zlex/dump.zig").dump;
-
 const FlexParser = @import("zlex/flexParser.zig");
 const ParserTpl = @import("zlex/parserTpl.zig");
 
@@ -23,6 +17,7 @@ const OutputType = enum(u8) {
     zig,
     h,
     yyc,
+    sanitize,
     dump_parse,
     dump_generated_l,
 };
@@ -50,7 +45,7 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
     var i: usize = 0;
     if (args1.len == 0) return ZlexError.InvalidOption;
     if (std.mem.eql(u8, args1[0], "flex")) {
-        run_as_flex(args1); // there is no turning back :)
+        @import("zlex/runAsFlex.zig").run_as_flex(args1); // there is no turning back :)
     }
     while (i < args1.len) {
         const arg = args1[i];
@@ -98,8 +93,11 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
 var opts: ZlexOptions = undefined;
 
 pub fn main() !u8 {
-    const args = try std.process.argsAlloc(std.heap.page_allocator);
-    defer std.heap.page_allocator.free(args);
+    const allocator = std.heap.page_allocator;
+
+    const args = try std.process.argsAlloc(allocator);
+    defer allocator.free(args);
+
     opts = parseArgs(args) catch {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
         std.os.exit(1);
@@ -113,53 +111,79 @@ pub fn main() !u8 {
         return generateAll();
     }
 
-    const allocator = std.heap.page_allocator;
     const stdout_writer = std.io.getStdOut().writer();
 
-    var f = try std.fs.cwd().openFile(opts.input_file_path, .{});
-    defer f.close();
-    var content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
-    _ = &content;
-    // try stdout_writer.print("read {d}bytes\n", .{content.len});
+    var content = brk: {
+        var f = try std.fs.cwd().openFile(opts.input_file_path, .{});
+        defer f.close();
+        break :brk try f.readToEndAlloc(allocator, std.math.maxInt(usize));
+    };
     defer allocator.free(content);
+    _ = &content;
 
-    var parser = FlexParser.init(.{
-        .allocator = allocator,
-        .input = content,
-    });
+    var parser = FlexParser.init(.{ .allocator = allocator, .input = content });
     defer parser.deinit();
 
+    // if provided prefix in cmd opts, use it here
     if (opts.prefix) |prefix| {
         parser.prefix = try parser.allocator.dupe(u8, prefix);
     }
 
     try parser.lex();
 
+    try @import("zlex/sanitize.zig").sanitizeParser(&parser);
+    if (opts.output_type == OutputType.sanitize) {
+        return 0;
+    }
+
     switch (opts.output_type) {
         .zig => {
-            try generateZig(allocator, &parser, stdout_writer, .{
-                .input_file_path = opts.input_file_path,
-            });
+            try @import("zlex/generateZig.zig").generateZig(
+                allocator,
+                &parser,
+                stdout_writer,
+                .{
+                    .input_file_path = opts.input_file_path,
+                },
+            );
         },
         .h => {
-            try generateH(allocator, &parser, stdout_writer);
+            try @import("zlex/generateH.zig").generateH(
+                allocator,
+                &parser,
+                stdout_writer,
+            );
         },
         .yyc => {
-            try generateYYc(allocator, &parser, stdout_writer, .{
-                .zlex_exe = opts.zlex_exe,
-                .input_file_path = opts.input_file_path,
-                .generateParserYYc_stop_after_generate_l = false,
-            });
+            try @import("zlex/generateYYc.zig").generateYYc(
+                allocator,
+                &parser,
+                stdout_writer,
+                .{
+                    .zlex_exe = opts.zlex_exe,
+                    .input_file_path = opts.input_file_path,
+                    .generateParserYYc_stop_after_generate_l = false,
+                },
+            );
         },
         .dump_parse => {
-            try dump(allocator, &parser, stdout_writer);
+            try @import("zlex/dump.zig").dump(
+                allocator,
+                &parser,
+                stdout_writer,
+            );
         },
         .dump_generated_l => {
-            try generateYYc(allocator, &parser, stdout_writer, .{
-                .zlex_exe = opts.zlex_exe,
-                .input_file_path = opts.input_file_path,
-                .generateParserYYc_stop_after_generate_l = true,
-            });
+            try @import("zlex/generateYYc.zig").generateYYc(
+                allocator,
+                &parser,
+                stdout_writer,
+                .{
+                    .zlex_exe = opts.zlex_exe,
+                    .input_file_path = opts.input_file_path,
+                    .generateParserYYc_stop_after_generate_l = true,
+                },
+            );
         },
         else => {},
     }
