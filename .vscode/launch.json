@@ -7,6 +7,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug zison",
+      "program": "${workspaceFolder}/zig-out/bin/zison",
+      "args": ["bison"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug zlex",
       "program": "${workspaceFolder}/zig-out/bin/zlex",
       "args": ["-t", "sanitize", "tests/zlex_sanitize/multi_context.l"],

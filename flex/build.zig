@@ -46,7 +46,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const flex_as_lib = b.addStaticLibrary(.{
-        .name = "libflex",
+        .name = "flex_as_lib",
         .target = target,
         .optimize = optimize,
     });

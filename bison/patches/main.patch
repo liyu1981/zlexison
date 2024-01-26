@@ -1,0 +1,14 @@
+diff --git a/src/main.c b/src/main.c
+index 1185bf24..58be1292 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -61,7 +61,8 @@
+ 
+ 
+ int
+-main (int argc, char *argv[])
++bison_main (int argc, char *argv[])
++// main (int argc, char *argv[])
+ {
+   {
+     char *cp = getenv ("BISON_PROGRAM_NAME");

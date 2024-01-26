@@ -14,8 +14,9 @@ pub fn build(b: *std.Build) void {
 
     const zcmd_dep = b.dependency("zcmd", .{});
     var jstring_dep = b.dependency("jstring", .{});
+
     const flex_dep = b.dependency("flex", .{});
-    const libflex_a = flex_dep.artifact("libflex");
+    const libflex_a = flex_dep.artifact("flex_as_lib");
 
     var zlex_exe = b.addExecutable(.{
         .name = "zlex",
@@ -24,13 +25,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    zlex_exe.step.dependOn(&libflex_a.step);
-
-    zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
-
-    zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
-    jstring_build.linkPCRE(zlex_exe, jstring_dep);
-
     zlex_exe.addCSourceFiles(.{
         .files = &[_][]const u8{
             "src/zlex/flex.zyy.c",
@@ -38,15 +32,30 @@ pub fn build(b: *std.Build) void {
         .flags = &c_flags,
     });
 
+    zlex_exe.step.dependOn(&libflex_a.step);
+    zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
+    zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
+    jstring_build.linkPCRE(zlex_exe, jstring_dep);
     zlex_exe.addObjectFile(libflex_a.getEmittedBin());
 
     b.installArtifact(zlex_exe);
 
-    const run_cmd = b.addRunArtifact(zlex_exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
+    const bison_dep = b.dependency("bison", .{});
+    const libbison_a = bison_dep.artifact("bison_as_lib");
+
+    var zison_exe = b.addExecutable(.{
+        .name = "zison",
+        .root_source_file = .{ .path = "src/zison.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+
+    zison_exe.step.dependOn(&libbison_a.step);
+    zison_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
+    zison_exe.addModule("jstring", jstring_dep.module("jstring"));
+    jstring_build.linkPCRE(zison_exe, jstring_dep);
+    zison_exe.addObjectFile(libbison_a.getEmittedBin());
+    zison_exe.linkSystemLibrary2("iconv", .{});
+
+    b.installArtifact(zison_exe);
 }
