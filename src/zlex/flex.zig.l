@@ -342,7 +342,10 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
                 .line = parser.context.cur_loc.line,
                 .col = action_line_start,
             };
-            parser.context.cur_codeblock.end = parser.context.cur_codeblock.start;
+            parser.context.cur_codeblock.end = .{
+                .line = parser.context.cur_loc.line,
+                .col = line.len,
+            };
         }
     } else {
         if (!parser.context.cur_codeblock.isEmpty()) {

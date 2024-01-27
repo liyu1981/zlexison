@@ -172,7 +172,7 @@ pub fn generateYYc(
                     },
                     .RulesActionCb => {
                         if (cb_entry.line_count == 0) {
-                            try generated_writer.print("{s} ", .{line.valueOf()[0..cb_entry.cb.start.col]});
+                            try generated_writer.print("{s} ", .{line.valueOf()[0 .. cb_entry.cb.start.col - 1]});
                             try generated_l_file.append('{');
                             try generated_writer.print(
                                 " {s} ",
@@ -187,7 +187,7 @@ pub fn generateYYc(
                                     ),
                                 },
                             );
-                            try generated_l_file.append('}');
+                            try generated_l_file.appendSlice("    }\n");
                             i += 1;
                             continue;
                         } else {
