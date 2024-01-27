@@ -106,11 +106,12 @@ pub fn generateYYc(
     var generated_l_file = std.ArrayList(u8).init(arena);
     const generated_writer = generated_l_file.writer();
 
-    try generated_writer.print("{s}\n{s}\n{s}\n{s}\n", .{
+    try generated_writer.print("{s}\n{s}\n{s}\n{s}\n{s}\n", .{
         "%option reject",
         "%option yymore",
         "%option unput",
         "%option stack",
+        "%option yylineno",
     });
 
     var cur_section: FlexParser.Context.Section = FlexParser.Context.Section.Definitions;
@@ -287,5 +288,14 @@ pub fn generateYYc(
         }
     };
 
-    try stdout_writer.print("{s}\n", .{yyc_final});
+    var yyc_final_final = brk: {
+        var js_yyc = try jstring.JString.newFromSlice(allocator, yyc_final);
+        defer js_yyc.deinit();
+        var js_yyc_final = try js_yyc.replaceAll("<stdin>", opts.input_file_path);
+        _ = &js_yyc_final;
+        break :brk js_yyc_final;
+    };
+    defer yyc_final_final.deinit();
+
+    try stdout_writer.print("{s}\n", .{yyc_final_final});
 }

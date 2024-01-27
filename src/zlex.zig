@@ -245,7 +245,15 @@ fn generateAll() !u8 {
         const yyc_file_name = try jstring.JString.newFromFormat(allocator, "{s}.yy.c", .{opts.output_file_prefix.?});
         var f = try std.fs.cwd().createFile(yyc_file_name.valueOf(), .{});
         defer f.close();
-        try f.writeAll(result.stdout.?);
+
+        const yyc_final = brk: {
+            var js_yyc = try jstring.JString.newFromSlice(allocator, result.stdout.?);
+            defer js_yyc.deinit();
+            const js_yyc_final1 = try js_yyc.replaceAll("<stdout>", yyc_file_name.valueOf());
+            break :brk js_yyc_final1;
+        };
+
+        try f.writeAll(yyc_final.valueOf());
     }
     return 0;
 }
