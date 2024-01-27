@@ -25,11 +25,11 @@ const ZA = struct {
         pub const INT_TERMINATE = 2;
         pub const INT_YYLESS = 3;
         pub const INT_CONTINUE = std.math.maxInt(c_int);
-
-        pub fn RETURN() !void {
-            return YYControl.E.RETURN;
-        }
     };
+
+    pub fn RETURN() !void {
+        return YYControl.E.RETURN;
+    }
 
     pub const YYGuts = extern struct {
         // /* User-defined. Not touched by flex. */

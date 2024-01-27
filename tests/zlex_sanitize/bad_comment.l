@@ -11,9 +11,9 @@ pub const Context = struct {
         TOK_MINUS,
         TOK_STAR,
         TOK_SLASH,
-        TOK_EOF,
         TOK_NUM,
         TOK_STR,
+        TOK_EOL,
     };
 
     pub const TOK = union(TOK_TYPE) {
@@ -21,19 +21,17 @@ pub const Context = struct {
         TOK_MINUS: u8,
         TOK_STAR: u8,
         TOK_SLASH: u8,
-        TOK_EOF : u8,
+        TOK_EOL : u8,
         TOK_NUM : i64,
         TOK_STR : []const u8,
     };
 
-    allocator: std.mem.Allocator,
     nesting: usize = 0,
     str: std.ArrayList(u8),
     cur_tok: TOK = undefined,
 
-    pub fn init(allocator: std.mem.Allocator) Context {
+    pub fn init() Context {
       return Context{
-        .allocator = allocator,
         .str = std.ArrayList(u8).init(std.heap.page_allocator),
       };
     }
@@ -48,57 +46,57 @@ pub const Context = struct {
 
 %%
 
-"+"      { parser.context.cur_tok = .{ .TOK_PLUS = '+' }; try ZA.RETURN(); }
-"-"      { parser.context.cur_tok = .{ .TOK_MINUS = '-' }; try ZA.RETURN(); }
-"*"      { parser.context.cur_tok = .{ .TOK_STAR = '*' }; try ZA.RETURN(); }
-"/"      { parser.context.cur_tok = .{ .TOK_SLASH = '/' }; try ZA.RETURN(); }
+"+"      { parser.context.cur_tok = .{ .TOK_PLUS = '+' }; return 0; }
+"-"      { parser.context.cur_tok = .{ .TOK_MINUS = '-' }; return 0; }
+"*"      { parser.context.cur_tok = .{ .TOK_STAR = '*' }; return 0; }
+"/"      { parser.context.cur_tok = .{ .TOK_SLASH = '/' }; return 0; }
 
 "("      {
     parser.context.nesting += 1;
     parser.context.str.clearAndFree();
-    parser.startCondition.BEGIN(SC_SC_STRING);
+    parser.startCondition.BEGIN(Parser.StartCondition.SC_STRING);
   }
 
+  /* bad comment */
 [0-9]+   {
     // Scan an integer.
-    const intval = try std.fmt.parseInt(i64, parser.yy.text[0..parser.yy.leng], 10);
+    const intval = try std.fmt.parseInt(i64, parser.yy.text[0..parser.YY.leng], 10);
     parser.context.cur_tok = .{ .TOK_NUM = intval };
-    try ZA.RETURN();
+    return 0;
   }
 
 [ \t]+   {
-    _ = parser;
     // Ignore white spaces.
   }
 
-"\n"     { parser.context.cur_tok = .{ .TOK_EOF = 'e' }; }
+"\n"     { parser.context.cur_tok = .{ .TOK_EOL = 'e' }; return 0; }
 
 .        {
-    std.io.getStdErr().writer().print("syntax error, invalid character: {c} at line: {d}, column: {d}.\n", .{ parser.yy.text[0], ZA.yyget_lineno(), ZA.yyget_column() }) catch |err| { return err; };
+    std.io.getStdErr().writer().print("syntax error, invalid character: {c} at line: {d}, column: {d}.\n", .{ parser.YY.text[0], parser.ZA.yyget_lineno(), parser.ZA.yyget_column() }) catch |err| { return err };
     return error.SyntaxError;
   }
 
 <SC_STRING>"("+   {
     parser.context.nesting += parser.yy.leng;
-    try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
   }
 
 <SC_STRING>")"    {
     parser.context.nesting -= 1;
     if (parser.context.nesting == 0) {
-        parser.startCondition.BEGIN(SC_INITIAL);
+        parser.startCondition.BEGIN(Parser.StartCondition.INITIAL);
         if (parser.context.str.items.len > 0) {
             parser.context.cur_tok = .{ .TOK_STR = parser.context.str.items[0..] };
-            try ZA.RETURN();
+            return 0;
         }
     } else {
-        try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
+        parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
     }
   }
 
-<SC_STRING>[^()]+  { try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]); }
+<SC_STRING>[^()]+  { parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]); }
 
-<<EOF>>  { parser.context.cur_tok = .{ .TOK_EOF = 'e' }; try ZA.RETURN(); }
+<<EOF>>  { return TOK.TOK_EOF; }
 
 %%
 
