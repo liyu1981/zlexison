@@ -24,18 +24,19 @@
         parser.yy.current_buffer = @as(*ZA.YYBufferState, @ptrFromInt(current_buffer_intptr));
         parser.yy.start = start;
     }
-    pub fn lex(this: *Parser) !void {
+    pub fn lexStart(this: *Parser) !void {
         ZA.zyy_setup_parser(@as(usize, @intFromPtr(this)));
         _ = ZA.zyylex_init(@as([*c]?*anyopaque, @ptrCast(&this.yy.yyg)));
-
         // TODO: this is ugly...
         Parser.ZA.zyy_yyg_intptr = this.yy.yyg;
-
         if (this.input) |input| {
             _ = try this.buffer.yy_scan_bytes(input);
         }
-
+    }
+    pub fn lex(this: *Parser) void {
         _ = ZA.zyylex(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
+    }
+    pub fn lexStop(this: *Parser) void {
         _ = ZA.zyylex_destroy(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
     }
     allocator: std.mem.Allocator,
@@ -45,6 +46,7 @@
     yy: ZA.YY = .{},
     action: ZA.Action = .{},
     buffer: ZA.Buffer = .{},
+    misc: ZA.Misc = .{},
     context: Context = undefined,
     pub fn init(args: struct {
         allocator: std.mem.Allocator,
@@ -57,7 +59,10 @@
             .context = Context.init(args.allocator),
             .prefix = brk: {
                 if (args.prefix) |prefix| {
-                    if (std.mem.startsWith(u8, prefix, "0123456789")) {
+                    if (prefix.len == 0) {
+                        @panic("parser prefix can not be empty");
+                    }
+                    if (std.mem.indexOfScalar(u8, "0123456789", prefix[0])) |_| {
                         @panic("parser prefix can not start with digits");
                     }
                     if (std.mem.containsAtLeast(u8, prefix, 1, " \t\r\n")) {

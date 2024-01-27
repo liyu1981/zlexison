@@ -21,7 +21,10 @@ pub fn main() !u8 {
     });
     defer parser.deinit();
 
-    try parser.lex();
+    // a hacky usage of lex, as our FlexParser is basically lex as parser
+    try parser.lexStart();
+    parser.lex();
+    parser.lexStop();
 
     try dump(allocator, &parser, stdout_writer);
 

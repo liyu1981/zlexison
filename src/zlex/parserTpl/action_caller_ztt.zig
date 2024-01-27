@@ -5,7 +5,7 @@ pub fn render(stream: anytype, ctx: anytype) !void {
       _ = ___magic;
   }
   // here comes the actual content
-    try stream.writeAll("    ");
+    try stream.writeAll("    {\n    ");
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_prepare_yy(");
     try stream.print("{s}", .{ctx.prefix});
@@ -15,5 +15,5 @@ pub fn render(stream: anytype, ctx: anytype) !void {
     try stream.print("{s}", .{ctx.name});
     try stream.writeAll("(");
     try stream.print("{s}", .{ctx.prefix});
-    try stream.writeAll("_parser_intptr));\n");
+    try stream.writeAll("_parser_intptr));\n    }\n");
 }

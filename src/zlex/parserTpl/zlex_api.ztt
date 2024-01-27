@@ -10,13 +10,20 @@ const ZA = struct {
 
     pub const YYControl = struct {
         const E = error{
+            RETURN,
             REJECT,
             TERMINATE,
             YYLESS,
         };
-        pub const REJECT = 1;
-        pub const TERMINATE = 2;
-        pub const YYLESS = 3;
+        pub const INT_RETURN = 0;
+        pub const INT_REJECT = 1;
+        pub const INT_TERMINATE = 2;
+        pub const INT_YYLESS = 3;
+        pub const INT_CONTINUE = std.math.maxInt(c_int);
+
+        pub fn RETURN() !void {
+            return YYControl.E.RETURN;
+        }
     };
 
     pub const YYGuts = struct {

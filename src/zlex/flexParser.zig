@@ -15,13 +15,20 @@ const ZA = struct {
 
     pub const YYControl = struct {
         const E = error{
+            RETURN,
             REJECT,
             TERMINATE,
             YYLESS,
         };
-        pub const REJECT = 1;
-        pub const TERMINATE = 2;
-        pub const YYLESS = 3;
+        pub const INT_RETURN = 0;
+        pub const INT_REJECT = 1;
+        pub const INT_TERMINATE = 2;
+        pub const INT_YYLESS = 3;
+        pub const INT_CONTINUE = std.math.maxInt(c_int);
+
+        pub fn RETURN() !void {
+            return YYControl.E.RETURN;
+        }
     };
 
     pub const YYGuts = extern struct {
@@ -358,7 +365,7 @@ export fn zyy_prepare_yy(
     parser.yy.start = start;
 }
 
-pub fn lex(this: *Parser) !void {
+pub fn lexStart(this: *Parser) !void {
     ZA.zyy_setup_parser(@as(usize, @intFromPtr(this)));
     _ = ZA.zyylex_init(@as([*c]?*anyopaque, @ptrCast(&this.yy.yyg)));
 
@@ -368,8 +375,13 @@ pub fn lex(this: *Parser) !void {
     if (this.input) |input| {
         _ = try this.buffer.yy_scan_bytes(input);
     }
+}
 
+pub fn lex(this: *Parser) void {
     _ = ZA.zyylex(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
+}
+
+pub fn lexStop(this: *Parser) void {
     _ = ZA.zyylex_destroy(@as(?*anyopaque, @ptrFromInt(this.yy.yyg)));
 }
 
@@ -395,7 +407,10 @@ pub fn init(args: struct {
         .context = Context.init(args.allocator),
         .prefix = brk: {
             if (args.prefix) |prefix| {
-                if (std.mem.startsWith(u8, prefix, "0123456789")) {
+                if (prefix.len == 0) {
+                    @panic("parser prefix can not be empty");
+                }
+                if (std.mem.indexOfScalar(u8, "0123456789", prefix[0])) |_| {
                     @panic("parser prefix can not start with digits");
                 }
                 if (std.mem.containsAtLeast(u8, prefix, 1, " \t\r\n")) {
@@ -583,15 +598,16 @@ export fn zyy_parser_section(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_section_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_section_impl(parser: *Parser) anyerror!void {
@@ -620,15 +636,16 @@ export fn zyy_parser_code_block_inline(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_code_block_inline_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_code_block_inline_impl(parser: *Parser) anyerror!void {
@@ -663,15 +680,16 @@ export fn zyy_parser_code_block_start(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_code_block_start_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_code_block_start_impl(parser: *Parser) anyerror!void {
@@ -703,15 +721,16 @@ export fn zyy_parser_code_block_stop(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_code_block_stop_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_code_block_stop_impl(parser: *Parser) anyerror!void {
@@ -743,15 +762,16 @@ export fn zyy_parser_code_block_content(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_code_block_content_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_code_block_content_impl(parser: *Parser) anyerror!void {
@@ -767,15 +787,16 @@ export fn zyy_parser_code_block_new_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_code_block_new_line_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_code_block_new_line_impl(parser: *Parser) anyerror!void {
@@ -792,44 +813,48 @@ export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_start_condition_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_start_condition_impl(parser: *Parser) anyerror!void {
+    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     const line = try parser.readRestLine();
     const condition_name = try extractStartConditionName(line);
-    // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
+    std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
     const s = parser.context.start_conditions.name_buf.items.len;
     try parser.context.start_conditions.name_buf.appendSlice(condition_name);
     const e = parser.context.start_conditions.name_buf.items.len;
     try parser.context.start_conditions.names.append(parser.context.start_conditions.name_buf.items[s..e]);
     try parser.context.start_conditions.locs.append(parser.context.cur_loc);
-    // std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
+    std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
-    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
 }
 
 export fn zyy_parser_rule_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_rule_line_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_rule_line_impl(parser: *Parser) anyerror!void {
@@ -878,15 +903,16 @@ export fn zyy_parser_rule_new_line(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_rule_new_line_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_rule_new_line_impl(parser: *Parser) anyerror!void {
@@ -901,15 +927,16 @@ export fn zyy_parser_default_rule(parser_intptr: usize) u32 {
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     zyy_parser_default_rule_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 
 fn zyy_parser_default_rule_impl(parser: *Parser) anyerror!void {
@@ -924,5 +951,5 @@ fn zyy_parser_default_rule_impl(parser: *Parser) anyerror!void {
 
 export fn zyy_parser_user_code_block(parser_ptr: *void) u32 {
     _ = parser_ptr;
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }

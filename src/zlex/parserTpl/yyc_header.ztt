@@ -14,6 +14,8 @@ extern void <= ctx.prefix : {s} =>_call_user_init(uintptr_t zyy_parser_intptr);
 #define ZLEX_CONTROL(x)                      \
     <= ctx.prefix : {s} =>_control = x;      \
     switch ((x)) {                           \
+        case 0 /*RETURN*/:                   \
+            return 0;                        \
         case 1 /*REJECT*/: {                 \
             REJECT;                          \
         } break;                             \

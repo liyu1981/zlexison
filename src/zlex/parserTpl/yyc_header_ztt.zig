@@ -25,7 +25,7 @@ pub fn render(stream: anytype, ctx: anytype) !void {
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_call_user_init(uintptr_t zyy_parser_intptr);\n#define ZLEX_CONTROL(x)                      \\\n    ");
     try stream.print("{s}", .{ctx.prefix});
-    try stream.writeAll("_control = x;      \\\n    switch ((x)) {                           \\\n        case 1 /*REJECT*/: {                 \\\n            REJECT;                          \\\n        } break;                             \\\n        case 2 /*TERMINATE*/: {              \\\n            yyterminate();                   \\\n        } break;                             \\\n        case 3 /*YYLESS*/: {                 \\\n            yyless(");
+    try stream.writeAll("_control = x;      \\\n    switch ((x)) {                           \\\n        case 0 /*RETURN*/:                   \\\n            return 0;                        \\\n        case 1 /*REJECT*/: {                 \\\n            REJECT;                          \\\n        } break;                             \\\n        case 2 /*TERMINATE*/: {              \\\n            yyterminate();                   \\\n        } break;                             \\\n        case 3 /*YYLESS*/: {                 \\\n            yyless(");
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_param_reg[0]); \\\n        } break;                             \\\n    }\n#define YY_USER_ACTION                           \\\n    (");
     try stream.print("{s}", .{ctx.prefix});

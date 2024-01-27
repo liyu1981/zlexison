@@ -14,7 +14,8 @@ pub fn generateYYc(
     opts: struct {
         zlex_exe: []const u8,
         input_file_path: []const u8,
-        generateParserYYc_stop_after_generate_l: bool = false,
+        stop_after_generate_l: bool = false,
+        stop_after_2nd_flex: bool = false,
     },
 ) !void {
     var aa = jstring.ArenaAllocator.init(allocator);
@@ -41,7 +42,7 @@ pub fn generateYYc(
         const result = try zcmd.run(.{
             .allocator = arena,
             .commands = &[_][]const []const u8{
-                &.{ opts.zlex_exe, "-t", "h", "-p", parser.prefix, opts.input_file_path },
+                &.{ opts.zlex_exe, "-t", "h", "-p", parser.prefix, "--no-sanitize", opts.input_file_path },
             },
         });
         result.assertSucceededPanic(.{});
@@ -243,7 +244,7 @@ pub fn generateYYc(
         )},
     );
 
-    if (opts.generateParserYYc_stop_after_generate_l) {
+    if (opts.stop_after_generate_l) {
         try stdout_writer.print("{s}\n", .{generated_l_file.items});
         return;
     }
@@ -261,6 +262,11 @@ pub fn generateYYc(
         result.assertSucceededPanic(.{});
         break :brk result.stdout.?;
     };
+
+    if (opts.stop_after_2nd_flex) {
+        try stdout_writer.print("{s}\n", .{yyc_candidate});
+        return;
+    }
 
     // and finally inject zlex_utils_c
     const yyc_final = brk: {

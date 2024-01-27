@@ -20,6 +20,7 @@ const OutputType = enum(u8) {
     sanitize,
     dump_parse,
     dump_generated_l,
+    dump_2nd_flex,
 };
 
 const ZlexOptions = struct {
@@ -28,6 +29,7 @@ const ZlexOptions = struct {
     zlex_exe: []const u8 = undefined,
     prefix: ?[]const u8 = null,
     output_file_prefix: ?[]const u8 = null,
+    do_sanitize: bool = true,
 };
 
 const ZlexError = error{
@@ -78,6 +80,10 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
             } else {
                 return ZlexError.InvalidOption;
             }
+        } else if (std.mem.eql(u8, arg, "--no-sanitize")) {
+            r.do_sanitize = false;
+            i += 1;
+            continue;
         }
 
         if (r.input_file_path.len > 0) {
@@ -129,15 +135,14 @@ pub fn main() !u8 {
         parser.prefix = try parser.allocator.dupe(u8, prefix);
     }
 
-    try parser.lex();
-
-    try @import("zlex/sanitize.zig").sanitizeParser(&parser);
-    if (opts.output_type == OutputType.sanitize) {
-        return 0;
-    }
+    // a hacky usage of lex, as our FlexParser is basically lex as parser
+    try parser.lexStart();
+    parser.lex();
+    parser.lexStop();
 
     switch (opts.output_type) {
         .zig => {
+            if (opts.do_sanitize) try @import("zlex/sanitize.zig").sanitizeParser(&parser);
             try @import("zlex/generateZig.zig").generateZig(
                 allocator,
                 &parser,
@@ -148,6 +153,7 @@ pub fn main() !u8 {
             );
         },
         .h => {
+            if (opts.do_sanitize) try @import("zlex/sanitize.zig").sanitizeParser(&parser);
             try @import("zlex/generateH.zig").generateH(
                 allocator,
                 &parser,
@@ -155,6 +161,7 @@ pub fn main() !u8 {
             );
         },
         .yyc => {
+            if (opts.do_sanitize) try @import("zlex/sanitize.zig").sanitizeParser(&parser);
             try @import("zlex/generateYYc.zig").generateYYc(
                 allocator,
                 &parser,
@@ -162,9 +169,11 @@ pub fn main() !u8 {
                 .{
                     .zlex_exe = opts.zlex_exe,
                     .input_file_path = opts.input_file_path,
-                    .generateParserYYc_stop_after_generate_l = false,
                 },
             );
+        },
+        .sanitize => {
+            try @import("zlex/sanitize.zig").sanitizeParser(&parser);
         },
         .dump_parse => {
             try @import("zlex/dump.zig").dump(
@@ -181,7 +190,19 @@ pub fn main() !u8 {
                 .{
                     .zlex_exe = opts.zlex_exe,
                     .input_file_path = opts.input_file_path,
-                    .generateParserYYc_stop_after_generate_l = true,
+                    .stop_after_generate_l = true,
+                },
+            );
+        },
+        .dump_2nd_flex => {
+            try @import("zlex/generateYYc.zig").generateYYc(
+                allocator,
+                &parser,
+                stdout_writer,
+                .{
+                    .zlex_exe = opts.zlex_exe,
+                    .input_file_path = opts.input_file_path,
+                    .stop_after_2nd_flex = true,
                 },
             );
         },

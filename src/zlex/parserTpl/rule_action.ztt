@@ -2,15 +2,16 @@ export fn <= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>(parser_intptr: usiz
     var parser = @as(*Parser, @ptrFromInt(parser_intptr));
     _ = &parser;
     <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser) catch |err| switch (err) {
-        ZA.YYControl.E.REJECT => return ZA.YYControl.REJECT,
-        ZA.YYControl.E.TERMINATE => return ZA.YYControl.TERMINATE,
-        ZA.YYControl.E.YYLESS => return ZA.YYControl.YYLESS,
+        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,
+        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
+        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
+        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
         else => {
-            std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
+            std.io.getStdErr().writer().print("{any}, line: {d}, column: {d}\n", .{err, Parser.ZA.yyget_lineno(), Parser.ZA.yyget_column()}) catch {};
             @panic("parser crashed");
         },
     };
-    return 0;
+    return ZA.YYControl.INT_CONTINUE;
 }
 fn <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser: *Parser) anyerror!void {
 <= ctx.code: {s} =>

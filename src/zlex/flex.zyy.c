@@ -678,28 +678,24 @@ void zyy_set_parser_param_reg(int index, int v) {
 }
 extern void zyy_call_user_action(uintptr_t zyy_parser_intptr);
 extern void zyy_call_user_init(uintptr_t zyy_parser_intptr);
-#define ZLEX_CONTROL(x)                          \
-    do {                                         \
-        switch ((x)) {                           \
-            case 1 /*REJECT*/: {                 \
-                REJECT;                          \
-            } break;                             \
-            case 2 /*TERMINATE*/: {              \
-                yyterminate();                   \
-            } break;                             \
-            case 3 /*YYLESS*/: {                 \
-                yyless(zyy_parser_param_reg[0]); \
-            } break;                             \
-        }                                        \
-    } while (0)
-#define YY_USER_ACTION                           \
-    do {                                         \
-        zyy_call_user_action(zyy_parser_intptr); \
-    } while (0);
-#define YY_USER_INIT                           \
-    do {                                       \
-        zyy_call_user_init(zyy_parser_intptr); \
-    } while (0);
+#define ZLEX_CONTROL(x)                      \
+    switch ((x)) {                           \
+        case 0 /*RETURN*/:                   \
+            return 0;                        \
+        case 1 /*REJECT*/: {                 \
+            REJECT;                          \
+        } break;                             \
+        case 2 /*TERMINATE*/: {              \
+            yyterminate();                   \
+        } break;                             \
+        case 3 /*YYLESS*/: {                 \
+            yyless(zyy_parser_param_reg[0]); \
+        } break;                             \
+    }
+#define YY_USER_ACTION \
+    (zyy_call_user_action(zyy_parser_intptr));
+#define YY_USER_INIT \
+    (zyy_call_user_init(zyy_parser_intptr));
 
 #line 670 "src/zlex/flex.zyy.c"
 
@@ -1032,12 +1028,6 @@ size_t zyy_yy_top_state(uintptr_t yyg_intptr) {
 void zyy_ECHO(uintptr_t yyg_intptr) {
     struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
     ECHO;
-}
-
-void zyy_REJECT(uintptr_t yyg_intptr) {
-    struct yyguts_t *yyg = (struct yyguts_t *)(yyscan_t)yyg_intptr;
-    // what about yy_cp
-    // REJECT();
 }
 
 void zyy_yymore(uintptr_t yyg_intptr) {
