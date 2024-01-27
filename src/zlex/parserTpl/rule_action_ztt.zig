@@ -13,7 +13,7 @@ pub fn render(stream: anytype, ctx: anytype) !void {
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_");
     try stream.print("{s}", .{ctx.name});
-    try stream.writeAll("_impl(parser) catch |err| switch (err) {\n        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,\n        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,\n        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,\n        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,\n        else => {\n            std.io.getStdErr().writer().print(\"{any}, line: {d}, column: {d}\\n\", .{err, Parser.ZA.yyget_lineno(), Parser.ZA.yyget_column()}) catch {};\n            @panic(\"parser crashed\");\n        },\n    };\n    return ZA.YYControl.INT_CONTINUE;\n}\nfn ");
+    try stream.writeAll("_impl(parser) catch |err| switch (err) {\n        ZA.YYControl.E.RETURN => return ZA.YYControl.INT_RETURN,\n        ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,\n        ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,\n        ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,\n        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,\n        else => {\n            std.io.getStdErr().writer().print(\"{any}, line: {d}, column: {d}\\n\", .{err, Parser.ZA.yyget_lineno(), Parser.ZA.yyget_column()}) catch {};\n            @panic(\"parser crashed\");\n        },\n    };\n    return ZA.YYControl.INT_RETURN;\n}\nfn ");
     try stream.print("{s}", .{ctx.prefix});
     try stream.writeAll("_parser_");
     try stream.print("{s}", .{ctx.name});

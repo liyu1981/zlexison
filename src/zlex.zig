@@ -30,6 +30,7 @@ const ZlexOptions = struct {
     prefix: ?[]const u8 = null,
     output_file_prefix: ?[]const u8 = null,
     do_sanitize: bool = true,
+    noline: bool = false,
 };
 
 const ZlexError = error{
@@ -82,6 +83,10 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
             }
         } else if (std.mem.eql(u8, arg, "--no-sanitize")) {
             r.do_sanitize = false;
+            i += 1;
+            continue;
+        } else if (std.mem.eql(u8, arg, "--noline")) {
+            r.noline = true;
             i += 1;
             continue;
         }
@@ -169,6 +174,7 @@ pub fn main() !u8 {
                 .{
                     .zlex_exe = opts.zlex_exe,
                     .input_file_path = opts.input_file_path,
+                    .noline = opts.noline,
                 },
             );
         },

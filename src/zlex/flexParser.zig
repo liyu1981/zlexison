@@ -19,6 +19,7 @@ const ZA = struct {
             REJECT,
             TERMINATE,
             YYLESS,
+            CONTINUE,
         };
         pub const INT_RETURN = 0;
         pub const INT_REJECT = 1;
@@ -27,8 +28,8 @@ const ZA = struct {
         pub const INT_CONTINUE = std.math.maxInt(c_int);
     };
 
-    pub fn RETURN() !void {
-        return YYControl.E.RETURN;
+    pub fn CONTINUE() !void {
+        return YYControl.E.CONTINUE;
     }
 
     pub const YYGuts = extern struct {
@@ -62,24 +63,24 @@ const ZA = struct {
     };
 
     pub const YYBufferState = extern struct {
-        yy_input_file: uint_ptr, // FILE* as uint_ptr
+        yy_input_file: *std.c.FILE,
         yy_ch_buf: [*c]u8, // input buffer
         yy_buf_pos: [*c]u8, // current position in input buffer
-        yy_buf_size: i64, // Size of input buffer in bytes, not including room for EOB characters.
-        yy_n_chars: i64, // Number of characters read into yy_ch_buf, not including EOB characters.
-        yy_is_our_buffer: i64, // Whether we "own" the buffer - i.e., we know we created it,
+        yy_buf_size: c_int, // Size of input buffer in bytes, not including room for EOB characters.
+        yy_n_chars: c_int, // Number of characters read into yy_ch_buf, not including EOB characters.
+        yy_is_our_buffer: c_int, // Whether we "own" the buffer - i.e., we know we created it,
         // and can realloc() it to grow
         // it, and should free() it to delete it.
-        yy_is_interactive: i64, // Whether this is an "interactive" input source; if so, and
+        yy_is_interactive: c_int, // Whether this is an "interactive" input source; if so, and
         // if we're using stdio for input, then we want to use getc()
         // instead of fread(), to make sure we stop fetching input after
         // each newline.
-        yy_at_bol: i64, // Whether we're considered to be at the beginning of a line.
+        yy_at_bol: c_int, // Whether we're considered to be at the beginning of a line.
         // If so, '^' rules will be active on the next match, otherwise not.
-        yy_bs_lineno: i64, // *< The line count.
-        yy_bs_column: i64, // *< The column count.
-        yy_fill_buffer: i64, // Whether to try to fill the input buffer when we reach the end of it.
-        yy_buffer_status: i64,
+        yy_bs_lineno: c_int, // *< The line count.
+        yy_bs_column: c_int, // *< The column count.
+        yy_fill_buffer: c_int, // Whether to try to fill the input buffer when we reach the end of it.
+        yy_buffer_status: c_int,
 
         const YY_BUFFER_NEW = 0;
         const YY_BUFFER_NORMAL = 1;
@@ -602,12 +603,13 @@ export fn zyy_parser_section(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_section_impl(parser: *Parser) anyerror!void {
@@ -630,6 +632,7 @@ fn zyy_parser_section_impl(parser: *Parser) anyerror!void {
     // std.debug.print("\nsection: {any}, line{d}\n", .{ parser.context.cur_section, parser.context.cur_loc.line });
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_code_block_inline(parser_intptr: usize) u32 {
@@ -640,12 +643,13 @@ export fn zyy_parser_code_block_inline(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_code_block_inline_impl(parser: *Parser) anyerror!void {
@@ -674,6 +678,7 @@ fn zyy_parser_code_block_inline_impl(parser: *Parser) anyerror!void {
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_code_block_start(parser_intptr: usize) u32 {
@@ -684,12 +689,13 @@ export fn zyy_parser_code_block_start(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_code_block_start_impl(parser: *Parser) anyerror!void {
@@ -715,6 +721,7 @@ fn zyy_parser_code_block_start_impl(parser: *Parser) anyerror!void {
     parser.context.cur_codeblock.start.col = parser.yy.leng;
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_code_block_stop(parser_intptr: usize) u32 {
@@ -725,12 +732,13 @@ export fn zyy_parser_code_block_stop(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_code_block_stop_impl(parser: *Parser) anyerror!void {
@@ -756,6 +764,7 @@ fn zyy_parser_code_block_stop_impl(parser: *Parser) anyerror!void {
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_code_block_content(parser_intptr: usize) u32 {
@@ -766,12 +775,13 @@ export fn zyy_parser_code_block_content(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_code_block_content_impl(parser: *Parser) anyerror!void {
@@ -781,6 +791,7 @@ fn zyy_parser_code_block_content_impl(parser: *Parser) anyerror!void {
     // std.debug.print("code block content:{s}\n", .{parser.yy.text[0..parser.yy.leng]});
     parser.context.cur_loc.col += parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_code_block_new_line(parser_intptr: usize) u32 {
@@ -791,12 +802,13 @@ export fn zyy_parser_code_block_new_line(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_code_block_new_line_impl(parser: *Parser) anyerror!void {
@@ -807,6 +819,7 @@ fn zyy_parser_code_block_new_line_impl(parser: *Parser) anyerror!void {
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
@@ -817,16 +830,17 @@ export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_start_condition_impl(parser: *Parser) anyerror!void {
-    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     const line = try parser.readRestLine();
     const condition_name = try extractStartConditionName(line);
     // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
@@ -835,10 +849,11 @@ fn zyy_parser_start_condition_impl(parser: *Parser) anyerror!void {
     const e = parser.context.start_conditions.name_buf.items.len;
     try parser.context.start_conditions.names.append(parser.context.start_conditions.name_buf.items[s..e]);
     try parser.context.start_conditions.locs.append(parser.context.cur_loc);
-    // std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
+    std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
-    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_rule_line(parser_intptr: usize) u32 {
@@ -849,12 +864,13 @@ export fn zyy_parser_rule_line(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_rule_line_impl(parser: *Parser) anyerror!void {
@@ -900,6 +916,7 @@ fn zyy_parser_rule_line_impl(parser: *Parser) anyerror!void {
     // std.debug.print("rule line:{s}, {d},{d}\n", .{ line, parser.context.cur_loc.line, parser.context.cur_loc.col });
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_rule_new_line(parser_intptr: usize) u32 {
@@ -910,12 +927,13 @@ export fn zyy_parser_rule_new_line(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_rule_new_line_impl(parser: *Parser) anyerror!void {
@@ -924,6 +942,7 @@ fn zyy_parser_rule_new_line_impl(parser: *Parser) anyerror!void {
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_default_rule(parser_intptr: usize) u32 {
@@ -934,12 +953,13 @@ export fn zyy_parser_default_rule(parser_intptr: usize) u32 {
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}\n", .{err}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 
 fn zyy_parser_default_rule_impl(parser: *Parser) anyerror!void {
@@ -950,6 +970,7 @@ fn zyy_parser_default_rule_impl(parser: *Parser) anyerror!void {
         parser.context.cur_loc.col += 1;
     }
     // std.debug.print("default now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
 }
 
 export fn zyy_parser_user_code_block(parser_ptr: *void) u32 {

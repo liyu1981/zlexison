@@ -48,27 +48,28 @@ pub const Context = struct {
 
 %%
 
-"+"      { parser.context.cur_tok = .{ .TOK_PLUS = '+' }; try ZA.RETURN(); }
-"-"      { parser.context.cur_tok = .{ .TOK_MINUS = '-' }; try ZA.RETURN(); }
-"*"      { parser.context.cur_tok = .{ .TOK_STAR = '*' }; try ZA.RETURN(); }
-"/"      { parser.context.cur_tok = .{ .TOK_SLASH = '/' }; try ZA.RETURN(); }
+"+"      { parser.context.cur_tok = .{ .TOK_PLUS = '+' }; }
+"-"      { parser.context.cur_tok = .{ .TOK_MINUS = '-' }; }
+"*"      { parser.context.cur_tok = .{ .TOK_STAR = '*' }; }
+"/"      { parser.context.cur_tok = .{ .TOK_SLASH = '/' }; }
 
 "("      {
     parser.context.nesting += 1;
     parser.context.str.clearAndFree();
     parser.startCondition.BEGIN(SC_SC_STRING);
+    try ZA.CONTINUE();
   }
 
 [0-9]+   {
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, parser.yy.text[0..parser.yy.leng], 10);
     parser.context.cur_tok = .{ .TOK_NUM = intval };
-    try ZA.RETURN();
   }
 
 [ \t]+   {
     _ = parser;
     // Ignore white spaces.
+    try ZA.CONTINUE();
   }
 
 "\n"     { parser.context.cur_tok = .{ .TOK_EOF = 'e' }; }
@@ -81,6 +82,7 @@ pub const Context = struct {
 <SC_STRING>"("+   {
     parser.context.nesting += parser.yy.leng;
     try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    try ZA.CONTINUE();
   }
 
 <SC_STRING>")"    {
@@ -89,16 +91,18 @@ pub const Context = struct {
         parser.startCondition.BEGIN(SC_INITIAL);
         if (parser.context.str.items.len > 0) {
             parser.context.cur_tok = .{ .TOK_STR = parser.context.str.items[0..] };
-            try ZA.RETURN();
         }
     } else {
         try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
+        try ZA.CONTINUE();
     }
   }
 
-<SC_STRING>[^()]+  { try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]); }
+<SC_STRING>[^()]+  { try parser.context.str.appendSlice(parser.yy.text[0..parser.yy.leng]);
+    try ZA.CONTINUE();
+  }
 
-<<EOF>>  { parser.context.cur_tok = .{ .TOK_EOF = 'e' }; try ZA.RETURN(); }
+<<EOF>>  { parser.context.cur_tok = .{ .TOK_EOF = 'e' }; }
 
 %%
 

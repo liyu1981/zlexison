@@ -6,12 +6,13 @@ export fn <= ctx.prefix : {s} =>_parser_<= ctx.name : {s} =>(parser_intptr: usiz
         ZA.YYControl.E.REJECT => return ZA.YYControl.INT_REJECT,
         ZA.YYControl.E.TERMINATE => return ZA.YYControl.INT_TERMINATE,
         ZA.YYControl.E.YYLESS => return ZA.YYControl.INT_YYLESS,
+        ZA.YYControl.E.CONTINUE => return ZA.YYControl.INT_CONTINUE,
         else => {
             std.io.getStdErr().writer().print("{any}, line: {d}, column: {d}\n", .{err, Parser.ZA.yyget_lineno(), Parser.ZA.yyget_column()}) catch {};
             @panic("parser crashed");
         },
     };
-    return ZA.YYControl.INT_CONTINUE;
+    return ZA.YYControl.INT_RETURN;
 }
 fn <= ctx.prefix : {s} =>_parser_<= ctx.name: {s} =>_impl(parser: *Parser) anyerror!void {
 <= ctx.code: {s} =>

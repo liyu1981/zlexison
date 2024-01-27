@@ -14,6 +14,7 @@ pub fn generateYYc(
     opts: struct {
         zlex_exe: []const u8,
         input_file_path: []const u8,
+        noline: bool = false,
         stop_after_generate_l: bool = false,
         stop_after_2nd_flex: bool = false,
     },
@@ -253,11 +254,20 @@ pub fn generateYYc(
     // now just rerun flex to the final .yy.c
     const yyc_candidate = brk: {
         const prefix_opt = try jstring.JString.newFromFormat(arena, "--prefix={s}", .{parser.prefix});
+        const commands = cmds_brk: {
+            if (opts.noline) {
+                break :cmds_brk &[_][]const []const u8{
+                    &.{ opts.zlex_exe, "flex", "-t", prefix_opt.valueOf(), "-R", "-L" },
+                };
+            } else {
+                break :cmds_brk &[_][]const []const u8{
+                    &.{ opts.zlex_exe, "flex", "-t", prefix_opt.valueOf(), "-R" },
+                };
+            }
+        };
         const result = try zcmd.run(.{
             .allocator = arena,
-            .commands = &[_][]const []const u8{
-                &.{ opts.zlex_exe, "flex", "-t", prefix_opt.valueOf(), "-R" },
-            },
+            .commands = commands,
             .stdin_input = generated_l_file.items,
         });
         result.assertSucceededPanic(.{});

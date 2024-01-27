@@ -178,6 +178,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     // std.debug.print("\nsection: {any}, line{d}\n", .{ parser.context.cur_section, parser.context.cur_loc.line });
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <INITIAL>^[ \t]+.*$ {
@@ -206,6 +207,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+    try ZA.CONTINUE();
   }
 
 <INITIAL>^\%\{[ \t]*$ {
@@ -231,6 +233,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     parser.context.cur_codeblock.start.col = parser.yy.leng;
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <INITIAL,code_block>^\%\}[ \t]*$ {
@@ -256,21 +259,24 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     parser.context.cur_codeblock = Parser.Context.CodeBlock.init(&parser.context);
+    try ZA.CONTINUE();
   }
 
 <INITIAL>^%(s|x) {
+    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     const line = try parser.readRestLine();
     const condition_name = try extractStartConditionName(line);
-    // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
+    std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
     const s = parser.context.start_conditions.name_buf.items.len;
     try parser.context.start_conditions.name_buf.appendSlice(condition_name);
     const e = parser.context.start_conditions.name_buf.items.len;
     try parser.context.start_conditions.names.append(parser.context.start_conditions.name_buf.items[s..e]);
     try parser.context.start_conditions.locs.append(parser.context.cur_loc);
-    // std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
+    std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
-    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <code_block>.* {
@@ -280,6 +286,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     // std.debug.print("code block content:{s}\n", .{parser.yy.text[0..parser.yy.leng]});
     parser.context.cur_loc.col += parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <code_block>\n {
@@ -289,6 +296,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     // std.debug.print("code block content:{s}\n", .{parser.yy.text[0..parser.yy.leng]});
     parser.context.cur_loc.col += parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <rule>^\%\{[ \t]*$ {
@@ -314,6 +322,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     parser.context.cur_codeblock.start.col = parser.yy.leng;
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <rule>.* {
@@ -359,6 +368,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     // std.debug.print("rule line:{s}, {d},{d}\n", .{ line, parser.context.cur_loc.line, parser.context.cur_loc.col });
     parser.context.cur_loc.col = parser.yy.leng;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 
@@ -368,10 +378,12 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
     // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 <user_block>(.|\n)* {
     _ = parser;
+    try ZA.CONTINUE();
   }
 
 <*>.|\n {
@@ -382,6 +394,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
         parser.context.cur_loc.col += 1;
     }
     // std.debug.print("default now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    try ZA.CONTINUE();
   }
 
 %%

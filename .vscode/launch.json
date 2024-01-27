@@ -7,6 +7,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug zlex_parser",
+      "program": "${workspaceFolder}/tests/zlex_parser/zig-out/bin/zlex_parser",
+      "args": ["../rpcalc/scan.l"],
+      "cwd": "${workspaceFolder}/tests/zlex_parser"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug zison",
       "program": "${workspaceFolder}/zig-out/bin/zison",
       "args": ["bison"],

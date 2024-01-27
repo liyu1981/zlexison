@@ -14,6 +14,7 @@ const ZA = struct {
             REJECT,
             TERMINATE,
             YYLESS,
+            CONTINUE,
         };
         pub const INT_RETURN = 0;
         pub const INT_REJECT = 1;
@@ -22,11 +23,11 @@ const ZA = struct {
         pub const INT_CONTINUE = std.math.maxInt(c_int);
     };
 
-    pub fn RETURN() !void {
-        return YYControl.E.RETURN;
+    pub fn CONTINUE() !void {
+        return YYControl.E.CONTINUE;
     }
 
-    pub const YYGuts = struct {
+    pub const YYGuts = extern struct {
         // /* User-defined. Not touched by flex. */
         // YY_EXTRA_TYPE yyextra_r;
 
@@ -56,25 +57,25 @@ const ZA = struct {
         yy_more_len: c_int,
     };
 
-    pub const YYBufferState = struct {
-        yy_input_file: uint_ptr, // FILE* as uint_ptr
+    pub const YYBufferState = extern struct {
+        yy_input_file: *std.c.FILE,
         yy_ch_buf: [*c]u8, // input buffer
         yy_buf_pos: [*c]u8, // current position in input buffer
-        yy_buf_size: i64, // Size of input buffer in bytes, not including room for EOB characters.
-        yy_n_chars: i64, // Number of characters read into yy_ch_buf, not including EOB characters.
-        yy_is_our_buffer: i64, // Whether we "own" the buffer - i.e., we know we created it,
+        yy_buf_size: c_int, // Size of input buffer in bytes, not including room for EOB characters.
+        yy_n_chars: c_int, // Number of characters read into yy_ch_buf, not including EOB characters.
+        yy_is_our_buffer: c_int, // Whether we "own" the buffer - i.e., we know we created it,
         // and can realloc() it to grow
         // it, and should free() it to delete it.
-        yy_is_interactive: i64, // Whether this is an "interactive" input source; if so, and
+        yy_is_interactive: c_int, // Whether this is an "interactive" input source; if so, and
         // if we're using stdio for input, then we want to use getc()
         // instead of fread(), to make sure we stop fetching input after
         // each newline.
-        yy_at_bol: i64, // Whether we're considered to be at the beginning of a line.
+        yy_at_bol: c_int, // Whether we're considered to be at the beginning of a line.
         // If so, '^' rules will be active on the next match, otherwise not.
-        yy_bs_lineno: i64, // *< The line count.
-        yy_bs_column: i64, // *< The column count.
-        yy_fill_buffer: i64, // Whether to try to fill the input buffer when we reach the end of it.
-        yy_buffer_status: i64,
+        yy_bs_lineno: c_int, // *< The line count.
+        yy_bs_column: c_int, // *< The column count.
+        yy_fill_buffer: c_int, // Whether to try to fill the input buffer when we reach the end of it.
+        yy_buffer_status: c_int,
 
         const YY_BUFFER_NEW = 0;
         const YY_BUFFER_NORMAL = 1;
