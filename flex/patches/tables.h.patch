@@ -1,7 +1,7 @@
-diff --git a/flex/flex-2.6.4/src/tables.h b/flex/flex-2.6.4/src/tables.h
+diff --git a/src/tables.h b/src/tables.h
 index 4720f1a..b8c2bbe 100644
---- a/flex/flex-2.6.4/src/tables.h
-+++ b/flex/flex-2.6.4/src/tables.h
+--- a/src/tables.h
++++ b/src/tables.h
 @@ -35,9 +35,6 @@
  #ifndef TABLES_H
  #define TABLES_H

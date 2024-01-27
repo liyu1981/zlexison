@@ -10,35 +10,35 @@ const common_flags = [_][]const u8{
 const c_flags = [_][]const u8{} ++ common_flags;
 
 const flex_srcs_c = [_][]const u8{
-    "flex-2.6.4/src/buf.c",
-    "flex-2.6.4/src/ccl.c",
-    "flex-2.6.4/src/dfa.c",
-    "flex-2.6.4/src/ecs.c",
-    "flex-2.6.4/src/filter.c",
-    // "flex-2.6.4/src/flexdef.h",
-    // "flex-2.6.4/src/flexint.h",
-    "flex-2.6.4/src/gen.c",
-    "flex-2.6.4/src/main.c",
-    "flex-2.6.4/src/misc.c",
-    "flex-2.6.4/src/nfa.c",
-    "flex-2.6.4/src/options.c",
-    "flex-2.6.4/src/options.h",
-    // "flex-2.6.4/src/parse.y",
-    "flex-2.6.4/src/regex.c",
-    "flex-2.6.4/src/scanflags.c",
-    "flex-2.6.4/src/scanopt.c",
-    "flex-2.6.4/src/scanopt.h",
-    "flex-2.6.4/src/skel.c",
-    "flex-2.6.4/src/sym.c",
-    "flex-2.6.4/src/tables.c",
-    "flex-2.6.4/src/tables.h",
-    "flex-2.6.4/src/tables_shared.c",
-    // "flex-2.6.4/src/tables_shared.h",
-    "flex-2.6.4/src/tblcmp.c",
-    "flex-2.6.4/src/version.h",
-    "flex-2.6.4/src/yylex.c",
-    "flex-2.6.4/src/scan.c",
-    "flex-2.6.4/src/parse.c",
+    "flex/src/buf.c",
+    "flex/src/ccl.c",
+    "flex/src/dfa.c",
+    "flex/src/ecs.c",
+    "flex/src/filter.c",
+    // "flex/src/flexdef.h",
+    // "flex/src/flexint.h",
+    "flex/src/gen.c",
+    "flex/src/main.c",
+    "flex/src/misc.c",
+    "flex/src/nfa.c",
+    "flex/src/options.c",
+    "flex/src/options.h",
+    // "flex/src/parse.y",
+    "flex/src/regex.c",
+    "flex/src/scanflags.c",
+    "flex/src/scanopt.c",
+    "flex/src/scanopt.h",
+    "flex/src/skel.c",
+    "flex/src/sym.c",
+    "flex/src/tables.c",
+    "flex/src/tables.h",
+    "flex/src/tables_shared.c",
+    // "flex/src/tables_shared.h",
+    "flex/src/tblcmp.c",
+    "flex/src/version.h",
+    "flex/src/yylex.c",
+    "flex/src/scan.c",
+    "flex/src/parse.c",
 };
 
 pub fn build(b: *std.Build) void {
@@ -50,7 +50,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    flex_as_lib.addIncludePath(.{ .path = "flex-2.6.4/src" });
+    flex_as_lib.addIncludePath(.{ .path = "flex/src" });
     flex_as_lib.linkSystemLibrary2("m", .{});
 
     flex_as_lib.addCSourceFiles(.{ .files = &flex_srcs_c, .flags = &c_flags });

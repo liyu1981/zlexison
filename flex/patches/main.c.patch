@@ -1,7 +1,7 @@
-diff --git a/flex/flex-2.6.4/src/main.c b/flex/flex-2.6.4/src/main.c
+diff --git a/src/main.c b/src/main.c
 index aba8d6a..e5eac44 100644
---- a/flex/flex-2.6.4/src/main.c
-+++ b/flex/flex-2.6.4/src/main.c
+--- a/src/main.c
++++ b/src/main.c
 @@ -195,7 +195,7 @@ int flex_main (int argc, char *argv[])
  }
  

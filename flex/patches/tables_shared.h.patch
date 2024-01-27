@@ -1,0 +1,13 @@
+diff --git a/src/tables_shared.h b/src/tables_shared.h
+index bbf9910..c6b9794 100644
+--- a/src/tables_shared.h
++++ b/src/tables_shared.h
+@@ -103,6 +103,8 @@ enum yytbl_flags {
+ 	YYTD_STRUCT = 0x10  /**< data consists of yy_trans_info structs */
+ };
+ 
++#include "flexdef.h"
++
+ /* The serialized tables header. */
+ struct yytbl_hdr {
+ 	flex_uint32_t th_magic;  /**< Must be 0xF13C57B1 (comes from "Flex Table") */
