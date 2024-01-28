@@ -692,8 +692,11 @@ extern void zyy_call_user_init(uintptr_t zyy_parser_intptr);
             yyless(zyy_parser_param_reg[0]); \
         } break;                             \
     }
-#define YY_USER_ACTION \
-    (zyy_call_user_action(zyy_parser_intptr));
+#define YY_USER_ACTION                           \
+    {                                            \
+        yyset_column(yycolumn + yyleng, yyg);    \
+        zyy_call_user_action(zyy_parser_intptr); \
+    };
 #define YY_USER_INIT \
     (zyy_call_user_init(zyy_parser_intptr));
 

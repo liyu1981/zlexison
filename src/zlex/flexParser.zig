@@ -840,7 +840,7 @@ export fn zyy_parser_start_condition(parser_intptr: usize) u32 {
 }
 
 fn zyy_parser_start_condition_impl(parser: *Parser) anyerror!void {
-    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     const line = try parser.readRestLine();
     const condition_name = try extractStartConditionName(line);
     // std.debug.print("start condition line: {s}, {s}\n", .{ line, condition_name });
@@ -849,10 +849,10 @@ fn zyy_parser_start_condition_impl(parser: *Parser) anyerror!void {
     const e = parser.context.start_conditions.name_buf.items.len;
     try parser.context.start_conditions.names.append(parser.context.start_conditions.name_buf.items[s..e]);
     try parser.context.start_conditions.locs.append(parser.context.cur_loc);
-    std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
+    // std.debug.print("start condition line: {s}, {s}, {d}\n", .{ line, condition_name, parser.context.start_conditions.names.items.len });
     parser.context.cur_loc.line += 1;
     parser.context.cur_loc.col = 0;
-    std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
+    // std.debug.print("now loc: line={d} col={d}\n", .{ parser.context.cur_loc.line, parser.context.cur_loc.col });
     try ZA.CONTINUE();
 }
 

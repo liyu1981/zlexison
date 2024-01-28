@@ -26,6 +26,7 @@ extern void <= ctx.prefix : {s} =>_call_user_init(uintptr_t zyy_parser_intptr);
         } break;                             \
     }
 #define YY_USER_ACTION                           \
-    (<= ctx.prefix : {s} =>_call_user_action(<= ctx.prefix : {s} =>_parser_intptr));
+    {yyset_column(yycolumn + yyleng, yyg);       \
+     <= ctx.prefix : {s} =>_call_user_action(<= ctx.prefix : {s} =>_parser_intptr);};
 #define YY_USER_INIT                           \
     (<= ctx.prefix : {s} =>_call_user_init(<= ctx.prefix : {s} =>_parser_intptr));

@@ -241,11 +241,20 @@ fn generateAll() !u8 {
         try f.writeAll(result.stdout.?);
     }
     {
+        const commands = brk: {
+            if (opts.noline) {
+                break :brk &[_][]const []const u8{
+                    &.{ opts.zlex_exe, "-t", "yyc", "-p", parser.prefix, "--noline", opts.input_file_path },
+                };
+            } else {
+                break :brk &[_][]const []const u8{
+                    &.{ opts.zlex_exe, "-t", "yyc", "-p", parser.prefix, opts.input_file_path },
+                };
+            }
+        };
         const result = try zcmd.run(.{
             .allocator = allocator,
-            .commands = &[_][]const []const u8{
-                &.{ opts.zlex_exe, "-t", "yyc", "-p", parser.prefix, opts.input_file_path },
-            },
+            .commands = commands,
         });
         result.assertSucceededPanic(.{});
         const yyc_file_name = try jstring.JString.newFromFormat(allocator, "{s}.yy.c", .{opts.output_file_prefix.?});
