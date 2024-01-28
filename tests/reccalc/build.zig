@@ -12,7 +12,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     var exe = b.addExecutable(.{
-        .name = "rpcalc",
+        .name = "calc",
         .root_source_file = .{ .path = "main.zig" },
         .target = target,
         .optimize = optimize,

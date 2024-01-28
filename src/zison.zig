@@ -22,7 +22,7 @@ const OutputType = enum(u8) {
 const ZisonOptions = struct {
     input_file_path: []const u8,
     output_type: OutputType,
-    zlex_exe: []const u8 = undefined,
+    zison_exe: []const u8 = undefined,
     prefix: ?[]const u8 = null,
     output_file_prefix: ?[]const u8 = null,
 };
@@ -37,12 +37,12 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
         .input_file_path = "",
         .output_type = .all,
     };
-    r.zlex_exe = args[0];
+    r.zison_exe = args[0];
     const args1 = args[1..];
     var i: usize = 0;
     if (args1.len == 0) return ZisonError.InvalidOption;
     if (std.mem.eql(u8, args1[0], "bison")) {
-        @import("zison/runAsBison.zig").run_as_bison(args1); // there is no turning back :)
+        @import("zison/runAsBison.zig").run_as_bison(args1, r.zison_exe); // there is no turning back :)
     }
     while (i < args1.len) {
         const arg = args1[i];

@@ -12,6 +12,7 @@ pub const Context = struct {
         TOK_STAR,
         TOK_SLASH,
         TOK_EOF,
+        TOK_EOL,
         TOK_NUM,
         TOK_STR,
     };
@@ -22,6 +23,7 @@ pub const Context = struct {
         TOK_STAR: u8,
         TOK_SLASH: u8,
         TOK_EOF : u8,
+        TOK_EOL : u8,
         TOK_NUM : i64,
         TOK_STR : []const u8,
     };
@@ -72,10 +74,13 @@ pub const Context = struct {
     try ZA.CONTINUE();
   }
 
-"\n"     { parser.context.cur_tok = .{ .TOK_EOF = 'e' }; }
+"\n"     { parser.context.cur_tok = .{ .TOK_EOL = 'l' }; }
 
 .        {
-    std.io.getStdErr().writer().print("syntax error, invalid character: {c} at line: {d}, column: {d}.\n", .{ parser.yy.text[0], ZA.yyget_lineno(), ZA.yyget_column() }) catch |err| { return err; };
+    std.io.getStdErr().writer().print(
+      "syntax error, invalid character: {c} at line: {d}, column: {d}.\n",
+      .{ parser.yy.text[0], ZA.yyget_lineno(), ZA.yyget_column() },
+    ) catch |err| { return err; };
     return error.SyntaxError;
   }
 

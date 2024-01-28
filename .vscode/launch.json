@@ -17,7 +17,7 @@
       "request": "launch",
       "name": "Debug zison",
       "program": "${workspaceFolder}/zig-out/bin/zison",
-      "args": ["bison"],
+      "args": ["bison", "tests/reccalc/parser.y"],
       "cwd": "${workspaceFolder}"
     },
     {

@@ -55,6 +55,7 @@ pub fn build(b: *std.Build) void {
     zison_exe.addModule("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zison_exe, jstring_dep);
     zison_exe.addObjectFile(libbison_a.getEmittedBin());
+    zison_exe.addObjectFile(.{ .path = "bison/bison/lib/libbison.a" });
     zison_exe.linkSystemLibrary2("iconv", .{});
 
     b.installArtifact(zison_exe);
