@@ -2,5 +2,11 @@
   "files.associations": {
     "iconv.h": "c",
     "errno.h": "c"
+  },
+  "[c]": {
+    "editor.formatOnSave": false
+  },
+  "[cc]": {
+    "editor.formatOnSave": false
   }
 }

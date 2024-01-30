@@ -25,13 +25,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    zlex_exe.addCSourceFiles(.{
-        .files = &[_][]const u8{
-            "src/zlex/flex.zyy.c",
-        },
-        .flags = &c_flags,
-    });
-
     zlex_exe.step.dependOn(&libflex_a.step);
     zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
     zlex_exe.addModule("jstring", jstring_dep.module("jstring"));

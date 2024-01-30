@@ -7,6 +7,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug g",
+      "program": "${workspaceFolder}/g",
+      "args": ["tests/flex_simple/simple.txt"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug zlex_parser",
       "program": "${workspaceFolder}/tests/zlex_parser/zig-out/bin/zlex_parser",
       "args": ["../rpcalc/scan.l"],
