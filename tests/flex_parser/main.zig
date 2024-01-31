@@ -21,6 +21,8 @@ pub fn main() !u8 {
     _ = &yylval_param;
 
     var lexer = FlexParser{ .allocator = std.heap.page_allocator };
+    FlexParser.context = FlexParser.Context.init(allocator);
+    defer FlexParser.context.deinit();
 
     try FlexParser.yylex_init(&lexer);
     defer FlexParser.yylex_destroy(&lexer);
