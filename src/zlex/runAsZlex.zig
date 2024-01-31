@@ -79,7 +79,14 @@ pub fn run_as_zlex(opts: struct {
             },
             .stdin_input = yyc_final2.valueOf(),
         });
-        result.assertSucceededPanic(.{});
+        result.assertSucceeded(.{}) catch {
+            var err_js = jstring.JString.newFromSlice(arena, result.stderr.?) catch @panic("OOM!");
+            const err_js_lines = err_js.split("\n", -1) catch @panic("OOM!");
+            std.debug.print("// zig fmt failed with: \n", .{});
+            for (err_js_lines) |line| std.debug.print("// {s}\n", .{line});
+            std.debug.print("// below is the generated source. \n{s}\n", .{yyc_final2});
+            std.os.exit(1);
+        };
         break :brk result.stdout.?;
     };
 

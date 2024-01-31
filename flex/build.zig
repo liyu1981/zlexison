@@ -61,9 +61,16 @@ const flex_objs = [_][]const u8{
     "flex/src/flex-stage1scan_zig.o",
 };
 
+var zflex_dir: std.fs.Dir = undefined;
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+
+    zflex_dir = std.fs.openDirAbsolute(b.pathFromRoot("flex"), .{}) catch |err| {
+        std.debug.print("{any}\n", .{err});
+        @panic("no flex dir?!");
+    };
 
     const zflex_pre_build_step = b.step("zflex_pre_build", "bootstrap, configure and pre-build zflex");
     zflex_pre_build_step.makeFn = zflexPreBuild;
@@ -75,6 +82,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    flex_as_lib.step.dependOn(zflex_pre_build_step);
     flex_as_lib.addIncludePath(.{ .path = "flex/src" });
     flex_as_lib.linkSystemLibrary2("m", .{});
 
@@ -91,15 +99,13 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
     defer aa.deinit();
     const allocator = aa.allocator();
 
-    const zflex_dir = try std.fs.cwd().openDir("flex", .{});
-
     {
         zflex_dir.access("./configure", .{}) catch {
-            std.debug.print("no ./configure found in flex src dir, autogen.sh it...", .{});
+            std.debug.print("no ./configure found in flex src dir, autogen.sh it...\n", .{});
             const result = try zcmd.run(.{
                 .allocator = allocator,
                 .commands = &[_][]const []const u8{
-                    &[_][]const u8{"./autogen.sh"},
+                    &[_][]const u8{ "bash", "./autogen.sh" },
                 },
                 .cwd_dir = zflex_dir,
             });
@@ -110,7 +116,7 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
     {
         try zflex_dir.access("./configure", .{});
         zflex_dir.access("./Makefile", .{}) catch {
-            std.debug.print("no ./Makefile found in flex src dir, configure to gen it...", .{});
+            std.debug.print("no ./Makefile found in flex src dir, configure to gen it...\n", .{});
             var envmap = try std.process.getEnvMap(allocator);
             try envmap.put("CC", "clang");
             try envmap.put("CXX", "clang++");
@@ -128,14 +134,33 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
     }
 
     {
-        try zflex_dir.access("./Makefile", .{});
-        try zflex_dir.access("./src/Makefile", .{});
-        try zflex_dir.access("./src/config.h", .{});
-        std.debug.print("make flex & zflex ...", .{});
+        try zflex_dir.access("./src/mkskel_zig.sh", .{});
+        try zflex_dir.access("./src/zig.skl", .{});
+        std.debug.print("re-gen zig_skel.c ...\n", .{});
+        var zflex_src_dir = try zflex_dir.openDir("src", .{});
+        defer zflex_src_dir.close();
         const result = try zcmd.run(.{
             .allocator = allocator,
             .commands = &[_][]const []const u8{
-                &[_][]const u8{"./make"},
+                &[_][]const u8{ "bash", "./mkskel_zig.sh", ".", "m4", "2.6.4" },
+            },
+            .cwd_dir = zflex_src_dir,
+        });
+        result.assertSucceededPanic(.{ .check_stderr_empty = false });
+        var f = try zflex_src_dir.createFile("zig_skel.c", .{});
+        defer f.close();
+        try f.writeAll(result.stdout.?);
+    }
+
+    {
+        try zflex_dir.access("./Makefile", .{});
+        try zflex_dir.access("./src/Makefile", .{});
+        try zflex_dir.access("./src/config.h", .{});
+        std.debug.print("make flex & zflex ...\n", .{});
+        const result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{"make"},
             },
             .cwd_dir = zflex_dir,
         });
