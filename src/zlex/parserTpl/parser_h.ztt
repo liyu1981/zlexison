@@ -1,6 +1,0 @@
-#include <stdint.h>
-#define zig_extern extern
-zig_extern void <= ctx.prefix : {s} =>_prepare_yy(uintptr_t const a0, uintptr_t const a1, uint8_t *const a2, uintptr_t const a3, uintptr_t const a4, uintptr_t const a5, uintptr_t const a6, uintptr_t const a7);
-<? for(ctx.action_fn_names) |action_fn_name| { ?>
-zig_extern uint32_t <= ctx.prefix : {s} =>_parser_<= action_fn_name: {s} =>(uintptr_t const a0);
-<? } ?>

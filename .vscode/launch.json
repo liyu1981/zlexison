@@ -7,6 +7,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug flex_parser main",
+      "program": "${workspaceFolder}/main",
+      "args": ["tests/flex_parser/flex.l"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug g",
       "program": "${workspaceFolder}/g",
       "args": ["tests/flex_simple/simple.txt"],
