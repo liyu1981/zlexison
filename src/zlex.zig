@@ -100,7 +100,7 @@ pub fn main() !u8 {
             @import("zlex/runAsZlex.zig").run_as_zflex(args[1..]);
         },
         .flex => {
-            @import("zlex/runAsFlex.zig").run_as_flex(args[1..]);
+            @import("zlex/runAsFlex.zig").run_as_flex(args[1..], opts.zlex_exe);
         },
     }
 

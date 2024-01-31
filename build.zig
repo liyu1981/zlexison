@@ -36,6 +36,7 @@ pub fn build(b: *std.Build) !void {
     // zlex_exe.addOptions("config", options);
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
     zlex_exe.addObjectFile(libflex_a.getEmittedBin());
+    // zlex_exe.linkLibC();
 
     b.installArtifact(zlex_exe);
 
