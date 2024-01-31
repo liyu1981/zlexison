@@ -45,7 +45,14 @@ pub fn run_as_zlex(opts: struct {
                 },
             },
         });
-        result.assertSucceededPanic(.{});
+        result.assertSucceeded(.{
+            .print_cmd_term = false,
+            .print_stdout = false,
+            .print_stderr = true,
+        }) catch {
+            std.debug.print("{?s}\n", .{result.stderr});
+            std.os.exit(1);
+        };
         break :brk result.stdout.?;
     };
 
@@ -79,7 +86,11 @@ pub fn run_as_zlex(opts: struct {
             },
             .stdin_input = yyc_final2.valueOf(),
         });
-        result.assertSucceeded(.{}) catch {
+        result.assertSucceeded(.{
+            .print_cmd_term = false,
+            .print_stdout = false,
+            .print_stderr = false,
+        }) catch {
             var err_js = jstring.JString.newFromSlice(arena, result.stderr.?) catch @panic("OOM!");
             const err_js_lines = err_js.split("\n", -1) catch @panic("OOM!");
             std.debug.print("// zig fmt failed with: \n", .{});

@@ -39,9 +39,9 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug zlex dump_parse",
+      "name": "Debug zlex flex",
       "program": "${workspaceFolder}/zig-out/bin/zlex",
-      "args": ["-t", "dump_parse", "src/zlex/flex.zig.l"],
+      "args": ["flex", "--help"],
       "cwd": "${workspaceFolder}"
     },
     {

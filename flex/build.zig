@@ -27,13 +27,13 @@ const flex_srcs_c = [_][]const u8{
     // "flex/src/tblcmp.c",
     // "flex/src/yylex.c",
     // "flex/src/scan.c",
-    // "flex/src/zig_skel.c",
-    // "flex/src/nfa_zig.c",
-    // "flex/src/gen_zig.c",
+    "flex/src/zig_skel.c",
+    "flex/src/nfa_zig.c",
+    "flex/src/gen_zig.c",
     "flex/src/main_zig.c",
-    // "flex/src/misc_zig.c",
-    // "flex/src/parse_zig.c",
-    // "flex/src/stage1scan_zig.c",
+    "flex/src/misc_zig.c",
+    "flex/src/parse_zig.c",
+    "flex/src/stage1scan_zig.c",
 };
 
 const flex_objs = [_][]const u8{
@@ -52,13 +52,13 @@ const flex_objs = [_][]const u8{
     "flex/src/flex-tblcmp.o",
     "flex/src/flex-yylex.o",
     // "flex/src/flex-scan.o",
-    "flex/src/flex-zig_skel.o",
-    "flex/src/flex-nfa_zig.o",
-    "flex/src/flex-gen_zig.o",
+    // "flex/src/flex-zig_skel.o",
+    // "flex/src/flex-nfa_zig.o",
+    // "flex/src/flex-gen_zig.o",
     // "flex/src/flex-main_zig.o",
-    "flex/src/flex-misc_zig.o",
-    "flex/src/flex-parse_zig.o",
-    "flex/src/flex-stage1scan_zig.o",
+    // "flex/src/flex-misc_zig.o",
+    // "flex/src/flex-parse_zig.o",
+    // "flex/src/flex-stage1scan_zig.o",
 };
 
 var zflex_dir: std.fs.Dir = undefined;
