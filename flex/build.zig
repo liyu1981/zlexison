@@ -142,7 +142,8 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
         const result = try zcmd.run(.{
             .allocator = allocator,
             .commands = &[_][]const []const u8{
-                &[_][]const u8{ "bash", "./mkskel_zig.sh", ".", "m4", "2.6.4" },
+                &[_][]const u8{ "bash", "./mkskel_zig.sh", ".", "m4", "2.6.4.1" },
+                // for last version, first 3 should align to flex version, last 1 digit is for zlex
             },
             .cwd_dir = zflex_src_dir,
         });
