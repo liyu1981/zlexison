@@ -1,4 +1,5 @@
 const std = @import("std");
+const zcmd = @import("zcmd").zcmd;
 
 const common_flags = [_][]const u8{
     "-g",
@@ -64,6 +65,11 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const zflex_pre_build_step = b.step("zflex_pre_build", "bootstrap, configure and pre-build zflex");
+    zflex_pre_build_step.makeFn = zflexPreBuild;
+
+    _ = b.addModule("flex", .{ .source_file = .{ .path = b.pathFromRoot("flex/src") } });
+
     const flex_as_lib = b.addStaticLibrary(.{
         .name = "flex_as_lib",
         .target = target,
@@ -76,4 +82,63 @@ pub fn build(b: *std.Build) void {
     for (flex_objs) |obj| flex_as_lib.addObjectFile(.{ .path = obj });
 
     b.installArtifact(flex_as_lib);
+}
+
+fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
+    _ = node;
+    _ = step;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const allocator = aa.allocator();
+
+    const zflex_dir = try std.fs.cwd().openDir("flex", .{});
+
+    {
+        zflex_dir.access("./configure", .{}) catch {
+            std.debug.print("no ./configure found in flex src dir, autogen.sh it...", .{});
+            const result = try zcmd.run(.{
+                .allocator = allocator,
+                .commands = &[_][]const []const u8{
+                    &[_][]const u8{"./autogen.sh"},
+                },
+                .cwd_dir = zflex_dir,
+            });
+            result.assertSucceededPanic(.{ .check_stderr_empty = false });
+        };
+    }
+
+    {
+        try zflex_dir.access("./configure", .{});
+        zflex_dir.access("./Makefile", .{}) catch {
+            std.debug.print("no ./Makefile found in flex src dir, configure to gen it...", .{});
+            var envmap = try std.process.getEnvMap(allocator);
+            try envmap.put("CC", "clang");
+            try envmap.put("CXX", "clang++");
+            try envmap.put("CFLAGS", "-DDEBUG -g");
+            const result = try zcmd.run(.{
+                .allocator = allocator,
+                .commands = &[_][]const []const u8{
+                    &[_][]const u8{"./configure"},
+                },
+                .cwd_dir = zflex_dir,
+                .env_map = &envmap,
+            });
+            result.assertSucceededPanic(.{ .check_stderr_empty = false });
+        };
+    }
+
+    {
+        try zflex_dir.access("./Makefile", .{});
+        try zflex_dir.access("./src/Makefile", .{});
+        try zflex_dir.access("./src/config.h", .{});
+        std.debug.print("make flex & zflex ...", .{});
+        const result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{"./make"},
+            },
+            .cwd_dir = zflex_dir,
+        });
+        result.assertSucceededPanic(.{ .check_stderr_empty = false });
+    }
 }

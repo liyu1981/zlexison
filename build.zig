@@ -1,5 +1,6 @@
 const std = @import("std");
 const jstring_build = @import("jstring");
+const zcmd = @import("zcmd").zcmd;
 
 const common_flags = [_][]const u8{
     "-g",
@@ -8,7 +9,7 @@ const common_flags = [_][]const u8{
 
 const c_flags = [_][]const u8{} ++ common_flags;
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
@@ -25,9 +26,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    var flex_bin_step = b.step("flex_bin", "copy flex/flex/src/flex as src/flex.bin");
+    flex_bin_step.makeFn = flexBinStepMakeFn;
+
+    zlex_exe.step.dependOn(flex_bin_step);
     zlex_exe.step.dependOn(&libflex_a.step);
     zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
     zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
+    // zlex_exe.addOptions("config", options);
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
     zlex_exe.addObjectFile(libflex_a.getEmittedBin());
 
@@ -52,4 +58,19 @@ pub fn build(b: *std.Build) void {
     zison_exe.linkSystemLibrary2("iconv", .{});
 
     b.installArtifact(zison_exe);
+}
+
+fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
+    _ = node;
+    _ = step;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const allocator = aa.allocator();
+
+    {
+        const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
+            &[_][]const u8{ "cp", "flex/flex/src/flex", "src/flex.bin" },
+        } });
+        result.assertSucceededPanic(.{});
+    }
 }

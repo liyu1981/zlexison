@@ -97,9 +97,11 @@ pub fn main() !u8 {
             };
         },
         .zflex => {
-            @import("zlex/runAsZlex.zig").run_as_zflex(args[1..]); // there is no turning back :)
+            @import("zlex/runAsZlex.zig").run_as_zflex(args[1..]);
         },
-        .flex => {},
+        .flex => {
+            @import("zlex/runAsFlex.zig").run_as_flex(args[1..]);
+        },
     }
 
     return 0;

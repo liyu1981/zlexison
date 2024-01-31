@@ -1,3 +1,4 @@
+src/flex.bin
 *.gv
 *.output
 *.yy.c
