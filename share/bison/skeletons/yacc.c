@@ -348,10 +348,8 @@ void ]b4_prefix[pstate_delete (]b4_prefix[pstate *ps);
 # _b4_declare_yyparse
 # -------------------
 # When not the push parser.
-m4_define([_b4_declare_yyparse],
-[[int ]b4_prefix[parse (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[);
-]m4_ifdef([b4_start_symbols],
-          [m4_map([_b4_declare_sub_yyparse], m4_defn([b4_start_symbols]))])])
+m4_define([_b4_declare_yyparse],[]m4_ifdef([b4_start_symbols],
+          [m4_map([_b4_declare_sub_yyparse], m4_defn([b4_start_symbols]))]))
 
 
 # b4_declare_yyparse
@@ -427,16 +425,16 @@ b4_header_if([[
 
 b4_output_begin([b4_parser_file_name])[
 ]b4_copyright([Bison implementation for Yacc-like parsers in C])[
-/* C LALR(1) parser skeleton written by Richard Stallman, by
-   simplifying the original so-called "semantic" parser.  */
+// /* C LALR(1) parser skeleton written by Richard Stallman, by
+//   simplifying the original so-called "semantic" parser.  */
 
 ]b4_disclaimer[
-/* All symbols defined below should begin with yy or YY, to avoid
-   infringing on user name space.  This should be done even for local
-   variables, as they might otherwise be expanded by user macros.
-   There are some unavoidable exceptions within include files to
-   define necessary library symbols; they are noted "INFRINGES ON
-   USER NAME SPACE" below.  */
+// /* All symbols defined below should begin with yy or YY, to avoid
+//    infringing on user name space.  This should be done even for local
+//    variables, as they might otherwise be expanded by user macros.
+//    There are some unavoidable exceptions within include files to
+//    define necessary library symbols; they are noted "INFRINGES ON
+//    USER NAME SPACE" below.  */
 
 ]b4_identification[
 ]b4_percent_code_get([[top]])[]dnl

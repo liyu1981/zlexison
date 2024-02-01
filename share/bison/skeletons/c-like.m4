@@ -39,8 +39,10 @@ $3\1])$4])
 # b4_comment(TEXT, [PREFIX])
 # --------------------------
 # Put TEXT in comment.  Prefix all the output lines with PREFIX.
+# m4_define([b4_comment],
+# [_b4_comment([$1], [$2/* ], [$2   ], [  */])])
 m4_define([b4_comment],
-[_b4_comment([$1], [$2/* ], [$2   ], [  */])])
+[_b4_comment([$1], [// $2/* ], [// $2   ], [//  */])])
 
 
 

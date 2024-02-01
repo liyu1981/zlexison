@@ -58,23 +58,23 @@ m4_define([b4_cpp_guard_close],
 # b4_pull_flag if they use the values of the %define variables api.pure or
 # api.push-pull.
 m4_define([b4_identification],
-[[/* Identify Bison output, and Bison version.  */
-#define YYBISON ]b4_version[
+[[// /* Identify Bison output, and Bison version.  */
+pub const YYBISON = ]b4_version[;
 
-/* Bison version string.  */
-#define YYBISON_VERSION "]b4_version_string["
+// /* Bison version string.  */
+pub const YYBISON_VERSION = "]b4_version_string[";
 
-/* Skeleton name.  */
-#define YYSKELETON_NAME ]b4_skeleton[]m4_ifdef([b4_pure_flag], [[
+// /* Skeleton name.  */
+pub const YYSKELETON_NAME = ]b4_skeleton[;]m4_ifdef([b4_pure_flag], [[
 
-/* Pure parsers.  */
-#define YYPURE ]b4_pure_flag])[]m4_ifdef([b4_push_flag], [[
+// /* Pure parsers.  */
+pub const YYPURE = ]b4_pure_flag])[;]m4_ifdef([b4_push_flag], [[
 
-/* Push parsers.  */
-#define YYPUSH ]b4_push_flag])[]m4_ifdef([b4_pull_flag], [[
+// /* Push parsers.  */
+pub const YYPUSH = ]b4_push_flag])[;]m4_ifdef([b4_pull_flag], [[
 
-/* Pull parsers.  */
-#define YYPULL ]b4_pull_flag])[
+// /* Pull parsers.  */
+pub const YYPULL = ]b4_pull_flag])[;
 ]])
 
 
@@ -456,17 +456,7 @@ dnl use C' _Noreturn in C++, to avoid -Wc11-extensions warnings.
 
 # b4_cast_define
 # --------------
-m4_define([b4_cast_define],
-[# ifndef YY_CAST
-#  ifdef __cplusplus
-#   define YY_CAST(Type, Val) static_cast<Type> (Val)
-#   define YY_REINTERPRET_CAST(Type, Val) reinterpret_cast<Type> (Val)
-#  else
-#   define YY_CAST(Type, Val) ((Type) (Val))
-#   define YY_REINTERPRET_CAST(Type, Val) ((Type) (Val))
-#  endif
-# endif[]dnl
-])
+m4_define([b4_cast_define], [])
 
 
 # b4_null_define
@@ -476,19 +466,7 @@ m4_define([b4_cast_define],
 #
 # In C++ pre C++11 it is standard practice to use 0 (not NULL) for the
 # null pointer.  In C, prefer ((void*)0) to avoid having to include stdlib.h.
-m4_define([b4_null_define],
-[# ifndef YY_NULLPTR
-#  if defined __cplusplus
-#   if 201103L <= __cplusplus
-#    define YY_NULLPTR nullptr
-#   else
-#    define YY_NULLPTR 0
-#   endif
-#  else
-#   define YY_NULLPTR ((void*)0)
-#  endif
-# endif[]dnl
-])
+m4_define([b4_null_define], [])
 
 
 # b4_null
@@ -565,16 +543,11 @@ m4_define([b4_token_enum],
 # --------------
 # The definition of the token kinds.
 m4_define([b4_token_enums],
-[b4_any_token_visible_if([[/* Token kinds.  */
-#ifndef ]b4_api_PREFIX[TOKENTYPE
-# define ]b4_api_PREFIX[TOKENTYPE
-  enum ]b4_api_prefix[tokentype
-  {
+[b4_any_token_visible_if([[// /* Token kinds.  */
+pub const ]b4_api_prefix[token_kind_t = enum {
     ]b4_symbol(empty, [id])[ = -2,
 ]b4_symbol_foreach([b4_token_enum])dnl
 [  };
-  typedef enum ]b4_api_prefix[tokentype ]b4_api_prefix[token_kind_t;
-#endif
 ]])])
 
 
@@ -617,14 +590,12 @@ m4_define([b4_symbol_enum],
 # Defining YYEMPTY here is important: it forces the compiler
 # to use a signed type, which matters for yytoken.
 m4_define([b4_declare_symbol_enum],
-[[/* Symbol kind.  */
-enum yysymbol_kind_t
+[[// /* Symbol kind.  */
+pub const yysymbol_kind_t = enum(i32)
 {
   ]b4_symbol(empty, [kind_base])[ = -2,
 ]b4_symbol_foreach([b4_symbol_enum])dnl
-[};
-typedef enum yysymbol_kind_t yysymbol_kind_t;
-]])])
+[};]])])
 
 
 ## ----------------- ##
@@ -820,8 +791,8 @@ m4_define([b4_symbol_type_register],
                          [b4_symbol([$1], [id])],
                          [yykind_[]b4_symbol([$1], [number])])])dnl
 m4_append([b4_union_members],
-m4_expand([m4_format([  %-40s %s],
-                     m4_expand([b4_symbol([$1], [type]) b4_symbol([$1], [type_tag]);]),
+m4_expand([m4_format([  %-40s ,%s],
+                     m4_expand([b4_symbol([$1], [type_tag]): b4_symbol([$1], [type])]),
                      [b4_symbol_tag_comment([$1])])]))
 ])
 
@@ -927,7 +898,7 @@ m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 # --------------------
 m4_define([b4_value_type_define],
 [b4_value_type_setup[]dnl
-/* Value type.  */
+// /* Value type.  */
 m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 [code],
 [[#if ! defined ]b4_api_PREFIX[STYPE && ! defined ]b4_api_PREFIX[STYPE_IS_DECLARED
@@ -938,18 +909,13 @@ typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
 ]],
 [m4_bmatch(b4_percent_define_get([[api.value.type]]),
 [union\|union-directive],
-[[#if ! defined ]b4_api_PREFIX[STYPE && ! defined ]b4_api_PREFIX[STYPE_IS_DECLARED
-]b4_percent_define_get_syncline([[api.value.union.name]])dnl
-[union ]b4_percent_define_get([[api.value.union.name]])[
+[dnl
+[pub const ]b4_percent_define_get([[api.value.union.name]])[ = union ][
 {
 ]b4_user_union_members[
 };
-]b4_percent_define_get_syncline([[api.value.union.name]])dnl
-[typedef union ]b4_percent_define_get([[api.value.union.name]])[ ]b4_api_PREFIX[STYPE;
-# define ]b4_api_PREFIX[STYPE_IS_TRIVIAL 1
-# define ]b4_api_PREFIX[STYPE_IS_DECLARED 1
-#endif
-]])])])
+]dnl
+])])])
 
 
 # b4_location_type_define
@@ -990,11 +956,10 @@ b4_pure_if([], [[extern ]b4_api_PREFIX[STYPE ]b4_prefix[lval;
 # b4_YYDEBUG_define
 # -----------------
 m4_define([b4_YYDEBUG_define],
-[[/* Debug traces.  */
+[[// /* Debug traces.  */
 ]m4_if(b4_api_prefix, [yy],
-[[#ifndef YYDEBUG
-# define YYDEBUG ]b4_parse_trace_if([1], [0])[
-#endif]],
+[[pub const YYDEBUG = ]b4_parse_trace_if([1], [0])[;
+]],
 [[#ifndef ]b4_api_PREFIX[DEBUG
 # if defined YYDEBUG
 #if YYDEBUG
@@ -1011,10 +976,9 @@ m4_define([b4_YYDEBUG_define],
 # b4_declare_yydebug
 # ------------------
 m4_define([b4_declare_yydebug],
-[b4_YYDEBUG_define[
-#if ]b4_api_PREFIX[DEBUG
-extern int ]b4_prefix[debug;
-#endif][]dnl
+[b4_YYDEBUG_define[]b4_parse_trace_if([
+pub extern var ]b4_prefix[debug: bool;
+], [])[]dnl
 ])
 
 # b4_yylloc_default_define

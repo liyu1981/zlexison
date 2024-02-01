@@ -22,9 +22,11 @@ pub fn runAsBison(args: [][:0]const u8, zison_exe_path: []const u8) void {
     argv[0] = zison_bison_path;
     for (1..args.len) |i| argv[i] = args[i];
 
-    const envmap = std.process.getEnvMap(arena) catch {
+    var envmap = std.process.getEnvMap(arena) catch {
         @panic("OOM!");
     };
+    const bison_share_path = std.fs.path.join(arena, &[_][]const u8{ zison_exe_dir.?, "share/bison" }) catch @panic("OOM!");
+    envmap.put("BISON_PKGDATADIR", bison_share_path) catch @panic("BISON_PKGDATADIR set failed!");
 
     const ret = std.process.execve(arena, argv, &envmap);
     std.debug.print("Oops, {any}\n", .{ret});
