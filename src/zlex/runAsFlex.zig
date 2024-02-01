@@ -7,10 +7,10 @@ pub fn run_as_flex(args: [][:0]const u8, zlex_exe_path: []const u8) void {
     // defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    std.debug.print("embed flex: {d} bytes.\n", .{flexbin.len});
+    // std.debug.print("embed flex: {d} bytes.\n", .{flexbin.len});
 
     const zlex_exe_dir = std.fs.path.dirname(zlex_exe_path);
-    std.debug.print("zlex exe dir: {?s}\n", .{zlex_exe_dir});
+    // std.debug.print("zlex exe dir: {?s}\n", .{zlex_exe_dir});
     const zlex_flex_path = ensureZlexFlex(arena, zlex_exe_dir.?) catch |err| {
         std.debug.print("{any}\n", .{err});
         @panic("ensureZlexFlex failed!");

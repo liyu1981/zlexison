@@ -1,3 +1,4 @@
+src/bison.bin
 src/flex.bin
 *.gv
 *.output

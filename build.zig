@@ -33,10 +33,8 @@ pub fn build(b: *std.Build) !void {
     zlex_exe.step.dependOn(&libflex_a.step);
     zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
     zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
-    // zlex_exe.addOptions("config", options);
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
     zlex_exe.addObjectFile(libflex_a.getEmittedBin());
-    // zlex_exe.linkLibC();
 
     b.installArtifact(zlex_exe);
 
@@ -50,13 +48,14 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
+    var bison_bin_step = b.step("bison_bin", "copy bison/bison/src/bison as src/bison.bin");
+    bison_bin_step.makeFn = bisonBinStepMakeFn;
+
+    zison_exe.step.dependOn(bison_bin_step);
     zison_exe.step.dependOn(&libbison_a.step);
     zison_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
     zison_exe.addModule("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zison_exe, jstring_dep);
-    zison_exe.addObjectFile(libbison_a.getEmittedBin());
-    zison_exe.addObjectFile(.{ .path = "bison/bison/lib/libbison.a" });
-    zison_exe.linkSystemLibrary2("iconv", .{});
 
     b.installArtifact(zison_exe);
 }
@@ -71,6 +70,21 @@ fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!v
     {
         const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
             &[_][]const u8{ "cp", "flex/flex/src/flex", "src/flex.bin" },
+        } });
+        result.assertSucceededPanic(.{});
+    }
+}
+
+fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
+    _ = node;
+    _ = step;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const allocator = aa.allocator();
+
+    {
+        const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
+            &[_][]const u8{ "cp", "bison/bison/src/bison", "src/bison.bin" },
         } });
         result.assertSucceededPanic(.{});
     }

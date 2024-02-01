@@ -1,0 +1,25 @@
+.{
+    .name = "zison",
+    .version = "0.0.0",
+
+    .dependencies = .{
+        .zcmd = .{
+            .url = "../../zcmd",
+            .hash = "122033f9f96de4c22c2ddd31ee5a72e474dbe37f0a21dedf34907e7392430460fb2f",
+        },
+        .jstring = .{
+            .url = "../../jstring",
+            .hash = "1220e24bb3656b7657e7f2853864a850a9e71fa307ff49a15545fa1a1c9da41deed2",
+        },
+    },
+
+    .paths = .{
+        "",
+        // For example...
+        //"build.zig",
+        //"build.zig.zon",
+        //"src",
+        //"LICENSE",
+        //"README.md",
+    },
+}

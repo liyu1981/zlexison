@@ -4,72 +4,53 @@ const jstring = @import("jstring");
 
 const usage =
     \\ usage: zison -o <output_file_prefix> <input_file_path>
-    \\        zison -t [h|zig|yyc] -p <prefix> <input_file_path>
     \\        zison bison <all_bison_options>
     \\
 ;
 
-const OutputType = enum(u8) {
-    all,
-    zig,
-    h,
-    yyc,
-    sanitize,
-    dump_parse,
-    dump_generated_l,
+const ZisonRunMode = enum {
+    zison,
+    zbison,
+    bison,
 };
 
 const ZisonOptions = struct {
+    runMode: ZisonRunMode,
     input_file_path: []const u8,
-    output_type: OutputType,
+    outut_file_path: []const u8,
     zison_exe: []const u8 = undefined,
-    prefix: ?[]const u8 = null,
-    output_file_prefix: ?[]const u8 = null,
 };
 
 const ZisonError = error{
     InvalidOption,
-    FlexSyntaxError,
 };
 
 fn parseArgs(args: [][:0]u8) !ZisonOptions {
     var r: ZisonOptions = .{
+        .runMode = .zison,
         .input_file_path = "",
-        .output_type = .all,
+        .outut_file_path = "",
+        .zison_exe = args[0],
     };
-    r.zison_exe = args[0];
     const args1 = args[1..];
     var i: usize = 0;
     if (args1.len == 0) return ZisonError.InvalidOption;
+
     if (std.mem.eql(u8, args1[0], "bison")) {
-        @import("zison/runAsBison.zig").run_as_bison(args1, r.zison_exe); // there is no turning back :)
+        r.runMode = .bison;
+        return r;
     }
+
+    if (std.mem.eql(u8, args1[0], "zbison")) {
+        r.runMode = .zbison;
+        return r;
+    }
+
     while (i < args1.len) {
         const arg = args1[i];
-        if (std.mem.eql(u8, arg, "-t")) {
+        if (std.mem.eql(u8, arg, "-o")) {
             if (i + 1 < args1.len) {
-                const arg1 = args1[i + 1];
-                if (std.meta.stringToEnum(OutputType, arg1)) |e| {
-                    r.output_type = e;
-                    i += 2;
-                    continue;
-                } else {
-                    return ZisonError.InvalidOption;
-                }
-            } else {
-                return ZisonError.InvalidOption;
-            }
-        } else if (std.mem.eql(u8, arg, "-p")) {
-            if (i + 1 < args1.len) {
-                r.prefix = args1[i + 1];
-                i += 2;
-                continue;
-            } else {
-                return ZisonError.InvalidOption;
-            }
-        } else if (std.mem.eql(u8, arg, "-o")) {
-            if (i + 1 < args1.len) {
-                r.output_file_prefix = args1[i + 1];
+                r.outut_file_path = args1[i + 1];
                 i += 2;
                 continue;
             } else {
@@ -87,6 +68,12 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
     return r;
 }
 
+fn printErrAndUsageExit(err: anyerror) noreturn {
+    std.debug.print("{any}\n", .{err});
+    std.debug.print("{s}\n", .{usage});
+    std.os.exit(1);
+}
+
 var opts: ZisonOptions = undefined;
 
 pub fn main() !u8 {
@@ -99,6 +86,14 @@ pub fn main() !u8 {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
         std.os.exit(1);
     };
+
+    switch (opts.runMode) {
+        .zison => {},
+        .zbison => {},
+        .bison => {
+            @import("zison/runAsBison.zig").run_as_flex(args[1..], opts.zison_exe);
+        },
+    }
 
     return 0;
 }
