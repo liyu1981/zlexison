@@ -1,7 +1,7 @@
 const std = @import("std");
 const bisonbin = @embedFile("../bison.bin");
 
-pub fn run_as_flex(args: [][:0]const u8, zison_exe_path: []const u8) void {
+pub fn runAsBison(args: [][:0]const u8, zison_exe_path: []const u8) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // later there is no going back, so Cool Guys Don't Look At Explosions
     // defer arena_allocator.deinit();
@@ -16,11 +16,11 @@ pub fn run_as_flex(args: [][:0]const u8, zison_exe_path: []const u8) void {
         @panic("ensureZisonBison failed!");
     };
 
-    const argv = arena.alloc([]const u8, args.len + 1) catch {
+    const argv = arena.alloc([]const u8, args.len) catch {
         @panic("OOM!");
     };
     argv[0] = zison_bison_path;
-    for (1..args.len + 1) |i| argv[i] = args[i - 1];
+    for (1..args.len) |i| argv[i] = args[i];
 
     const envmap = std.process.getEnvMap(arena) catch {
         @panic("OOM!");
@@ -50,8 +50,10 @@ fn ensureZisonBison(allocator: std.mem.Allocator, zison_exe_dir: []const u8) ![]
                 return ensureZisonBisonCopy(zison_bison_path);
             };
     };
-    defer f.close();
     const content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
+    // can not defer close as later we may need to overwrite it
+    f.close();
+    defer allocator.free(content);
 
     var hash1: [512 / 8]u8 = undefined;
     _ = &hash1;
@@ -71,6 +73,6 @@ fn ensureZisonBisonCopy(zison_bison_path: []const u8) ![]const u8 {
     var f = try cwd.createFile(zison_bison_path, .{});
     defer f.close();
     try f.writeAll(bisonbin);
-    try f.chmod(0o0500);
+    try f.chmod(0o0755);
     return zison_bison_path;
 }

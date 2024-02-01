@@ -139,6 +139,16 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
         std.debug.print("re-gen zig_skel.c ...\n", .{});
         var zflex_src_dir = try zflex_dir.openDir("src", .{});
         defer zflex_src_dir.close();
+        const versions = try getVersions(allocator);
+        var buf: [256]u8 = undefined;
+        _ = &buf;
+        const verstr = try std.fmt.bufPrint(&buf, "{d}.{d}.{d}.{d}", .{
+            versions.flex_major_version,
+            versions.flex_minor_version,
+            versions.flex_subminor_version,
+            versions.zlex_version,
+        });
+        std.debug.print("verstr: {s}\n", .{verstr});
         const result = try zcmd.run(.{
             .allocator = allocator,
             .commands = &[_][]const []const u8{
@@ -167,4 +177,56 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
         });
         result.assertSucceededPanic(.{ .check_stderr_empty = false });
     }
+}
+
+fn getVersions(allocator: std.mem.Allocator) !struct {
+    flex_major_version: usize,
+    flex_minor_version: usize,
+    flex_subminor_version: usize,
+    zlex_version: usize,
+} {
+    return .{
+        .flex_major_version = try getVersion(
+            allocator,
+            &[_][]const []const u8{
+                &[_][]const u8{ "grep", "#define YY_FLEX_MAJOR_VERSION", "src/stage1scan.c" },
+                &[_][]const u8{ "awk", "{print $3}" },
+            },
+            zflex_dir,
+        ),
+        .flex_minor_version = try getVersion(
+            allocator,
+            &[_][]const []const u8{
+                &[_][]const u8{ "grep", "#define YY_FLEX_MINOR_VERSION", "src/stage1scan.c" },
+                &[_][]const u8{ "awk", "{print $3}" },
+            },
+            zflex_dir,
+        ),
+        .flex_subminor_version = try getVersion(
+            allocator,
+            &[_][]const []const u8{
+                &[_][]const u8{ "grep", "#define YY_FLEX_SUBMINOR_VERSION", "src/stage1scan.c" },
+                &[_][]const u8{ "awk", "{print $3}" },
+            },
+            zflex_dir,
+        ),
+        .zlex_version = try getVersion(
+            allocator,
+            &[_][]const []const u8{
+                &[_][]const u8{ "zig", "run", "../../src/version.zig", "--", "zlex" },
+            },
+            zflex_dir,
+        ),
+    };
+}
+
+fn getVersion(allocator: std.mem.Allocator, commands: []const []const []const u8, cwd_dir: std.fs.Dir) !usize {
+    var result = try zcmd.run(.{
+        .allocator = allocator,
+        .commands = commands,
+        .cwd_dir = cwd_dir,
+    });
+    defer result.deinit();
+    result.assertSucceededPanic(.{});
+    return try std.fmt.parseInt(usize, result.trimedStdout(), 10);
 }

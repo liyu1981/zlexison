@@ -91,7 +91,7 @@ pub fn main() !u8 {
         .zison => {},
         .zbison => {},
         .bison => {
-            @import("zison/runAsBison.zig").run_as_flex(args[1..], opts.zison_exe);
+            @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe);
         },
     }
 

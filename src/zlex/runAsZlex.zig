@@ -2,7 +2,7 @@ const std = @import("std");
 const zcmd = @import("zcmd");
 const jstring = @import("jstring");
 
-pub fn run_as_zlex(opts: struct {
+pub fn runAsZlex(opts: struct {
     input_file_path: []const u8,
     output_file_path: []const u8,
     zlex_exe: []const u8,
@@ -97,7 +97,7 @@ pub fn run_as_zlex(opts: struct {
 
 extern fn flex_main(argc: usize, argv: [*c]const u8) u8;
 
-pub fn run_as_zflex(args: [][:0]const u8) void {
+pub fn runAsZflex(args: [][:0]const u8) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // later there is no going back, so Cool Guys Don't Look At Explosions
     // defer arena_allocator.deinit();
