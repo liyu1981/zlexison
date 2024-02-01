@@ -1,10 +1,3 @@
-%option reject
-%option yymore
-%option unput
-%option stack
-%option bison-bridge
-%option bison-locations
-
 %{
 pub const Context = struct {
     pub const Error = error{
@@ -254,6 +247,7 @@ fn extractStartConditionName(line: []const u8) ![]const u8 {
   }
 
 <INITIAL,code_block>^\%\}[ \t]*$ {
+    // std.debug.print("yylex loc:L{d}, C{d}\n", .{yyget_lineno(yyg), yyget_column(yyg)});
     switch (context.cur_section) {
         .Definitions => {
             try context.definitions_cbs.append(context.cur_codeblock);

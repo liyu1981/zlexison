@@ -1,5 +1,7 @@
+main
 src/bison.bin
 src/flex.bin
+*.orig.*
 *.gv
 *.output
 *.yy.c

@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Debug flex_parser main",
       "program": "${workspaceFolder}/main",
-      "args": ["tests/flex_parser/flex.l"],
+      "args": ["test.txt"],
       "cwd": "${workspaceFolder}"
     },
     {

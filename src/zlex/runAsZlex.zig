@@ -29,6 +29,9 @@ pub fn run_as_zlex(opts: struct {
     }
 
     const raw_yyc = brk: {
+        // zflex in default enabled
+        //   -R --yylineno --stack --bison-bridge --bison-locations
+        //   %option reject,unput,yymore
         const result = try zcmd.run(.{
             .allocator = arena,
             .commands = &[_][]const []const u8{
@@ -36,11 +39,6 @@ pub fn run_as_zlex(opts: struct {
                     opts.zlex_exe,
                     "zflex",
                     "-t",
-                    "-R",
-                    "--yylineno",
-                    "--stack",
-                    "--bison-bridge",
-                    "--bison-locations",
                     opts.input_file_path,
                 },
             },
@@ -56,21 +54,14 @@ pub fn run_as_zlex(opts: struct {
         break :brk result.stdout.?;
     };
 
-    var yyc_final1 = brk: {
-        var js_yyc = try jstring.JString.newFromSlice(arena, raw_yyc);
-        defer js_yyc.deinit();
-        var js_yyc_final = try js_yyc.replaceAll("<stdin>", opts.input_file_path);
-        _ = &js_yyc_final;
-        break :brk js_yyc_final;
-    };
-    defer yyc_final1.deinit();
+    // following a lot of jstring be created, so remember to use arena to avoid
+    // manual deinit
+    var raw_yyc_fixed = try (try jstring.JString.newFromSlice(arena, raw_yyc)).replaceAll("<REJECT>;", "REJECT(yyg); loop_control = LOOP_START_YY_FIND_RULE; continue;");
 
-    var yyc_final2 = brk: {
-        var js_yyc_final = try yyc_final1.replaceAll("#line", "// #line");
-        _ = &js_yyc_final;
-        break :brk js_yyc_final;
-    };
-    defer yyc_final2.deinit();
+    var yyc_final1 = (try (try raw_yyc_fixed.replaceAll("<stdin>", opts.input_file_path))
+        .replaceAll("<stdout>", opts.output_file_path));
+
+    var yyc_final2 = try yyc_final1.replaceAll("#line", "// #line");
 
     // try writer.print("{s}", .{yyc_final2});
 
