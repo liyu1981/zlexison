@@ -56,39 +56,7 @@ m4_define([b4_generated_by],
 # ----------------------------
 # If YEARS are not defined, use b4_copyright_years.
 m4_define([b4_copyright],
-[b4_generated_by
-b4_comment([$1
-
-]m4_dquote(m4_text_wrap([Copyright (C)
-]m4_ifval([$2], [[$2]], [m4_defn([b4_copyright_years])])[
-Free Software Foundation, Inc.]))[
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.])
-
-b4_comment([As a special exception, you may create a larger work that contains
-part or all of the Bison parser skeleton and distribute that work
-under terms of your choice, so long as that work isn't itself a
-parser generator using the skeleton or a modified version thereof
-as a parser skeleton.  Alternatively, if you modify or redistribute
-the parser skeleton itself, you may (at your option) remove this
-special exception, which will cause the skeleton and the resulting
-Bison output files to be licensed under the GNU General Public
-License without this special exception.
-
-This special exception was added by the Free Software Foundation in
-version 2.2 of Bison.])
-])
+[b4_generated_by])
 
 
 # b4_disclaimer
@@ -539,7 +507,7 @@ m4_define([b4_symbol_action],
 b4_syncline([b4_symbol([$1], [$2_line])], [b4_symbol([$1], [$2_file])])dnl
 b4_symbol([$1], [$2])
 b4_syncline([@oline@], [@ofile@])dnl
-        break;
+        },
 
 b4_dollar_popdef[]dnl
 ])])
@@ -561,9 +529,10 @@ m4_define([b4_symbol_actions],
 [m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_$1])]))dnl
 m4_ifval(m4_defn([b4_actions_]),
 [switch (m4_default([$2], [yykind]))
-   // {
-   //   else => {},
-   // }dnl
+    {
+m4_defn([b4_actions_])[]dnl
+      else => {},
+    }dnl
 ],
 [b4_use(m4_default([$2], [yykind]));])dnl
 m4_popdef([b4_actions_])dnl
@@ -575,7 +544,7 @@ m4_popdef([b4_actions_])dnl
 # easier to use with m4_map, but then, use []dnl to suppress the last
 # one.
 m4_define([_b4_symbol_case],
-[case b4_symbol([$1], [kind]): b4_symbol_tag_comment([$1])])
+[b4_symbol([$1], [kind]) => { b4_symbol_tag_comment([$1])])
 ])
 
 

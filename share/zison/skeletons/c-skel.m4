@@ -21,7 +21,7 @@
 b4_glr_if(             [m4_define([b4_used_skeleton], [b4_skeletonsdir/[glr.c]])])
 b4_nondeterministic_if([m4_define([b4_used_skeleton], [b4_skeletonsdir/[glr.c]])])
 
-m4_define_default([b4_used_skeleton], [b4_skeletonsdir/[yacc.c]])
+m4_define_default([b4_used_skeleton], [b4_skeletonsdir/[zig.m4]])
 m4_define_default([b4_skeleton], ["b4_basename(b4_used_skeleton)"])
 
 m4_include(b4_used_skeleton)

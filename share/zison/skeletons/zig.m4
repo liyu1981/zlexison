@@ -5,7 +5,7 @@
 # Foundation, Inc.
 
 m4_pushdef([b4_copyright_years],
-           [1984, 1989-1990, 2000-2015, 2018-2021])
+            [1984, 1989-1990, 2000-2015, 2018-2021])
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -428,17 +428,7 @@ b4_header_if([[
 
 b4_output_begin([b4_parser_file_name])[
 ]b4_copyright([Bison implementation for Yacc-like parsers in C])[
-// /* C LALR(1) parser skeleton written by Richard Stallman, by
-//   simplifying the original so-called "semantic" parser.  */
-
 ]b4_disclaimer[
-// /* All symbols defined below should begin with yy or YY, to avoid
-//    infringing on user name space.  This should be done even for local
-//    variables, as they might otherwise be expanded by user macros.
-//    There are some unavoidable exceptions within include files to
-//    define necessary library symbols; they are noted "INFRINGES ON
-//    USER NAME SPACE" below.  */
-
 ]b4_identification[
 ]b4_percent_code_get([[top]])[]dnl
 m4_if(b4_api_prefix, [yy], [],
@@ -480,29 +470,11 @@ m4_if(b4_api_prefix, [yy], [],
 ]b4_sizes_types_define[
 
 // /* Stored state numbers (used for stacks). */
-// typedef ]b4_int_type(0, m4_eval(b4_states_number - 1))[ yy_state_t;
-pub const yy_state_t = i8;
+pub const yy_state_t = isize;
 
 // /* State numbers in computations.  */
-// typedef int yy_state_fast_t;
 pub const yy_state_fast_t = c_int;
-
-// #ifndef YY_
-// # if defined YYENABLE_NLS && YYENABLE_NLS
-// #  if ENABLE_NLS
-// #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
-// #   define YY_(Msgid) dgettext ("bison-runtime", Msgid)
-// #  endif
-// # endif
-// # ifndef YY_
-// #  define YY_(Msgid) Msgid
-// # endif
-// #endif
-]b4_has_translations_if([
-// #ifndef N_
-// # define N_(Msgid) Msgid
-// #endif
-])[
+][
 
 ]b4_attribute_define[
 
@@ -517,79 +489,11 @@ pub const YY_ASSERT = std.debug.assert;
 [[// #define YY_ASSERT(E) ((void) (0 && (E)))
 pub const YY_ASSERT = std.debug.assert;]])[
 
-// #if ]b4_lac_if([[1]], [b4_parse_error_case([simple], [[!defined yyoverflow]], [[1]])])[
-
-// /* The parser invokes alloca or malloc; define the necessary symbols.  */]dnl
+][]dnl
 b4_push_if([], [b4_lac_if([], [[
-
-// # ifdef YYSTACK_USE_ALLOCA
-// #  if YYSTACK_USE_ALLOCA
-// #   ifdef __GNUC__
-// #    define YYSTACK_ALLOC __builtin_alloca
-// #   elif defined __BUILTIN_VA_ARG_INCR
-// #    include <alloca.h> /* INFRINGES ON USER NAME SPACE */
-// #   elif defined _AIX
-// #    define YYSTACK_ALLOC __alloca
-// #   elif defined _MSC_VER
-// #    include <malloc.h> /* INFRINGES ON USER NAME SPACE */
-// #    define alloca _alloca
-// #   else
-// #    define YYSTACK_ALLOC alloca
-// #    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS
-// #     include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
-//       /* Use EXIT_SUCCESS as a witness for stdlib.h.  */
-// #     ifndef EXIT_SUCCESS
-// #      define EXIT_SUCCESS 0
-// #     endif
-// #    endif
-// #   endif
-// #  endif
-// # endif]])])[
-
-// # ifdef YYSTACK_ALLOC
-//    /* Pacify GCC's 'empty if-body' warning.  */
-// #  define YYSTACK_FREE(Ptr) do { /* empty */; } while (0)
-// #  ifndef YYSTACK_ALLOC_MAXIMUM
-//     /* The OS might guarantee only one guard page at the bottom of the stack,
-//        and a page size can be as small as 4096 bytes.  So we cannot safely
-//        invoke alloca (N) if N exceeds 4096.  Use a slightly smaller number
-//        to allow for a few compiler-allocated temporary stack slots.  */
-// #   define YYSTACK_ALLOC_MAXIMUM 4032 /* reasonable circa 2006 */
-// #  endif
-// # else
-// #  define YYSTACK_ALLOC YYMALLOC
-// #  define YYSTACK_FREE YYFREE
-// #  ifndef YYSTACK_ALLOC_MAXIMUM
-// #   define YYSTACK_ALLOC_MAXIMUM YYSIZE_MAXIMUM
-// #  endif
-// #  if (defined __cplusplus && ! defined EXIT_SUCCESS \
-//        && ! ((defined YYMALLOC || defined malloc) \
-//              && (defined YYFREE || defined free)))
-// #   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
-// #   ifndef EXIT_SUCCESS
-// #    define EXIT_SUCCESS 0
-// #   endif
-// #  endif
-// #  ifndef YYMALLOC
-// #   define YYMALLOC malloc
-// #   if ! defined malloc && ! defined EXIT_SUCCESS
-// void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
-// #   endif
-// #  endif
-// #  ifndef YYFREE
-// #   define YYFREE free
-// #   if ! defined free && ! defined EXIT_SUCCESS
-// void free (void *); /* INFRINGES ON USER NAME SPACE */
-// #   endif
-// #  endif
-// # endif]b4_lac_if([[
+]])])[
+]b4_lac_if([[
 // # define YYCOPY_NEEDED 1]])[
-// #endif /* ]b4_lac_if([[1]], [b4_parse_error_case([simple], [[!defined yyoverflow]], [[1]])])[ */
-
-// #if (! defined yyoverflow \
-//     && (! defined __cplusplus \
-//          || (]b4_locations_if([[defined ]b4_api_PREFIX[LTYPE_IS_TRIVIAL && ]b4_api_PREFIX[LTYPE_IS_TRIVIAL \
-//              && ]])[defined ]b4_api_PREFIX[STYPE_IS_TRIVIAL && ]b4_api_PREFIX[STYPE_IS_TRIVIAL)))
 
 // /* A type that is properly aligned for any stack member.  */
 pub const yyalloc = union {
@@ -604,43 +508,18 @@ pub const YYSTACK_GAP_MAXIMUM = ]@@sizeOf[(yyalloc) - 1;
 
 // /* The size of an array large to enough to hold all stacks, each with
 //    N elements.  */
-]b4_locations_if(
-[// # define YYSTACK_BYTES(N) \
-//     ((N) * (YYSIZEOF (yy_state_t) + YYSIZEOF (YYSTYPE) \
-//              + YYSIZEOF (YYLTYPE)) \
-//       + 2 * YYSTACK_GAP_MAXIMUM)
-pub fn YYSTACK_BYTES(comptime N: usize) usize {
+]b4_locations_if([pub fn YYSTACK_BYTES(comptime N: usize) usize {
     return N + @@sizeOf(yy_state_t) + @@sizeOf(YYSTYPE) + @@sizeOf(YYLTYPE) + 2 * YYSTACK_GAP_MAXIMUM;
-}
-],
-[// # define YYSTACK_BYTES(N) \
-//      ((N) * (YYSIZEOF (yy_state_t) + YYSIZEOF (YYSTYPE)) \
-//       + YYSTACK_GAP_MAXIMUM)
-pub fn YYSTACK_BYTES(comptime N: usize) usize {
+}],
+[pub fn YYSTACK_BYTES(comptime N: usize) usize {
     return N + @@sizeOf(yy_state_t) + @@sizeOf(YYSTYPE) + YYSTACK_GAP_MAXIMUM;
-}
-])[
-
-// # define YYCOPY_NEEDED 1
-pub const YYCOPY_NEEDED = 1;
+}])[
 
 // /* Relocate STACK from its old location to the new one.  The
 //    local variables YYSIZE and YYSTACKSIZE give the old and new number of
 //    elements in the stack, and YYPTR gives the new location of the
 //    stack.  Advance YYPTR to a properly aligned location for the next
 //    stack.  */
-// # define YYSTACK_RELOCATE(Stack_alloc, Stack)                           \
-//     do                                                                  \
-//       {                                                                 \
-//         YYPTRDIFF_T yynewbytes;                                         \
-//         YYCOPY (&yyptr->Stack_alloc, Stack, yysize);                    \
-//         Stack = &yyptr->Stack_alloc;                                    \
-//         yynewbytes = yystacksize * YYSIZEOF (*Stack) + YYSTACK_GAP_MAXIMUM; \
-//         yyptr += yynewbytes / YYSIZEOF (*yyptr);                        \
-//       }                                                                 \
-//     while (0)
-//
-// #endif
 pub fn YYSTACK_RELOCATE(Stack_alloc: yyalloc, Stack_: **yyalloc, yysize: usize, yystacksize: usize, yyptr_: **yyptr_t) void {
     var yynewbytes: usize = 0;
     YYCOPY(yyptr_.*.Stack_alloc, Stack_.*.*, yysize);
@@ -649,25 +528,13 @@ pub fn YYSTACK_RELOCATE(Stack_alloc: yyalloc, Stack_: **yyalloc, yysize: usize, 
     yyptr_.* = yyptr_.*.* + yynewbytes / @@sizeOf(yyptr_t);
 }
 
-// #if defined YYCOPY_NEEDED && YYCOPY_NEEDED
 // /* Copy COUNT objects from SRC to DST.  The source and destination do
 //    not overlap.  */
-// # ifndef YYCOPY
-// #  if defined __GNUC__ && 1 < __GNUC__
-// #   define YYCOPY(Dst, Src, Count) \
-//       __builtin_memcpy (Dst, Src, YY_CAST (YYSIZE_T, (Count)) * sizeof (*(Src)))
-// #  else
-// #   define YYCOPY(Dst, Src, Count)              \
-//       do                                        \
-//         {                                       \
-//           YYPTRDIFF_T yyi;                      \
-//           for (yyi = 0; yyi < (Count); yyi++)   \
-//             (Dst)[yyi] = (Src)[yyi];            \
-//         }                                       \
-//       while (0)
-// #  endif
-// # endif
-// #endif /* !YYCOPY_NEEDED */
+pub inline fn YYCOPY(comptime T: type, dst: [*c]T, src: [*c]T, count: usize) void {
+    for (0..count) |yyi| {
+        dst[yyi] = src[yyi];
+    }
+}
 
 // /* YYFINAL -- State number of the termination state.  */
 pub const YYFINAL = ]b4_final_state_number[;
@@ -695,11 +562,7 @@ pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
     return YYX;
 }
 ]],
-[[// #define YYTRANSLATE(YYX)                                \
-//   (0 <= (YYX) && (YYX) <= YYMAXUTOK                     \
-//    ? YY_CAST (yysymbol_kind_t, yytranslate[YYX])        \
-//    : ]b4_symbol_prefix[YYUNDEF)
-pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
+[[pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
     if (YYX >= 0 and YYX <= YYMAXUTOK) {
         return yytranslate[YYX];
     } else {
@@ -709,26 +572,20 @@ pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
 
 // /* YYTRANSLATE[TOKEN-NUM] -- Symbol number corresponding to TOKEN-NUM
 //    as returned by yylex.  */
-pub const yytranslate = [_]]b4_int_type_for([b4_translate])[{
+pub const yytranslate = [_]]isize[{
   ]b4_translate[
 };]])[
 
-// #if ]b4_api_PREFIX[DEBUG
 ]b4_integral_parser_table_define([rline], [b4_rline],
      [[YYRLINE[YYN] -- Source line where rule number YYN was defined.]])[
-// #endif
 
 // /** Accessing symbol of state STATE.  */
-// #define YY_ACCESSING_SYMBOL(State) YY_CAST (yysymbol_kind_t, yystos[State])
-pub inline fn YY_ACCESSING_SYMBOL(State: anytype) yysymbol_kind_t {
-    return yystos[State];
+pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
+    return yystos[index];
 }
 
-// #if ]b4_parse_error_case([simple], [b4_api_PREFIX[DEBUG || ]b4_token_table_flag], [[1]])[
 // /* The user-facing name of the symbol whose (internal) number is
 //    YYSYMBOL.  No bounds checking.  */
-// static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
-
 ]b4_parse_error_bmatch([simple\|verbose],
 [[// /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
 //    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
@@ -736,11 +593,12 @@ pub const yytname = [_]u8 {
   ]b4_tname[
 };
 
-pub fn yysymbol_name(yysymbol: yysymbol_kind_t) [*c]const u8 {
+pub fn yysymbol_name(yysymbol: usize) [*c]const u8 {
     return yytname[yysymbol];
 }]],
-[[pub fn yysymbol_name(yysymbol: yysymbol_kind_t) [*c]const u8 {
-  const yy_sname = []u8 {
+[[pub fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
+  comptime const YY_NULLPTR = "";
+  const yy_sname = [_][]const u8 {
   ]b4_symbol_names[
   };]b4_has_translations_if([[
   /* YYTRANSLATABLE[SYMBOL-NUM] -- Whether YY_SNAME[SYMBOL-NUM] is
@@ -754,97 +612,62 @@ pub fn yysymbol_name(yysymbol: yysymbol_kind_t) [*c]const u8 {
           : yy_sname[yysymbol]);]], [[
   return yy_sname[yysymbol];]])[
 }]])[
-// #endif
 
-// #define YYPACT_NINF (]b4_pact_ninf[)
 pub const YYPACT_NINF = ]b4_pact_ninf[;
 
-// #define yypact_value_is_default(Yyn) \
-//  ]b4_table_value_equals([[pact]], [[Yyn]], [b4_pact_ninf], [YYPACT_NINF])[
-pub fn yypact_value_is_default(Yyn: anytype) bool {
+pub inline fn yypact_value_is_default(Yyn: anytype) bool {
+  // TODO: check for all case
+  // #define yypact_value_is_default(Yyn) \
+  //  ]b4_table_value_equals([[pact]], [[Yyn]], [b4_pact_ninf], [YYPACT_NINF])[
+  _ = Yyn;
   return false;
 }
 
-// #define YYTABLE_NINF (]b4_table_ninf[)
 pub const YYTABLE_NINF = ]b4_table_ninf[;
 
-// #define yytable_value_is_error(Yyn) \
-//   ]b4_table_value_equals([[table]], [[Yyn]], [b4_table_ninf], [YYTABLE_NINF])[
 pub fn yytable_value_is_error(Yyn: anytype) bool {
+  // TODO: check for all case
+  // #define yytable_value_is_error(Yyn) \
+  //   ]b4_table_value_equals([[table]], [[Yyn]], [b4_table_ninf], [YYTABLE_NINF])[
+  _ = Yyn;
   return false;
 }
 
 ]b4_parser_tables_define[
 
-// enum { YYENOMEM = -2 };
 pub const YYENOMEM = -2;
 
 // #define yyerrok         (yyerrstatus = 0)
 // #define yyclearin       (yychar = ]b4_symbol(empty, id)[)
 
-// #define YYACCEPT        goto yyacceptlab
-// #define YYABORT         goto yyabortlab
-// #define YYERROR         goto yyerrorlab
-// #define YYNOMEM         goto yyexhaustedlab
-
-
 // #define YYRECOVERING()  (!!yyerrstatus)
 
-// #define YYBACKUP(Token, Value)                                    \
-//   do                                                              \
-//     if (yychar == ]b4_symbol(empty, id)[)                                        \
-//       {                                                           \
-//         yychar = (Token);                                         \
-//         yylval = (Value);                                         \
-//         YYPOPSTACK (yylen);                                       \
-//         yystate = *yyssp;                                         \]b4_lac_if([[
-//         YY_LAC_DISCARD ("YYBACKUP");                              \]])[
-//         goto yybackup;                                            \
-//       }                                                           \
-//     else                                                          \
-//       {                                                           \
-//         yyerror (]b4_yyerror_args[YY_("syntax error: cannot back up")); \
-//         YYERROR;                                                  \
-//       }                                                           \
-//   while (0)
-pub fn YYBACKUP(Token: anytype, Value: anytype) void {
+pub fn YYBACKUP(yyctx: *yypareser_context_t, token: u8, value: c_int) void {
+  if (yyctx.yychar == yytoken_kind_t.]b4_symbol(empty, id)[)
+       {
+         yyctx.yychar = token;
+         yyctx.yylval = value;
+         YYPOPSTACK (yyctx, yylen);
+         yyctx.yystate = yyctx.yyssp.*;]b4_lac_if([[
+         YY_LAC_DISCARD ("YYBACKUP");]])[
+         // TODO: goto!
+         // goto yybackup;
+       }
+     else
+       {
+         yyerror (]b4_yyerror_args[YY_("syntax error: cannot back up"));
+         // TODO: goto!
+         // goto errorlab;
+       }
 }
 
-// /* Backward compatibility with an undocumented macro.
-//    Use ]b4_symbol(error, id)[ or ]b4_symbol(undef, id)[. */
-// #define YYERRCODE ]b4_symbol(undef, id)[
-pub const YYERRCODE = ]b4_symbol(undef, id)[;
 ]b4_locations_if([[
 ]b4_yylloc_default_define[
 #define YYRHSLOC(Rhs, K) ((Rhs)[K])
 ]])[
 
-// /* Enable debugging if requested.  */
-// #if ]b4_api_PREFIX[DEBUG
+]b4_yylocation_print_define[
 
-// # ifndef YYFPRINTF
-// #  include <stdio.h> /* INFRINGES ON USER NAME SPACE */
-// #  define YYFPRINTF fprintf
-// # endif
-
-// # define YYDPRINTF(Args)                        \
-// do {                                            \
-//   if (yydebug)                                  \
-//     YYFPRINTF Args;                             \
-// } while (0)
-
-// ]b4_yylocation_print_define[
-
-// # define YY_SYMBOL_PRINT(Title, Kind, Value, Location)                    \
-// do {                                                                      \
-//   if (yydebug)                                                            \
-//     {                                                                     \
-//       YYFPRINTF (stderr, "%s ", Title);                                   \
-//       yy_symbol_print (stderr,                                            \
-//                   Kind, Value]b4_locations_if([, Location])[]b4_user_args[); \
-//       YYFPRINTF (stderr, "\n");                                           \
-//     }                                                                     \
-// } while (0)
 pub fn YY_SYMBOL_PRINT(Title: []const u8, Kind: anytype, Value: anytype, Location: anytype) void {
     std.debug.print("%s", .{Title});
     std.debug.print("{any}{any}{any}", .{Kind, Value]b4_locations_if([, Location])[]b4_user_args[});

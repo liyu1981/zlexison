@@ -217,77 +217,7 @@ m4_define([b4_c99_int_type],
 # Define private types suitable for holding small integers in C99 or later.
 m4_define([b4_c99_int_type_define],
 [m4_copy_force([b4_c99_int_type], [b4_int_type])dnl
-[// #ifdef short
-// # undef short
-// #endif
-
-// /* On compilers that do not define __PTRDIFF_MAX__ etc., make sure
-//   <limits.h> and (if available) <stdint.h> are included
-//   so that the code can choose integer types of a good width.  */
-
-// #ifndef __PTRDIFF_MAX__
-// # include <limits.h> /* INFRINGES ON USER NAME SPACE */
-// # if defined __STDC_VERSION__ && 199901 <= __STDC_VERSION__
-// #  include <stdint.h> /* INFRINGES ON USER NAME SPACE */
-// #  define YY_STDINT_H
-// # endif
-// #endif
-
-// /* Narrow types that promote to a signed type and that can represent a
-//   signed or unsigned integer of at least N bits.  In tables they can
-//   save space and decrease cache pressure.  Promoting to a signed type
-//   helps avoid bugs in integer arithmetic.  */
-
-// #ifdef __INT_LEAST8_MAX__
-// typedef __INT_LEAST8_TYPE__ yytype_int8;
-// #elif defined YY_STDINT_H
-// typedef int_least8_t yytype_int8;
-// #else
-// typedef signed char yytype_int8;
-// #endif
-pub const yytype_int8 = i8;
-
-// #ifdef __INT_LEAST16_MAX__
-// typedef __INT_LEAST16_TYPE__ yytype_int16;
-// #elif defined YY_STDINT_H
-// typedef int_least16_t yytype_int16;
-// #else
-// typedef short yytype_int16;
-// #endif
-
-// /* Work around bug in HP-UX 11.23, which defines these macros
-//    incorrectly for preprocessor constants.  This workaround can likely
-//    be removed in 2023, as HPE has promised support for HP-UX 11.23
-//    (aka HP-UX 11i v2) only through the end of 2022; see Table 2 of
-//    <https://h20195.www2.hpe.com/V2/getpdf.aspx/4AA4-7673ENW.pdf>.  */
-// #ifdef __hpux
-// # undef UINT_LEAST8_MAX
-// # undef UINT_LEAST16_MAX
-// # define UINT_LEAST8_MAX 255
-// # define UINT_LEAST16_MAX 65535
-// #endif
-
-// #if defined __UINT_LEAST8_MAX__ && __UINT_LEAST8_MAX__ <= __INT_MAX__
-// typedef __UINT_LEAST8_TYPE__ yytype_uint8;
-// #elif (!defined __UINT_LEAST8_MAX__ && defined YY_STDINT_H \
-//        && UINT_LEAST8_MAX <= INT_MAX)
-// typedef uint_least8_t yytype_uint8;
-// #elif !defined __UINT_LEAST8_MAX__ && UCHAR_MAX <= INT_MAX
-// typedef unsigned char yytype_uint8;
-// #else
-// typedef short yytype_uint8;
-// #endif
-
-// #if defined __UINT_LEAST16_MAX__ && __UINT_LEAST16_MAX__ <= __INT_MAX__
-// typedef __UINT_LEAST16_TYPE__ yytype_uint16;
-// #elif (!defined __UINT_LEAST16_MAX__ && defined YY_STDINT_H \
-//        && UINT_LEAST16_MAX <= INT_MAX)
-// typedef uint_least16_t yytype_uint16;
-// #elif !defined __UINT_LEAST16_MAX__ && USHRT_MAX <= INT_MAX
-// typedef unsigned short yytype_uint16;
-// #else
-// typedef int yytype_uint16;
-// #endif]])
+[]])
 
 
 # b4_sizes_types_define
@@ -295,43 +225,7 @@ pub const yytype_int8 = i8;
 # Define YYPTRDIFF_T/YYPTRDIFF_MAXIMUM, YYSIZE_T/YYSIZE_MAXIMUM,
 # and YYSIZEOF.
 m4_define([b4_sizes_types_define],
-[[// #ifndef YYPTRDIFF_T
-// # if defined __PTRDIFF_TYPE__ && defined __PTRDIFF_MAX__
-// #  define YYPTRDIFF_T __PTRDIFF_TYPE__
-// #  define YYPTRDIFF_MAXIMUM __PTRDIFF_MAX__
-// # elif defined PTRDIFF_MAX
-// #  ifndef ptrdiff_t
-// #   include <stddef.h> /* INFRINGES ON USER NAME SPACE */
-// #  endif
-// #  define YYPTRDIFF_T ptrdiff_t
-// #  define YYPTRDIFF_MAXIMUM PTRDIFF_MAX
-// # else
-// #  define YYPTRDIFF_T long
-// #  define YYPTRDIFF_MAXIMUM LONG_MAX
-// # endif
-// #endif
-
-// #ifndef YYSIZE_T
-// # ifdef __SIZE_TYPE__
-// #  define YYSIZE_T __SIZE_TYPE__
-// # elif defined size_t
-// #  define YYSIZE_T size_t
-// # elif defined __STDC_VERSION__ && 199901 <= __STDC_VERSION__
-// #  include <stddef.h> /* INFRINGES ON USER NAME SPACE */
-// #  define YYSIZE_T size_t
-// # else
-// #  define YYSIZE_T unsigned
-// # endif
-// #endif
-
-// #define YYSIZE_MAXIMUM                                  \
-//   YY_CAST (YYPTRDIFF_T,                                 \
-//            (YYPTRDIFF_MAXIMUM < YY_CAST (YYSIZE_T, -1)  \
-//             ? YYPTRDIFF_MAXIMUM                         \
-//             : YY_CAST (YYSIZE_T, -1)))
-
-// #define YYSIZEOF(X) YY_CAST (YYPTRDIFF_T, sizeof (X))
-]])
+[[]])
 
 
 # b4_int_type_for(NAME)
@@ -363,22 +257,7 @@ m4_define([b4_table_value_equals],
 # Provide portable compiler "attributes".  If "noreturn" is passed, define
 # _Noreturn.
 m4_define([b4_attribute_define],
-[[// #ifndef YY_ATTRIBUTE_PURE
-// # if defined __GNUC__ && 2 < __GNUC__ + (96 <= __GNUC_MINOR__)
-// #  define YY_ATTRIBUTE_PURE __attribute__ ((__pure__))
-// # else
-// #  define YY_ATTRIBUTE_PURE
-// # endif
-// #endif
-
-// #ifndef YY_ATTRIBUTE_UNUSED
-// # if defined __GNUC__ && 2 < __GNUC__ + (7 <= __GNUC_MINOR__)
-// #  define YY_ATTRIBUTE_UNUSED __attribute__ ((__unused__))
-// # else
-// #  define YY_ATTRIBUTE_UNUSED
-// # endif
-// #endif
-
+[[
 ]m4_bmatch([$1], [\bnoreturn\b], [[/* The _Noreturn keyword of C11.  */
 ]dnl This is close to lib/_Noreturn.h, except that we do enable
 dnl the use of [[noreturn]], because _Noreturn is used in places
@@ -409,49 +288,7 @@ dnl use C' _Noreturn in C++, to avoid -Wc11-extensions warnings.
 # endif
 #endif
 
-]])[// /* Suppress unused-variable warnings by "using" E.  */
-// #if ! defined lint || defined __GNUC__
-// # define YY_USE(E) ((void) (E))
-// #else
-// # define YY_USE(E) /* empty */
-// #endif
-
-// /* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-// #if defined __GNUC__ && ! defined __ICC && 406 <= __GNUC__ * 100 + __GNUC_MINOR__
-// # if __GNUC__ * 100 + __GNUC_MINOR__ < 407
-// #  define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                           \
-//     _Pragma ("GCC diagnostic push")                                     \
-//     _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")
-// # else
-// #  define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                           \
-//     _Pragma ("GCC diagnostic push")                                     \
-//     _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")              \
-//     _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
-// # endif
-// # define YY_IGNORE_MAYBE_UNINITIALIZED_END      \
-//     _Pragma ("GCC diagnostic pop")
-// #else
-// # define YY_INITIAL_VALUE(Value) Value
-// #endif
-// #ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-// # define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-// # define YY_IGNORE_MAYBE_UNINITIALIZED_END
-// #endif
-// #ifndef YY_INITIAL_VALUE
-// # define YY_INITIAL_VALUE(Value) /* Nothing. */
-// #endif
-
-// #if defined __cplusplus && defined __GNUC__ && ! defined __ICC && 6 <= __GNUC__
-// # define YY_IGNORE_USELESS_CAST_BEGIN                          \
-//     _Pragma ("GCC diagnostic push")                            \
-//     _Pragma ("GCC diagnostic ignored \"-Wuseless-cast\"")
-// # define YY_IGNORE_USELESS_CAST_END            \
-//     _Pragma ("GCC diagnostic pop")
-// #endif
-// #ifndef YY_IGNORE_USELESS_CAST_BEGIN
-// # define YY_IGNORE_USELESS_CAST_BEGIN
-// # define YY_IGNORE_USELESS_CAST_END
-// #endif
+]])[
 ]])
 
 
@@ -486,7 +323,7 @@ m4_define([b4_null], [YY_NULLPTR])
 # Define "yy<TABLE-NAME>" whose contents is CONTENT.
 m4_define([b4_integral_parser_table_define],
 [m4_ifvaln([$3], [b4_comment([$3])])dnl
-pub const yy$1[] = [[_]]b4_int_type_for([$2]){
+pub const yy$1[] = [[_]]isize{
   $2
 };dnl
 ])
@@ -731,42 +568,38 @@ m4_define_default([b4_yy_symbol_print_define],
 // | Print this symbol's value on YYO.  |
 // `-----------------------------------*/
 
-// static void
-// yy_symbol_value_print (FILE *yyo,
-//                        yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep]b4_locations_if(dnl
-// [[, YYLTYPE const * const yylocationp]])[]b4_user_formals[)
-// {
-//   FILE *yyoutput = yyo;
-// ]b4_parse_param_use([yyoutput], [yylocationp])dnl
-// [  if (!yyvaluep)
-//     return;]
-// b4_percent_code_get([[pre-printer]])dnl
-//   YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-//   b4_symbol_actions([printer])
-//   YY_IGNORE_MAYBE_UNINITIALIZED_END
-// b4_percent_code_get([[post-printer]])dnl
-// [}
+pub fn yy_symbol_value_print (
+  yyo: std.fs.File,
+  yykind: isize,
+  yyvaluep: *const YYSTYPE]b4_locations_if(dnl
+[[, yylocationp: *const YYLTYPE]])[]b4_user_formals[) !void {
+   var yyoutput = yyo;
+   ]b4_parse_param_use([yyoutput], [yylocationp])dnl
+   [  if (yyvaluep == null) return;]
+   b4_percent_code_get([[pre-printer]])dnl
+   b4_symbol_actions([printer])
+   b4_percent_code_get([[post-printer]])dnl
+[}
 
 
 // /*---------------------------.
 // | Print this symbol on YYO.  |
 // `---------------------------*/
 
-// static void
-// yy_symbol_print (FILE *yyo,
-//                  yysymbol_kind_t yykind, YYSTYPE const * const yyvaluep]b4_locations_if(dnl
-// [[, YYLTYPE const * const yylocationp]])[]b4_user_formals[)
-// {
-//   YYFPRINTF (yyo, "%s %s (",
-//              yykind < YYNTOKENS ? "token" : "nterm", yysymbol_name (yykind));
-
-// ]b4_locations_if([  YYLOCATION_PRINT (yyo, yylocationp);
-//   YYFPRINTF (yyo, ": ");
+pub fn yy_symbol_print (yyo: std.fs.File,
+                  yykind: usize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
+[[, yylocationp: *const YYLTYPE]])[]b4_user_formals[) !void {
+  try yyo.writer().print("{s} {s} (", .{
+      if (yykind < YYNTOKENS) "token" else "nterm",
+      yysymbol_name(yykind),
+  });
+]b4_locations_if([  YYLOCATION_PRINT (yyo, yylocationp);
+  try yyo.writer().print(": ", .{});
 ])dnl
-// [  yy_symbol_value_print (yyo, yykind, yyvaluep]dnl
-// b4_locations_if([, yylocationp])[]b4_user_args[);
-//   YYFPRINTF (yyo, ")");
-// }]dnl
+[  try yy_symbol_value_print (yyo, yykind, yyvaluep]dnl
+b4_locations_if([, yylocationp])[]b4_user_args[);
+  try yyo.writer().print(")", .{});
+}]dnl
 ])
 
 

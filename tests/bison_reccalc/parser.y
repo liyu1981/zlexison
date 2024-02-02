@@ -4,10 +4,7 @@
 // Emitted in the header file, before the definition of YYSTYPE.
 %code requires
 {
-  // #ifndef YY_TYPEDEF_YY_SCANNER_T
-  // # define YY_TYPEDEF_YY_SCANNER_T
-  // typedef void* yyscan_t;
-  // #endif
+  const lexer = @import("scan.zig");
 
   pub const result = struct {
     // Whether to print the intermediate results.
@@ -22,27 +19,15 @@
 // Emitted in the header file, after the definition of YYSTYPE.
 %code provides
 {
-  // Tell Flex the expected prototype of yylex.
-  // The scanner argument must be named yyscanner.
-// #define YY_DECL                                                         \
-//  yytoken_kind_t yylex (YYSTYPE* yylval, yyscan_t yyscanner, result *res)
-//  YY_DECL;
-
-//  void yyerror (yyscan_t scanner, result *res, const char *msg, ...);
 }
 
 // Emitted on top of the implementation file.
 %code top
 {
-// #include <stdarg.h> // va_list.
-// #include <stdio.h>  // printf.
-// #include <stdlib.h> // getenv.
 }
 
 %code
 {
-  // result parse_string (const char* cp);
-  // result parse (void);
 }
 
 // Include the header in the implementation rather than duplicating it.
@@ -81,11 +66,11 @@
 
 %token <c_int> NUM "number"
 %type <c_int> exp
-%printer { fprintf (yyo, "%d", $$); } <c_int>
+%printer { try yyo.writer().print("{d}", $$); } <c_int>
 
-%token <[*c]u8> STR "string"
-%printer { fprintf (yyo, "\"%s\"", $$); } <[*c]u8>
-%destructor { free ($$); } <[*c]u8>
+%token <[]const u8> STR "string"
+%printer { try yyo.writer().print("{s}", $$); } <[]const u8>
+%destructor { allocator.free($$); } <[]const u8>
 
 // Precedence (from lowest to highest) and associativity.
 %left "+" "-"
