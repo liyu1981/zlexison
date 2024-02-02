@@ -556,15 +556,14 @@ m4_define([b4_symbol_printer],    [b4_symbol_action([$1], [printer])])
 # ------------------------------------------
 # Emit the symbol actions for ACTION ("destructor" or "printer").
 # Dispatch on KIND.
+# m4_defn([b4_actions_])[]dnl
 m4_define([b4_symbol_actions],
 [m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_$1])]))dnl
 m4_ifval(m4_defn([b4_actions_]),
 [switch (m4_default([$2], [yykind]))
-    {
-m4_defn([b4_actions_])[]dnl
-      default:
-        break;
-    }dnl
+   // {
+   //   else => {},
+   // }dnl
 ],
 [b4_use(m4_default([$2], [yykind]));])dnl
 m4_popdef([b4_actions_])dnl

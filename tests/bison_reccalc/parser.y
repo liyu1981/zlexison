@@ -150,51 +150,51 @@ exp:
 
 %%
 // Epilogue (C code).
-#include "scan.h"
+// #include "scan.h"
 
-result
-parse (void)
-{
-  yyscan_t scanner;
-  yylex_init (&scanner);
-  result res = {1, 0, 0};
-  yyparse (scanner, &res);
-  yylex_destroy (scanner);
-  return res;
-}
+// result
+// parse (void)
+// {
+//   yyscan_t scanner;
+//   yylex_init (&scanner);
+//   result res = {1, 0, 0};
+//   yyparse (scanner, &res);
+//   yylex_destroy (scanner);
+//   return res;
+// }
 
-result
-parse_string (const char *str)
-{
-  yyscan_t scanner;
-  yylex_init (&scanner);
-  YY_BUFFER_STATE buf = yy_scan_string (str ? str : "", scanner);
-  result res = {0, 0, 0};
-  yyparse (scanner, &res);
-  yy_delete_buffer (buf, scanner);
-  yylex_destroy (scanner);
-  return res;
-}
+// result
+// parse_string (const char *str)
+// {
+//   yyscan_t scanner;
+//   yylex_init (&scanner);
+//   YY_BUFFER_STATE buf = yy_scan_string (str ? str : "", scanner);
+//   result res = {0, 0, 0};
+//   yyparse (scanner, &res);
+//   yy_delete_buffer (buf, scanner);
+//   yylex_destroy (scanner);
+//   return res;
+// }
 
-void
-yyerror (yyscan_t scanner, result *res,
-         const char *msg, ...)
-{
-  (void) scanner;
-  va_list args;
-  va_start (args, msg);
-  vfprintf (stderr, msg, args);
-  va_end (args);
-  fputc ('\n', stderr);
-  res->nerrs += 1;
-}
+// void
+// yyerror (yyscan_t scanner, result *res,
+//          const char *msg, ...)
+// {
+//   (void) scanner;
+//   va_list args;
+//   va_start (args, msg);
+//   vfprintf (stderr, msg, args);
+//   va_end (args);
+//   fputc ('\n', stderr);
+//   res->nerrs += 1;
+// }
 
-int
-main (void)
-{
-  // Possibly enable parser runtime debugging.
-  yydebug = !!getenv ("YYDEBUG");
-  result res = parse ();
-  // Exit on failure if there were errors.
-  return !!res.nerrs;
-}
+// int
+// main (void)
+// {
+//   // Possibly enable parser runtime debugging.
+//   yydebug = !!getenv ("YYDEBUG");
+//   result res = parse ();
+//   // Exit on failure if there were errors.
+//   return !!res.nerrs;
+// }
