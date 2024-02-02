@@ -1,7 +1,13 @@
 const std = @import("std");
 const bisonbin = @embedFile("../bison.bin");
 
-pub fn runAsBison(args: [][:0]const u8, zison_exe_path: []const u8) void {
+pub fn runAsBison(
+    args: [][:0]const u8,
+    zison_exe_path: []const u8,
+    opts: struct {
+        bison_rel_pkgdatadir: []const u8 = "share/bison",
+    },
+) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // later there is no going back, so Cool Guys Don't Look At Explosions
     // defer arena_allocator.deinit();
@@ -25,7 +31,7 @@ pub fn runAsBison(args: [][:0]const u8, zison_exe_path: []const u8) void {
     var envmap = std.process.getEnvMap(arena) catch {
         @panic("OOM!");
     };
-    const bison_share_path = std.fs.path.join(arena, &[_][]const u8{ zison_exe_dir.?, "share/bison" }) catch @panic("OOM!");
+    const bison_share_path = std.fs.path.join(arena, &[_][]const u8{ zison_exe_dir.?, opts.bison_rel_pkgdatadir }) catch @panic("OOM!");
     envmap.put("BISON_PKGDATADIR", bison_share_path) catch @panic("BISON_PKGDATADIR set failed!");
 
     const ret = std.process.execve(arena, argv, &envmap);

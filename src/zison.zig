@@ -88,10 +88,20 @@ pub fn main() !u8 {
     };
 
     switch (opts.runMode) {
-        .zison => {},
-        .zbison => {},
+        .zison => {
+            try @import("zison/runAsZison.zig").runAsZison(.{
+                .input_file_path = opts.input_file_path,
+                .output_file_path = opts.outut_file_path,
+                .zison_exe = opts.zison_exe,
+            });
+        },
+        .zbison => {
+            @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe, .{
+                .bison_rel_pkgdatadir = "share/zison",
+            });
+        },
         .bison => {
-            @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe);
+            @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe, .{});
         },
     }
 
