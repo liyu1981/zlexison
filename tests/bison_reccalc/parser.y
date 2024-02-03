@@ -87,8 +87,8 @@ input:
 line:
   exp eol
     {
-      res->value = $exp;
-      if (res->verbose)
+      res.value = $exp;
+      if (res.verbose)
         printf ("%d\n", $exp);
     }
 | error eol
@@ -117,15 +117,15 @@ exp:
     else
       $$ = $1 / $3;
   }
-| "+" exp %prec UNARY  { $$ = + $2; }
-| "-" exp %prec UNARY  { $$ = - $2; }
+| "+" exp %prec UNARY  { $$ = $2; }
+| "-" exp %prec UNARY  { $$ = -$2; }
 | STR
   {
-    result r = parse_string ($1);
+    var r = parse_string ($1);
     free ($1);
     if (r.nerrs)
       {
-        res->nerrs += r.nerrs;
+        res.nerrs += r.nerrs;
         YYERROR;
       }
     else

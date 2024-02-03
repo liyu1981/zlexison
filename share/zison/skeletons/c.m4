@@ -546,15 +546,12 @@ pub fn yydestruct (yymsg: [*c]u8,
             yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *YYLTYPE]])[]b4_user_formals[)
 void {
-]b4_parse_param_use([yyvaluep], [yylocationp])dnl
-[ if (yymsg == null) {
+][ if (yymsg == null) {
     yymsg = "Deleting";
   }
   YY_SYMBOL_PRINT (yymsg, yykind, yyvaluep, yylocationp);
 
-  // YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-  // ]b4_symbol_actions([destructor])[
-  // YY_IGNORE_MAYBE_UNINITIALIZED_END
+  ]b4_symbol_actions([destructor])[
 }]dnl
 ])
 
