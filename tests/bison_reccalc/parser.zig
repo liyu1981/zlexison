@@ -73,6 +73,9 @@ pub const YYSTYPE = union {
 
 };
 
+// /* Location type.  */
+const YYLTYPE = YYLexer.YYLTYPE;
+
 // /* "%code provides" blocks.//  */
 
 // /* Symbol kind.  */
@@ -114,6 +117,7 @@ pub const YY_ASSERT = std.debug.assert;
 pub const yyalloc = union {
     yyss_alloc: yy_state_t,
     yyvs_alloc: YYSTYPE,
+    yyls_alloc: YYLTYPE,
 };
 
 // /* The size of the maximum gap between one aligned stack and the next.  */
@@ -123,7 +127,7 @@ pub const YYSTACK_GAP_MAXIMUM = @sizeOf(yyalloc) - 1;
 // /* The size of an array large to enough to hold all stacks, each with
 //    N elements.  */
 pub fn YYSTACK_BYTES(comptime N: usize) usize {
-    return N + @sizeOf(yy_state_t) + @sizeOf(YYSTYPE) + YYSTACK_GAP_MAXIMUM;
+    return N + @sizeOf(yy_state_t) + @sizeOf(YYSTYPE) + @sizeOf(YYLTYPE) + 2 * YYSTACK_GAP_MAXIMUM;
 }
 
 const WITH_YYSTACK_RELOCATE = true;
@@ -198,7 +202,7 @@ pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
 pub const yytranslate = [_]isize{ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
 // /* YYRLINE[YYN] -- Source line where rule number YYN was defined.//  */
-pub const yyrline = [_]isize{ 0, 83, 83, 84, 88, 95, 102, 103, 107, 108, 109, 110, 111, 121, 122, 123 };
+pub const yyrline = [_]isize{ 0, 85, 85, 86, 90, 97, 104, 105, 109, 110, 111, 112, 113, 123, 124, 125 };
 
 // /** Accessing symbol of state STATE.  */
 pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
@@ -287,6 +291,47 @@ pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
     }
 }
 
+// /* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
+//    If N is 0, then set CURRENT to the empty location which ends
+//    the previous symbol: RHS[0] (always defined).  */
+
+fn YYLLOC_DEFAULT(current: *YYLTYPE, rhs: *YYLTYPE, N: usize) void {
+    if (N > 0) {
+        current.first_line = rhs[1].first_line;
+        current.first_column = rhs[1].first_column;
+        current.last_line = rhs[N].last_line;
+        current.last_column = rhs[N].last_column;
+    } else {
+        current.first_line = rhs[0].last_line;
+        current.last_line = current.first_line;
+        current.first_column = rhs[0].last_column;
+        current.last_column = current.last_column;
+    }
+}
+
+// /* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
+fn yy_location_print_(yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
+    const end_col = if (0 != yylocp.last_column) yylocp.last_column - 1 else 0;
+    if (yydebug) {
+        if (0 <= yylocp.first_line) {
+            try yyo.writer().print("{d}", .{yylocp.first_line});
+            if (0 <= yylocp.first_column) {
+                try yyo.writer().print(".{d}", .{yylocp.first_column});
+            }
+        }
+        if (0 <= yylocp.last_line) {
+            if (yylocp.first_line < yylocp.last_line) {
+                try yyo.writer().print("-{d}", .{yylocp.last_line});
+                if (0 <= end_col) {
+                    try yyo.writer().print(".{d}", .{end_col});
+                }
+            } else if (0 <= end_col and yylocp.first_column < end_col) {
+                try yyo.writer().print("-{d}", .{end_col});
+            }
+        }
+    }
+}
+
 pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, kind: anytype, value: anytype, location: anytype) void {
     if (yydebug) {
         std.debug.print("%s", .{title});
@@ -302,22 +347,23 @@ pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, kind: anyty
 // | Print this symbol's value on YYO.  |
 // `-----------------------------------*/
 
-pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE) !void {
+pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
+    _ = yylocationp;
     if (yyvaluep == null) return;
     switch (yykind) {
-        YYSYMBOL_NUM => { // /* "number"//  */
+        yysymbol_kind_t.YYSYMBOL_NUM => { // /* "number"//  */
             {
                 try yyo.writer().print("{d}", ((*yyvaluep).TOK_NUM));
             }
         },
 
-        YYSYMBOL_STR => { // /* "string"//  */
+        yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
             {
                 try yyo.writer().print("{s}", ((*yyvaluep).TOK_STR));
             }
         },
 
-        YYSYMBOL_exp => { // /* exp//  */
+        yysymbol_kind_t.YYSYMBOL_exp => { // /* exp//  */
             {
                 try yyo.writer().print("{d}", ((*yyvaluep).TOK_exp));
             }
@@ -331,12 +377,14 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
 // | Print this symbol on YYO.  |
 // `---------------------------*/
 
-pub fn yy_symbol_print(yyo: std.fs.File, yykind: usize, yyvaluep: *const YYSTYPE) !void {
+pub fn yy_symbol_print(yyo: std.fs.File, yykind: usize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
     try yyo.writer().print("{s} {s} (", .{
         if (yykind < YYNTOKENS) "token" else "nterm",
         yysymbol_name(yykind),
     });
-    try yy_symbol_value_print(yyo, yykind, yyvaluep);
+    try yy_location_print_(yyo, yylocationp);
+    try yyo.writer().print(": ", .{});
+    try yy_symbol_value_print(yyo, yykind, yyvaluep, yylocationp);
     try yyo.writer().print(")", .{});
 }
 
@@ -361,7 +409,8 @@ pub fn yy_stack_print(yybottom: [*c]yy_state_t, yytop: [*c]yy_state_t) void {
 // | Report that the YYRULE is going to be reduced.  |
 // `------------------------------------------------*/
 
-pub fn yy_reduce_print(yyssp: [*c]yy_state_t, yyvsp: [*c]YYSTYPE, yyrule: usize) void {
+pub fn yy_reduce_print(yyctx: *yyparse_context_t, yylsp: [*c]YYLTYPE, yyrule: usize) void {
+    _ = yylsp;
     const yylno = yyrline[yyrule];
     const yynrhs = yyr2[yyrule];
     if (yydebug) {
@@ -372,17 +421,11 @@ pub fn yy_reduce_print(yyssp: [*c]yy_state_t, yyvsp: [*c]YYSTYPE, yyrule: usize)
         if (yydebug) {
             std.debug.print("   ${d} = ", .{yyi + 1});
         }
-        yy_symbol_print(std.io.getStdErr(), YY_ACCESSING_SYMBOL(yyssp[yyi + 1 - yynrhs]), &yyvsp[(yyi + 1) - (yynrhs)]);
+        yy_symbol_print(std.io.getStdErr(), YY_ACCESSING_SYMBOL(yyctx.yyssp[yyi + 1 - yynrhs]), &yyctx.yyvsp[(yyi + 1) - (yynrhs)], &(yyctx.yylsp[(yyi + 1) - (yynrhs)]));
         if (yydebug) {
             std.debug.print("\n", .{});
         }
     }
-
-    // # define YY_REDUCE_PRINT(Rule)          \
-    // do {                                    \
-    //   if (yydebug)                          \
-    //     yy_reduce_print (yyssp, yyvsp, Rule, YYLexer, Result); \
-    // } while (0)
 }
 
 // /* YYINITDEPTH -- initial size of the parser's stacks.  */
@@ -401,6 +444,7 @@ pub const YYMAXDEPTH = 10000;
 pub const yypcontext_t = struct {
     yyssp: [*c]yy_state_t,
     yytoken: yysymbol_kind_t,
+    yylloc: *YYLTYPE,
 };
 
 // /* Put in YYARG at most YYARGN of the expected tokens given the
@@ -568,14 +612,15 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[*c]u8, yyctx: *yypcontext_t)
 // | Release the memory associated to this symbol.  |
 // `-----------------------------------------------*/
 
-pub fn yydestruct(yymsg: [*c]u8, yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE) void {
+pub fn yydestruct(yymsg: [*c]u8, yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
+    _ = yylocationp;
     if (yymsg == null) {
         yymsg = "Deleting";
     }
     YY_SYMBOL_PRINT(yymsg, yykind, yyvaluep, null);
 
     switch (yykind) {
-        YYSYMBOL_STR => { // /* "string"//  */
+        yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
             {
                 allocator.free(((*yyvaluep).TOK_STR));
             }
@@ -602,6 +647,20 @@ const yyparse_context_t = struct {
     yyval_default: YYSTYPE,
     yylval: YYSTYPE,
 
+    // /* Location data for the lookahead symbol.  */
+    yyloc_default: YYLTYPE = YYLTYPE{
+        .first_line = 1,
+        .first_column = 1,
+        .last_line = 1,
+        .last_column = 1,
+    },
+    yylloc: YYLTYPE = YYLTYPE{
+        .first_line = 1,
+        .first_column = 1,
+        .last_line = 1,
+        .last_column = 1,
+    },
+
     // /* Number of syntax errors so far.  */
     yynerrs: usize = 0,
 
@@ -625,6 +684,11 @@ const yyparse_context_t = struct {
     yyvs: [*c]YYSTYPE, // need init to  = yyvsa;
     yyvsp: [*c]YYSTYPE, // need init to  = yyvs;
 
+    // /* The location stack: array, bottom, top.  */
+    yylsa: [YYINITDEPTH]YYLTYPE,
+    yyls: *YYLTYPE, // need init to  = yylsa;
+    yylsp: *YYLTYPE, // need init to  = yyls;
+
     yyn: c_int,
     // /* The return value of yyparse.  */
     yyresult: c_int,
@@ -633,6 +697,10 @@ const yyparse_context_t = struct {
     // /* The variables used to return semantic value and location from the
     //    action routines.  */
     yyval: YYSTYPE,
+    yyloc: YYLTYPE,
+
+    // /* The locations where the error started and ended.  */
+    yyerror_range: [3]YYLTYPE,
 
     // /* Buffer for error messages, and its allocated size.  */
     yymsgbuf: [128]u8,
@@ -697,9 +765,15 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
                 //    these so that the &'s don't force the real ones into
                 //    memory.  */
                 var yyss1 = yyctx.yyss;
-                _ = &yyss1;
+                {
+                    _ = &yyss1;
+                }
                 var yyvs1 = yyctx.yyvs;
-                _ = &yyvs1;
+                {
+                    _ = &yyvs1;
+                }
+
+                const yyls1 = yyctx.yyls;
 
                 // /* Each stack pointer address is followed by the size of the
                 //    data in use in that stack, in bytes.  This used to be a
@@ -709,9 +783,11 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
                 // yyoverflow (YY_("memory exhausted"),
                 //            &yyss1, yysize * YYSIZEOF (*yyssp),
                 //            &yyvs1, yysize * YYSIZEOF (*yyvsp),
+                //            &yyls1, yysize * YYSIZEOF (*yylsp),
                 //            &yystacksize);
                 yyctx.yyss = yyss1;
                 yyctx.yyvs = yyvs1;
+                yyctx.yyls = yyls1;
             } else if (WITH_YYSTACK_RELOCATE) {
                 // /* Extend the stack our own way.  */
                 if (YYMAXDEPTH <= yyctx.yystacksize) {
@@ -730,6 +806,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
                     }
                     YYSTACK_RELOCATE(&yyctx, .yyss, &yyptr, yysize);
                     YYSTACK_RELOCATE(&yyctx, .yyvs, &yyptr, yysize);
+                    YYSTACK_RELOCATE(&yyctx, .yyls, &yyptr, yysize);
                     // YYSTACK_RELOCATE = false;
                     // TODO: why undef?
                     // #  undef YYSTACK_RELOCATE
@@ -741,6 +818,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
 
             yyctx.yyssp = yyctx.yyss + yyctx.yysize - 1;
             yyctx.yyvsp = yyctx.yyvs + yyctx.yysize - 1;
+            yyctx.yylsp = yyctx.yyls + yyctx.yysize - 1;
 
             if (yydebug) {
                 std.debug.print("Stack size increased to {d}\n", .{yyctx.yystacksize});
@@ -784,13 +862,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
         std.debug.print("Reading a token\n");
     }
 
-    // TODO: this must change
-    var yylval_param: YYLexer.YYSTYPE = .{};
-    _ = &yylval_param;
-    var yylloc_param: YYLexer.YYLTYPE = .{};
-    _ = &yylval_param;
-
-    yyctx.yychar = try yyctx.scanner.yylex(&yylval_param, &yylloc_param);
+    yyctx.yychar = try yyctx.scanner.yylex(yyctx.yylval, yyctx.yylloc, YYLexer, Result);
 
     if (yyctx.yychar <= yytoken_kind_t.TOK_EOF) {
         yyctx.yychar = yytoken_kind_t.TOK_EOF;
@@ -805,6 +877,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
         //    loop in error recovery. */
         yyctx.yychar = yytoken_kind_t.TOK_YYUNDEF;
         yyctx.yytoken = yysymbol_kind_t.YYSYMBOL_YYerror;
+        yyctx.yyerror_range[1] = yyctx.yylloc;
         return LABEL_YYERRLAB1;
     } else {
         yyctx.yytoken = YYTRANSLATE(yyctx.yychar);
@@ -838,6 +911,9 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
     yyctx.yyvsp += 1;
     yyctx.yyvsp.* = yyctx.yylval;
 
+    yyctx.yylsp += 1;
+    yyctx.yylsp.* = yyctx.yylloc;
+
     // /* Discard the shifted token.  */
     yyctx.yychar = yytoken_kind_t.TOK_YYEMPTY;
     return LABEL_YYNEWSTATE;
@@ -870,7 +946,9 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
     //    unconditionally makes the parser a bit smaller, and it avoids a
     //    GCC warning that YYVAL may be used uninitialized.  */
     yyctx.yyval = yyctx.yyvsp[1 - yyctx.yylen];
-
+    // /* Default location. */
+    YYLLOC_DEFAULT(yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);
+    yyctx.yyerror_range[1] = yyctx.yyloc;
     yy_reduce_print(yyctx.yyssp, yyctx.yyvsp, yyctx.yyn);
     switch (yyctx.yyn) {
         4 => { // /* line: exp eol//  */
@@ -961,6 +1039,8 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
 
     yyctx.yyvsp += 1;
     yyctx.yyvsp.* = yyctx.yyval;
+    yyctx.yylsp += 1;
+    yyctx.yylsp.* = yyctx.yyloc;
 
     // /* Now 'shift' the result of the reduction.  Determine what state
     //    that goes to, based on the state we popped back to and the rule
@@ -994,7 +1074,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
     if (!yyctx.yyerrstatus) {
         yyctx.yynerrs += 1;
         {
-            var yypctx = yypcontext_t{ .yyssp = yyctx.yyssp, .yytoken = yyctx.yytoken };
+            var yypctx = yypcontext_t{ .yyssp = yyctx.yyssp, .yytoken = yyctx.yytoken, .yylloc = &yyctx.yylloc };
             var yymsgp: []const u8 = "syntax error";
             var yysyntax_error_status: c_int = 0;
             yysyntax_error_status = yysyntax_error(&yyctx.yymsg_alloc, &yyctx.yymsg, &yypctx);
@@ -1013,13 +1093,14 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
                     yysyntax_error_status = YYENOMEM;
                 }
             }
-            // yyerror (YYLexer, Result, yymsgp);
+            // yyerror (&yylloc, YYLexer, Result, yymsgp);
             if (yysyntax_error_status == YYENOMEM) {
                 return LABEL_YYEXHAUSTEDLAB;
             }
         }
     }
 
+    yyctx.yyerror_range[1] = yyctx.yylloc;
     if (yyctx.yyerrstatus == 3) {
         // /* If just tried and failed to reuse lookahead token after an
         //    error, discard it.  */
@@ -1030,7 +1111,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
                 return LABEL_YYABORTLAB;
             }
         } else {
-            yydestruct("Error: discarding", yyctx.yytoken, &yyctx.yylval);
+            yydestruct("Error: discarding", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
             yyctx.yychar = yytoken_kind_t.TOK_YYEMPTY;
         }
     }
@@ -1080,7 +1161,8 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
             return LABEL_YYABORTLAB;
         }
 
-        yydestruct("Error: popping", YY_ACCESSING_SYMBOL(yyctx.yystate), yyctx.yyvsp);
+        yyctx.yyerror_range[1] = yyctx.yylsp.*;
+        yydestruct("Error: popping", YY_ACCESSING_SYMBOL(yyctx.yystate), yyctx.yyvsp, yyctx.yylsp);
         yyctx.YYPOPSTACK(1);
         yyctx.yystate = yyctx.yyssp.*;
         yy_stack_print(yyctx.yyss, yyctx.yyssp);
@@ -1090,6 +1172,10 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
     yyctx.yyvsp += 1;
     yyctx.yyvsp = yyctx.yylval;
     // YY_IGNORE_MAYBE_UNINITIALIZED_END
+
+    yyctx.yyerror_range[2] = yyctx.yylloc;
+    yyctx.yylsp += 1;
+    YYLLOC_DEFAULT(yyctx.yylsp.*, yyctx.yyerror_range, 2);
 
     // /* Shift the error token.  */
     YY_SYMBOL_PRINT("Shifting", YY_ACCESSING_SYMBOL(yyctx.yyn), yyctx.yyvsp, yyctx.yylsp);
@@ -1118,7 +1204,7 @@ fn label_yyabortlab(yyctx: *yyparse_context_t) usize {
 // | yyexhaustedlab -- YYNOMEM (memory exhaustion) comes here.  |
 // `-----------------------------------------------------------*/
 fn label_yyexhaustedlab(yyctx: *yyparse_context_t) usize {
-    // yyerror (YYLexer, Result, YY_("memory exhausted"));
+    // yyerror (&yylloc, YYLexer, Result, YY_("memory exhausted"));
     yyctx.yyresult = 2;
     return LABEL_YYRETURNLAB;
 }
@@ -1131,14 +1217,14 @@ fn label_yyreturnlab(yyctx: *yyparse_context_t) usize {
         // /* Make sure we have latest lookahead translation.  See comments at
         //   user semantic actions for why this is necessary.  */
         yyctx.yytoken = YYTRANSLATE(yyctx.yychar);
-        yydestruct("Cleanup: discarding lookahead", yyctx.yytoken, &yyctx.yylval);
+        yydestruct("Cleanup: discarding lookahead", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     }
     // /* Do not reclaim the symbols of the rule whose action triggered
     //    this YYABORT or YYACCEPT.  */
     yyctx.YYPOPSTACK(yyctx.yylen);
     yy_stack_print(yyctx.yyss, yyctx.yyssp);
     while (yyctx.yyssp != yyctx.yyss) {
-        yydestruct("Cleanup: popping", YY_ACCESSING_SYMBOL(yyctx.yyssp.*), yyctx.yyvsp);
+        yydestruct("Cleanup: popping", YY_ACCESSING_SYMBOL(yyctx.yyssp.*), yyctx.yyvsp, yyctx.yylsp);
         yyctx.YYPOPSTACK(1);
     }
     return LABEL_YYPUSHRETURN;
@@ -1165,7 +1251,8 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) c_int {
 
     yyctx.yychar = yytoken_kind_t.TOK_YYEMPTY; // /* Cause a token to be read.  */
 
-    // goto yysetstate;
+    yyctx.yylsp[0] = yyctx.yylloc;
+
     var loop_control: usize = LABEL_YYSETSTATE;
 
     while (true) {

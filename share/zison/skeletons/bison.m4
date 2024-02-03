@@ -503,7 +503,7 @@ m4_define([b4_symbol_action],
                    [$1],
                    [],
                    [(*yylocationp)])dnl
-    _b4_symbol_case([$1])[]dnl
+]$3[_b4_symbol_case([$1])[]dnl
 b4_syncline([b4_symbol([$1], [$2_line])], [b4_symbol([$1], [$2_file])])dnl
 b4_symbol([$1], [$2])
 b4_syncline([@oline@], [@ofile@])dnl
@@ -517,7 +517,11 @@ b4_dollar_popdef[]dnl
 # b4_symbol_printer(SYMBOL-NUM)
 # --------------------------------
 m4_define([b4_symbol_destructor], [b4_symbol_action([$1], [destructor])])
+m4_define([b4_symbol_sym_destructor],    [b4_symbol_action([$1], [destructor], [yysymbol_kind_t.])])
+m4_define([b4_symbol_tok_destructor],    [b4_symbol_action([$1], [destructor], [yytoken_kind_t.])])
 m4_define([b4_symbol_printer],    [b4_symbol_action([$1], [printer])])
+m4_define([b4_symbol_sym_printer],    [b4_symbol_action([$1], [printer], [yysymbol_kind_t.])])
+m4_define([b4_symbol_tok_printer],    [b4_symbol_action([$1], [printer], [yytoken_kind_t.])])
 
 
 # b4_symbol_actions(ACTION, [KIND = yykind])
@@ -526,7 +530,7 @@ m4_define([b4_symbol_printer],    [b4_symbol_action([$1], [printer])])
 # Dispatch on KIND.
 # m4_defn([b4_actions_])[]dnl
 m4_define([b4_symbol_actions],
-[m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_$1])]))dnl
+[m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_sym_$1])]))dnl
 m4_ifval(m4_defn([b4_actions_]),
 [switch (m4_default([$2], [yykind]))
     {

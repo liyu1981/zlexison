@@ -112,8 +112,8 @@ b4_percent_define_default([[api.symbol.prefix]], [[YYSYMBOL_]])
 # All the yylex formal arguments.
 # b4_lex_param arrives quoted twice, but we want to keep only one level.
 m4_define([b4_yylex_formals],
-[b4_pure_if([[[b4_api_PREFIX[STYPE *yylvalp]], [[&yylval]]][]dnl
-b4_locations_if([, [b4_api_PREFIX[LTYPE *yyllocp], [&yylloc]]])])dnl
+[b4_pure_if([[[b4_api_PREFIX[STYPE *yylvalp]], [[yyctx.yylval]]][]dnl
+b4_locations_if([, [b4_api_PREFIX[LTYPE *yyllocp], [yyctx.yylloc]]])])dnl
 m4_ifdef([b4_lex_param], [, ]b4_lex_param)])
 
 
@@ -588,7 +588,7 @@ pub fn yy_symbol_print (yyo: std.fs.File,
       if (yykind < YYNTOKENS) "token" else "nterm",
       yysymbol_name(yykind),
   });
-]b4_locations_if([  YYLOCATION_PRINT (yyo, yylocationp);
+]b4_locations_if([  try yy_location_print_(yyo, yylocationp);
   try yyo.writer().print(": ", .{});
 ])dnl
 [  try yy_symbol_value_print (yyo, yykind, yyvaluep]dnl
@@ -749,22 +749,11 @@ typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
 # b4_location_type_define
 # -----------------------
 m4_define([b4_location_type_define],
-[[/* Location type.  */
+[[// /* Location type.  */
 ]b4_percent_define_ifdef([[api.location.type]],
-[[typedef ]b4_percent_define_get([[api.location.type]])[ ]b4_api_PREFIX[LTYPE;
+[[const YYLTYPE =]b4_percent_define_get([[api.location.type]])[;
 ]],
-[[#if ! defined ]b4_api_PREFIX[LTYPE && ! defined ]b4_api_PREFIX[LTYPE_IS_DECLARED
-typedef struct ]b4_api_PREFIX[LTYPE ]b4_api_PREFIX[LTYPE;
-struct ]b4_api_PREFIX[LTYPE
-{
-  int first_line;
-  int first_column;
-  int last_line;
-  int last_column;
-};
-# define ]b4_api_PREFIX[LTYPE_IS_DECLARED 1
-# define ]b4_api_PREFIX[LTYPE_IS_TRIVIAL 1
-#endif
+[[const YYLTYPE =]b4_percent_define_get([[api.location.type]])[;
 ]])])
 
 
@@ -804,29 +793,23 @@ pub var ]b4_prefix[debug: bool = YYDEBUG == 1;
 # ------------------------
 # Define YYLLOC_DEFAULT.
 m4_define([b4_yylloc_default_define],
-[[/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
+[[// /* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
+//    If N is 0, then set CURRENT to the empty location which ends
+//    the previous symbol: RHS[0] (always defined).  */
 
-#ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)                                \
-    do                                                                  \
-      if (N)                                                            \
-        {                                                               \
-          (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;        \
-          (Current).first_column = YYRHSLOC (Rhs, 1).first_column;      \
-          (Current).last_line    = YYRHSLOC (Rhs, N).last_line;         \
-          (Current).last_column  = YYRHSLOC (Rhs, N).last_column;       \
-        }                                                               \
-      else                                                              \
-        {                                                               \
-          (Current).first_line   = (Current).last_line   =              \
-            YYRHSLOC (Rhs, 0).last_line;                                \
-          (Current).first_column = (Current).last_column =              \
-            YYRHSLOC (Rhs, 0).last_column;                              \
-        }                                                               \
-    while (0)
-#endif
+fn YYLLOC_DEFAULT(current: *YYLTYPE, rhs: *YYLTYPE, N: usize) void {
+    if (N > 0) {
+      current.first_line = rhs[1].first_line;
+      current.first_column = rhs[1].first_column;
+      current.last_line = rhs[N].last_line;
+      current.last_column = rhs[N].last_column;
+    } else {
+      current.first_line = rhs[0].last_line;
+      current.last_line = current.first_line;
+      current.first_column = rhs[0].last_column;
+      current.last_column = current.last_column;
+    }
+}
 ]])
 
 # b4_yylocation_print_define
@@ -834,75 +817,33 @@ m4_define([b4_yylloc_default_define],
 # Define YYLOCATION_PRINT.
 m4_define([b4_yylocation_print_define],
 [b4_locations_if([[
-/* YYLOCATION_PRINT -- Print the location on the stream.
-   This macro was not mandated originally: define only if we know
-   we won't break user code: when these are the locations we know.  */
-
-# ifndef YYLOCATION_PRINT
-
-#  if defined YY_LOCATION_PRINT
-
-   /* Temporary convenience wrapper in case some people defined the
-      undocumented and private YY_LOCATION_PRINT macros.  */
-#   define YYLOCATION_PRINT(File, Loc)  YY_LOCATION_PRINT(File, *(Loc))
-
-#  elif defined ]b4_api_PREFIX[LTYPE_IS_TRIVIAL && ]b4_api_PREFIX[LTYPE_IS_TRIVIAL
-
-/* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
-
-YY_ATTRIBUTE_UNUSED
-static int
-yy_location_print_ (FILE *yyo, YYLTYPE const * const yylocp)
-{
-  int res = 0;
-  int end_col = 0 != yylocp->last_column ? yylocp->last_column - 1 : 0;
-  if (0 <= yylocp->first_line)
-    {
-      res += YYFPRINTF (yyo, "%d", yylocp->first_line);
-      if (0 <= yylocp->first_column)
-        res += YYFPRINTF (yyo, ".%d", yylocp->first_column);
+// /* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
+fn yy_location_print_ (yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
+  const end_col = if (0 != yylocp.last_column) yylocp.last_column - 1 else 0;
+  if (yydebug) {
+    if (0 <= yylocp.first_line) {
+      try yyo.writer().print("{d}", .{yylocp.first_line});
+      if (0 <= yylocp.first_column) {
+        try yyo.writer().print(".{d}", .{yylocp.first_column});
+      }
     }
-  if (0 <= yylocp->last_line)
-    {
-      if (yylocp->first_line < yylocp->last_line)
-        {
-          res += YYFPRINTF (yyo, "-%d", yylocp->last_line);
-          if (0 <= end_col)
-            res += YYFPRINTF (yyo, ".%d", end_col);
+    if (0 <= yylocp.last_line) {
+      if (yylocp.first_line < yylocp.last_line) {
+        try yyo.writer().print("-{d}", .{yylocp.last_line});
+          if (0 <= end_col) {
+            try yyo.writer().print(".{d}", .{end_col});
+          }
         }
-      else if (0 <= end_col && yylocp->first_column < end_col)
-        res += YYFPRINTF (yyo, "-%d", end_col);
+      else if (0 <= end_col and yylocp.first_column < end_col) {
+        try yyo.writer().print("-{d}", .{end_col});
+      }
     }
-  return res;
+  }
 }
-
-#   define YYLOCATION_PRINT  yy_location_print_
-
-    /* Temporary convenience wrapper in case some people defined the
-       undocumented and private YY_LOCATION_PRINT macros.  */
-#   define YY_LOCATION_PRINT(File, Loc)  YYLOCATION_PRINT(File, &(Loc))
-
-#  else
-
-#   define YYLOCATION_PRINT(File, Loc) ((void) 0)
-    /* Temporary convenience wrapper in case some people defined the
-       undocumented and private YY_LOCATION_PRINT macros.  */
-#   define YY_LOCATION_PRINT  YYLOCATION_PRINT
-
-#  endif
-# endif /* !defined YYLOCATION_PRINT */]])
-])
+]])])
 
 # b4_yyloc_default
 # ----------------
 # Expand to a possible default value for yylloc.
 m4_define([b4_yyloc_default],
-[[
-# if defined ]b4_api_PREFIX[LTYPE_IS_TRIVIAL && ]b4_api_PREFIX[LTYPE_IS_TRIVIAL
-  = { ]m4_join([, ],
-               m4_defn([b4_location_initial_line]),
-               m4_defn([b4_location_initial_column]),
-               m4_defn([b4_location_initial_line]),
-               m4_defn([b4_location_initial_column]))[ }
-# endif
-]])
+[[{ .first_line = 1, .first_column = 1, .last_line = 1, .last_column = 1, }]])

@@ -49,6 +49,8 @@
 // Enable run-time traces (yydebug).
 %define parse.trace
 
+%define api.location.type {YYLexer.YYLTYPE}
+
 // Generate the parser description file (parse.output).
 %verbose
 
