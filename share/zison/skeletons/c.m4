@@ -786,9 +786,9 @@ b4_pure_if([], [[extern ]b4_api_PREFIX[STYPE ]b4_prefix[lval;
 m4_define([b4_YYDEBUG_define],
 [[// /* Debug traces.  */
 ]m4_if(b4_api_prefix, [yy],
-[[pub var yydebug = ]b4_parse_trace_if([1], [0])[;
+[[const YYDEBUG = ]b4_parse_trace_if([1], [0])[;
 ]],
-[[pub var yydebug = ]b4_parse_trace_if([1], [0])[;
+[[const YYDEBUG = ]b4_parse_trace_if([1], [0])[;
 ]])[]dnl
 ])
 
@@ -796,7 +796,7 @@ m4_define([b4_YYDEBUG_define],
 # ------------------
 m4_define([b4_declare_yydebug],
 [b4_YYDEBUG_define[]b4_parse_trace_if([
-pub extern var ]b4_prefix[debug: bool;
+pub var ]b4_prefix[debug: bool = YYDEBUG == 1;
 ], [])[]dnl
 ])
 

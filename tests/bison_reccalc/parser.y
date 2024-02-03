@@ -4,9 +4,9 @@
 // Emitted in the header file, before the definition of YYSTYPE.
 %code requires
 {
-  const lexer = @import("scan.zig");
+  const YYLexer = @import("scan.zig");
 
-  pub const result = struct {
+  pub const Result = struct {
     // Whether to print the intermediate results.
     verbose: bool,
     // Value of the last computation.
@@ -53,7 +53,7 @@
 %verbose
 
 // Scanner and error count are exchanged between main, yyparse and yylex.
-%param {scanner: yyscan_t}{res: *result}
+%param {scanner: *YYLexer}{res: *Result}
 
 %token
   PLUS   "+"
@@ -87,13 +87,14 @@ input:
 line:
   exp eol
     {
-      res.value = $exp;
-      if (res.verbose)
-        printf ("%d\n", $exp);
+      yyctx.res.value = $exp;
+      if (yyctx.res.verbose) {
+        std.debug.print("{d}\n", .{$exp});
+      }
     }
 | error eol
     {
-      yyerrok;
+      std.debug.print("yyerrok!", .{});
     }
 ;
 
@@ -111,8 +112,8 @@ exp:
   {
     if ($3 == 0)
       {
-        yyerror (scanner, res, "invalid division by zero");
-        YYERROR;
+        std.debug.print("invalid division by zero", .{});
+        unreachable;
       }
     else
       $$ = $1 / $3;
@@ -121,65 +122,33 @@ exp:
 | "-" exp %prec UNARY  { $$ = -$2; }
 | STR
   {
-    var r = parse_string ($1);
-    free ($1);
-    if (r.nerrs)
-      {
-        res.nerrs += r.nerrs;
-        YYERROR;
-      }
-    else
-      $$ = r.value;
+    const int_value = try std.fmt.parseInt(c_int, $1, 10);
+    allocator.free($1);
+    $$ = int_value;
   }
 ;
 
 %%
-// Epilogue (C code).
-// #include "scan.h"
 
-// result
-// parse (void)
-// {
-//   yyscan_t scanner;
-//   yylex_init (&scanner);
-//   result res = {1, 0, 0};
-//   yyparse (scanner, &res);
-//   yylex_destroy (scanner);
-//   return res;
-// }
+pub fn main() !u8 {
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+    defer std.heap.page_allocator.free(args);
+    var aa = std.heap.ArenaAllocator(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
 
-// result
-// parse_string (const char *str)
-// {
-//   yyscan_t scanner;
-//   yylex_init (&scanner);
-//   YY_BUFFER_STATE buf = yy_scan_string (str ? str : "", scanner);
-//   result res = {0, 0, 0};
-//   yyparse (scanner, &res);
-//   yy_delete_buffer (buf, scanner);
-//   yylex_destroy (scanner);
-//   return res;
-// }
+    YYParser.allocator = allocator;
+    yydebug = true;
+    var res: Result = Result{};
 
-// void
-// yyerror (yyscan_t scanner, result *res,
-//          const char *msg, ...)
-// {
-//   (void) scanner;
-//   va_list args;
-//   va_start (args, msg);
-//   vfprintf (stderr, msg, args);
-//   va_end (args);
-//   fputc ('\n', stderr);
-//   res->nerrs += 1;
-// }
+    var scanner = YYLexer{ .allocator = arena };
+    YYLexer.context = YYLexer.Context.init(arena);
+    defer YYLexer.context.deinit();
 
-// int
-// main (void)
-// {
-//   // Possibly enable parser runtime debugging.
-//   yydebug = !!getenv ("YYDEBUG");
-//   result res = parse ();
-//   // Exit on failure if there were errors.
-//   return !!res.nerrs;
-// }
+    try YYLexer.yylex_init(&scanner);
+    defer YYLexer.yylex_destroy(&scanner);
+
+    try YYParser.yyparse(&scanner, &res);
+
+    std.debug.print("{any}\n", .{res});
+}

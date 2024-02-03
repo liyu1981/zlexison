@@ -140,14 +140,14 @@ m4_define([b4_accept],
 # --------------------------------
 # See README.
 m4_define([b4_lhs_value],
-[b4_symbol_value(yyval, [$1], [$2])])
+[b4_symbol_value(yyctx.yyval, [$1], [$2])])
 
 
 # b4_rhs_value(RULE-LENGTH, POS, [SYMBOL-NUM], [TYPE])
 # ----------------------------------------------------
 # See README.
 m4_define([b4_rhs_value],
-[b4_symbol_value([yyvsp@{b4_subtract([$2], [$1])@}], [$3], [$4])])
+[b4_symbol_value([yyctx.yyvsp@{b4_subtract([$2], [$1])@}], [$3], [$4])])
 
 
 ## ----------- ##
@@ -432,7 +432,7 @@ b4_output_begin([b4_parser_file_name])[
 ]b4_identification[
 const std = @@import("std");
 const Self = @@This();
-const Parser = @@This();
+const YYParser = @@This();
 
 pub var with_yyoverflow: bool = false;
 
@@ -727,7 +727,7 @@ pub fn yy_stack_print(yybottom: [*c]yy_state_t, yytop: [*c]yy_state_t) void {
 // | Report that the YYRULE is going to be reduced.  |
 // `------------------------------------------------*/
 
-pub fn yy_reduce_print(yyssp: [*c]yy_state_t, yyvsp: [*c]YYSTYPE,]b4_locations_if([[ yylsp: [*c]YYLTYPE,]])[yyrule: usize]b4_user_formals[) void {
+pub fn yy_reduce_print(yyssp: [*c]yy_state_t, yyvsp: [*c]YYSTYPE,]b4_locations_if([[ yylsp: [*c]YYLTYPE,]])[yyrule: usize][) void {
    const yylno = yyrline[yyrule];
    const yynrhs = yyr2[yyrule];
    if (yydebug) {
@@ -1089,7 +1089,7 @@ yypcontext_expected_tokens (yyctx: *yypcontext_t,
       const yyxend = if (yychecklim < YYNTOKENS) yychecklim else YYNTOKENS;
       var yyx = yyxbegin;
       while (yyx < yyxend) : (yyx += 1) {
-        if (yycheck[yyx + yyn] == yyx and yyx != ]b4_symbol(error, kind)[
+        if (yycheck[yyx + yyn] == yyx and yyx != yysymbol_kind_t.]b4_symbol(error, kind)[
             and !yytable_value_is_error (yytable[yyx + yyn]))
           {
             if (yyarg == null) {
@@ -1451,6 +1451,7 @@ yypstate_delete (yypstate *yyps)
 // collect all yyparse loop variables into one struct so that when we deal with
 // gotos, we will be with easier life
 const yyparse_context_t = struct {
+    ]b4_formals(b4_parse_param)[,
     ]b4_pure_if([b4_declare_scanner_communication_variables])[
     ]b4_declare_parser_state_variables([init])[
     ]b4_lac_if([[
@@ -1521,7 +1522,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
   }
   YY_ASSERT (0 <= yyctx.yystate and yyctx.yystate < YYNSTATES);
   yyctx.yyssp.* = yyctx.yystate;
-  yy_stack_print (yyss, yyssp);
+  yy_stack_print (yyctx.yyss, yyctx.yyssp);
 
   if (yyctx.yyss + yyctx.yystacksize - 1 <= yyctx.yyssp) {
     if (!with_yyoverflow and !WITH_YYSTACK_RELOCATE) {
@@ -1565,7 +1566,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
         }
 
         {
-          var yyss1 = yyss;
+          const yyss1 = yyctx.yyss;
           var yyptr: [*c]yyalloc = YYSTACK_BYTES (yyctx.yystacksize);
           if (yyptr == null) {
             return LABEL_YYEXHAUSTEDLAB;
@@ -1638,7 +1639,7 @@ fn label_yybackup(yyctx: *yyparse_context_t) usize {
   return LABEL_YYREAD_PUSHED_TOKEN;
 }
 
-fn label_yyread_pushed_token(yyctx: *yyparse_context_t) usize {[
+fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
   if (yydebug) {
     std.debug.print("Reading a token\n");
   }
@@ -1650,12 +1651,18 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) usize {[
   if (yyctx.yypushed_loc) {
     yyctx.yylloc = yyctx.yypushed_loc.*;
   }]])])], [[
-  yyctx.yychar = ]b4_yylex[;]])[
+    // TODO: this must change
+    var yylval_param: YYLexer.YYSTYPE = .{};
+    _ = &yylval_param;
+    var yylloc_param: YYLexer.YYLTYPE = .{};
+    _ = &yylval_param;
+
+  yyctx.yychar = try yyctx.scanner.]b4_yylex[;]])[
 
   if (yyctx.yychar <= yytoken_kind_t.]b4_symbol(eof, [id])[)
     {
-      yyctx.yychar = ]b4_symbol(eof, [id])[;
-      yyctx.yytoken = ]b4_symbol(eof, [kind])[;
+      yyctx.yychar = yytoken_kind_t.]b4_symbol(eof, [id])[;
+      yyctx.yytoken = yysymbol_kind_t.]b4_symbol(eof, [kind])[;
       if (yydebug) {
         std.debug.print("Now at end of input.\n");
       }
@@ -1666,15 +1673,15 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) usize {[
       //    to error recovery.  But do not keep the error token as
       //    lookahead, it is too special and may lead us to an endless
       //    loop in error recovery. */
-      yyctx.yychar = ]b4_symbol(undef, [id])[;
-      yyctx.yytoken = ]b4_symbol(error, [kind])[;]b4_locations_if([[
+      yyctx.yychar = yytoken_kind_t.]b4_symbol(undef, [id])[;
+      yyctx.yytoken = yysymbol_kind_t.]b4_symbol(error, [kind])[;]b4_locations_if([[
       yyctx.yyerror_range[1] = yylloc;]])[
       return LABEL_YYERRLAB1;
     }
   else
     {
       yyctx.yytoken = YYTRANSLATE (yyctx.yychar);
-      YY_SYMBOL_PRINT ("Next token is", yytoken, &yylval, &yylloc);
+      YY_SYMBOL_PRINT ("Next token is", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     }
 
   // /* If the proper action on seeing token YYTOKEN is to reduce or to
@@ -1705,7 +1712,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) usize {[
     }
 
     // /* Shift the lookahead token.  */
-    YY_SYMBOL_PRINT ("Shifting", yytoken, &yylval, &yylloc);
+    YY_SYMBOL_PRINT ("Shifting", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     yyctx.yystate = yyctx.yyn;
     yyctx.yyvsp += 1;
     yyctx.yyvsp.* = yyctx.yylval;
@@ -1715,7 +1722,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) usize {[
     ])[
 
     // /* Discard the shifted token.  */
-    yyctx.yychar = ]b4_symbol(empty, id)[;]b4_lac_if([[
+    yyctx.yychar = yytoken_kind_t.]b4_symbol(empty, id)[;]b4_lac_if([[
     YY_LAC_DISCARD ("shift");]])[
     return LABEL_YYNEWSTATE;
 }
@@ -1779,7 +1786,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
     //    case of YYERROR or YYBACKUP, subsequent parser actions might lead
     //    to an incorrect destructor call or verbose syntax error message
     //    before the lookahead is translated.  */
-    YY_SYMBOL_PRINT ("-> $$ =", YY_CAST (yysymbol_kind_t, yyr1[yyn]), &yyval, &yyloc);
+    YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyctx.yyn], &yyctx.yyval, &yyctx.yyloc);
 
     yyctx.YYPOPSTACK (yyctx.yylen);
     yyctx.yylen = 0;
@@ -1794,7 +1801,13 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
     //    number reduced by.  */
     {
       const yylhs = yyr1[yyctx.yyn] - YYNTOKENS;
+        {
+            _ = yylhs;
+        }
       const yyi = yypgoto[yyctx.yylhs] + yyctx.yyssp.*;
+        {
+            _ = yyi;
+        }
       yyctx.yystate = if (0 <= yyctx.yyi and yyctx.yyi <= YYLAST and yycheck[yyctx.yyi] == yyctx.yyssp.*)
                 yytable[yyctx.yyi]
                 else yydefgoto[yyctx.yylhs];
@@ -1826,7 +1839,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
           return LABEL_YYEXHAUSTEDLAB;
       }]],
       [simple],
-[[      yyerror (]b4_yyerror_args[YY_("syntax error"));]],
+[[      // yyerror (]b4_yyerror_args[YY_("syntax error"));]],
 [[      {
         var yypctx
           = yypcontext_t{ .yyssp = ]b4_push_if([[yyctx.yyps]], [[yyctx.yyssp, .yytoken = ]b4_lac_if([[yyctx.yyesa, &yyctx.yyes, &yyctx.yyes_capacity]])])[yyctx.yytoken]b4_locations_if([[, &yyctx.yylloc]])[};
@@ -1855,7 +1868,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
                 yysyntax_error_status = YYENOMEM;
               }
           }
-        yyerror (]b4_yyerror_args[yymsgp);
+        // yyerror (]b4_yyerror_args[yymsgp);
         if (yysyntax_error_status == YYENOMEM) {
           return LABEL_YYEXHAUSTEDLAB;
         }
@@ -1879,7 +1892,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
         {
           yydestruct ("Error: discarding",
                       yyctx.yytoken, &yyctx.yylval]b4_locations_if([, &yyctx.yylloc])[][);
-          yyctx.yychar = ]b4_symbol(empty, id)[;
+          yyctx.yychar = yytoken_kind_t.]b4_symbol(empty, id)[;
         }
     }
 
@@ -1993,7 +2006,7 @@ fn label_yyreturnlab(yyctx: *yyparse_context_t) usize {
       //   user semantic actions for why this is necessary.  */
       yyctx.yytoken = YYTRANSLATE (yyctx.yychar);
       yydestruct ("Cleanup: discarding lookahead",
-                  yyctx.yytoken, &yyctx.yylval]b4_locations_if([, &yyctx.yylloc])[]b4_user_args[);
+                  yyctx.yytoken, &yyctx.yylval]b4_locations_if([, &yyctx.yylloc])[][);
     }
   // /* Do not reclaim the symbols of the rule whose action triggered
   //    this YYABORT or YYACCEPT.  */
@@ -2049,6 +2062,8 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
 [[pub fn yyparse (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)]])])[ c_int {
   // replace all local variables with yyps, so later when access should use yyps
   var yyctx = yyparse_context_t{};
+  yyctx.scanner = scanner;
+  yyctx.res = res;
   yyctx.yyss = yyctx.yyssa.ptr;
   yyctx.yyssp = yyctx.yyss;
   yyctx.yyvs = yyctx.yyvsa.ptr;
@@ -2076,7 +2091,7 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
   }
 
 ]m4_ifdef([b4_start_symbols], [],
-[[  yyctx.yychar = ]b4_symbol(empty, id)[; // /* Cause a token to be read.  */
+[[  yyctx.yychar = yytoken_kind_t.]b4_symbol(empty, id)[; // /* Cause a token to be read.  */
 ]])[
 ]m4_ifdef([b4_initial_action], [
 b4_dollar_pushdef([m4_define([b4_dollar_dollar_used])yylval], [], [],
@@ -2152,7 +2167,7 @@ b4_locations_if([[  yylsp[0] = ]b4_push_if([b4_pure_if([*])yypushed_loc], [yyllo
   // /*-------------------------.
   // | yypushreturn -- return.  |
   // `-------------------------*/
-  if (yyoverflow) {
+  if (with_yyoverflow) {
     if (yyctx.yyss != yyctx.yyssa)
       allocator.free (yyctx.yyss);
   }]b4_lac_if([[
