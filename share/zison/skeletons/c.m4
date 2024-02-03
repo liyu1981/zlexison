@@ -381,7 +381,7 @@ m4_define([b4_token_enum],
 # The definition of the token kinds.
 m4_define([b4_token_enums],
 [b4_any_token_visible_if([[// /* Token kinds.  */
-pub const ]b4_api_prefix[token_kind_t = enum {
+pub const ]b4_api_prefix[token_kind_t = enum(i32) {
     ]b4_symbol(empty, [id])[ = -2,
 ]b4_symbol_foreach([b4_token_enum])dnl
 [  };
@@ -544,12 +544,12 @@ m4_define_default([b4_yydestruct_define],
 
 pub fn yydestruct (yymsg: [*c]u8,
             yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE]b4_locations_if(dnl
-[[, yylocationp: *YYLTYPE]])[]b4_user_formals[)
+[[, yylocationp: *YYLTYPE]])[][)
 void {
 ][ if (yymsg == null) {
     yymsg = "Deleting";
   }
-  YY_SYMBOL_PRINT (yymsg, yykind, yyvaluep, yylocationp);
+  YY_SYMBOL_PRINT (yymsg, yykind, yyvaluep, null);
 
   ]b4_symbol_actions([destructor])[
 }]dnl
@@ -569,10 +569,8 @@ pub fn yy_symbol_value_print (
   yyo: std.fs.File,
   yykind: isize,
   yyvaluep: *const YYSTYPE]b4_locations_if(dnl
-[[, yylocationp: *const YYLTYPE]])[]b4_user_formals[) !void {
-   var yyoutput = yyo;
-   ]b4_parse_param_use([yyoutput], [yylocationp])dnl
-   [  if (yyvaluep == null) return;]
+[[, yylocationp: *const YYLTYPE]])[][) !void {
+   ][  if (yyvaluep == null) return;]
    b4_percent_code_get([[pre-printer]])dnl
    b4_symbol_actions([printer])
    b4_percent_code_get([[post-printer]])dnl
@@ -585,7 +583,7 @@ pub fn yy_symbol_value_print (
 
 pub fn yy_symbol_print (yyo: std.fs.File,
                   yykind: usize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
-[[, yylocationp: *const YYLTYPE]])[]b4_user_formals[) !void {
+[[, yylocationp: *const YYLTYPE]])[][) !void {
   try yyo.writer().print("{s} {s} (", .{
       if (yykind < YYNTOKENS) "token" else "nterm",
       yysymbol_name(yykind),
@@ -594,7 +592,7 @@ pub fn yy_symbol_print (yyo: std.fs.File,
   try yyo.writer().print(": ", .{});
 ])dnl
 [  try yy_symbol_value_print (yyo, yykind, yyvaluep]dnl
-b4_locations_if([, yylocationp])[]b4_user_args[);
+b4_locations_if([, yylocationp])[][);
   try yyo.writer().print(")", .{});
 }]dnl
 ])
@@ -788,19 +786,10 @@ b4_pure_if([], [[extern ]b4_api_PREFIX[STYPE ]b4_prefix[lval;
 m4_define([b4_YYDEBUG_define],
 [[// /* Debug traces.  */
 ]m4_if(b4_api_prefix, [yy],
-[[pub const YYDEBUG = ]b4_parse_trace_if([1], [0])[;
+[[pub var yydebug = ]b4_parse_trace_if([1], [0])[;
 ]],
-[[#ifndef ]b4_api_PREFIX[DEBUG
-# if defined YYDEBUG
-#if YYDEBUG
-#   define ]b4_api_PREFIX[DEBUG 1
-#  else
-#   define ]b4_api_PREFIX[DEBUG 0
-#  endif
-# else /* ! defined YYDEBUG */
-#  define ]b4_api_PREFIX[DEBUG ]b4_parse_trace_if([1], [0])[
-# endif /* ! defined YYDEBUG */
-#endif  /* ! defined ]b4_api_PREFIX[DEBUG */]])[]dnl
+[[pub var yydebug = ]b4_parse_trace_if([1], [0])[;
+]])[]dnl
 ])
 
 # b4_declare_yydebug
