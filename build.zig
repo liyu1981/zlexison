@@ -9,7 +9,10 @@ const common_flags = [_][]const u8{
 
 const c_flags = [_][]const u8{} ++ common_flags;
 
+var g_build: *std.Build = undefined;
+
 pub fn build(b: *std.Build) !void {
+    g_build = b;
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
@@ -69,7 +72,11 @@ fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!v
 
     {
         const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
-            &[_][]const u8{ "cp", "flex/flex/src/flex", "src/flex.bin" },
+            &[_][]const u8{
+                "cp",
+                g_build.pathFromRoot("flex/flex/src/flex"),
+                g_build.pathFromRoot("src/flex.bin"),
+            },
         } });
         result.assertSucceededPanic(.{});
     }
@@ -84,7 +91,11 @@ fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!
 
     {
         const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
-            &[_][]const u8{ "cp", "bison/bison/src/bison", "src/bison.bin" },
+            &[_][]const u8{
+                "cp",
+                g_build.pathFromRoot("bison/bison/src/bison"),
+                g_build.pathFromRoot("src/bison.bin"),
+            },
         } });
         result.assertSucceededPanic(.{});
     }
