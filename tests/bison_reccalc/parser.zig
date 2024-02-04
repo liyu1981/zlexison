@@ -29,6 +29,35 @@ const YYParser = @This();
 pub var with_yyoverflow: bool = false;
 
 pub var allocator: std.mem.Allocator = undefined;
+
+/// util for calculate c pointer distance.
+inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
+    return (@intFromPtr(p2) - @intFromPtr(p1)) / @sizeOf(T);
+}
+
+inline fn ptrLessThan(comptime T: type, p1: [*]T, p2: [*]T) bool {
+    return @as([*c]T, @ptrCast(p1)) < @as([*c]T, @ptrCast(p2));
+}
+
+inline fn ptrLessThanEql(comptime T: type, p1: [*]T, p2: [*]T) bool {
+    return @as([*c]T, @ptrCast(p1)) <= @as([*c]T, @ptrCast(p2));
+}
+
+inline fn ptrWithOffset(comptime T: type, p: [*]T, offset: isize) [*]T {
+    return @as(
+        [*]T,
+        @ptrFromInt(@as(usize, @intCast(@as(isize, @intCast(@intFromPtr(p))) + offset * @sizeOf(T)))),
+    );
+}
+
+inline fn ptrRhsWithOffset(comptime T: type, p: [*]T, offset: isize) T {
+    return ptrWithOffset(T, p, offset)[0];
+}
+
+inline fn ptrLhsWithOffset(comptime T: type, p: [*]T, offset: isize) *T {
+    return &(ptrWithOffset(T, p, offset)[0]);
+}
+
 // /* "%code top" blocks.//  */
 
 // /* Debug traces.  */
@@ -42,11 +71,11 @@ const YYLexer = @import("scan.zig");
 
 pub const Result = struct {
     // Whether to print the intermediate results.
-    verbose: bool,
+    verbose: bool = true,
     // Value of the last computation.
-    value: i64,
+    value: i64 = -1,
     // Number of errors.
-    nerrs: usize,
+    nerrs: usize = 0,
 };
 
 // /* Token kinds.  */
@@ -66,12 +95,7 @@ pub const yytoken_kind_t = enum(i32) {
 };
 
 // /* Value type.  */
-pub const YYSTYPE = union {
-    TOK_STR: []const u8, // /* "string"//  */
-    TOK_NUM: c_int, // /* "number"//  */
-    TOK_exp: c_int, // /* exp//  */
-
-};
+pub const YYSTYPE = YYLexer.YYSTYPE;
 
 // /* Location type.  */
 const YYLTYPE = YYLexer.YYLTYPE;
@@ -108,7 +132,7 @@ pub const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
 pub const yy_state_t = isize;
 
 // /* State numbers in computations.  */
-pub const yy_state_fast_t = c_int;
+pub const yy_state_fast_t = isize;
 
 // #define YY_ASSERT(E) ((void) (0 && (E)))
 pub const YY_ASSERT = std.debug.assert;
@@ -120,13 +144,19 @@ pub const yyalloc = union {
     yyls_alloc: YYLTYPE,
 };
 
+fn YYSTACK_ALLOC(size: usize) ![*]yyalloc {
+    var yyalloc_array = try allocator.alloc(yyalloc, size);
+    _ = &yyalloc_array;
+    return yyalloc_array.ptr;
+}
+
 // /* The size of the maximum gap between one aligned stack and the next.  */
 // # define YYSTACK_GAP_MAXIMUM (YYSIZEOF (union yyalloc) - 1)
 pub const YYSTACK_GAP_MAXIMUM = @sizeOf(yyalloc) - 1;
 
 // /* The size of an array large to enough to hold all stacks, each with
 //    N elements.  */
-pub fn YYSTACK_BYTES(comptime N: usize) usize {
+pub fn YYSTACK_BYTES(N: usize) usize {
     return N + @sizeOf(yy_state_t) + @sizeOf(YYSTYPE) + @sizeOf(YYLTYPE) + 2 * YYSTACK_GAP_MAXIMUM;
 }
 
@@ -139,34 +169,39 @@ const WITH_YYSTACK_RELOCATE = true;
 //    stack.  */
 fn YYSTACK_RELOCATE(
     yyctx: *yyparse_context_t,
-    comptime field: enum { yyss, yyvs },
-    yyptr_: *[*c]yyalloc,
+    comptime field: enum { yyss, yyvs, yyls },
+    yyptr_: *[*]yyalloc,
     yysize: usize,
 ) void {
-    var yyptr = yyptr_.*;
+    const yyptr = yyptr_.*;
     var yynewbytes: usize = 0;
     switch (field) {
         .yyss => {
-            YYCOPY(yy_state_t, yyptr.yyss, yyctx.yyss, yysize);
-            yyctx.yyss = &(yyptr.yyss);
+            YYCOPY(yy_state_t, .yyss, yyptr, yyctx.yyss, yysize);
+            yyctx.yyss[0] = yyptr[0].yyss_alloc;
             yynewbytes = yyctx.yystacksize * @sizeOf(yyalloc) + YYSTACK_GAP_MAXIMUM;
         },
         .yyvs => {
-            YYCOPY(YYSTYPE, yyptr.yyvs, yyctx.yyvs, yysize);
-            yyctx.yyvs = &(yyptr.yyvs);
+            YYCOPY(YYSTYPE, .yyvs, yyptr, yyctx.yyvs, yysize);
+            yyctx.yyvs[0] = yyptr[0].yyvs_alloc;
             yynewbytes = yyctx.yystacksize * @sizeOf(yyalloc) + YYSTACK_GAP_MAXIMUM;
         },
+        .yyls => {},
     }
-    var c_yyptr = @as([*c]yyalloc, @ptrCast(yyptr));
-    _ = &c_yyptr;
-    yyptr_.* = @ptrCast(c_yyptr + yynewbytes / @sizeOf(*yyalloc));
+    yyptr_.* = @ptrCast(yyptr + yynewbytes / @sizeOf(*yyalloc));
 }
 
 // /* Copy COUNT objects from SRC to DST.  The source and destination do
 //    not overlap.  */
-pub inline fn YYCOPY(comptime T: type, dst: [*c]T, src: [*c]T, count: usize) void {
-    for (0..count) |yyi| {
-        dst[yyi] = src[yyi];
+pub fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: [*]yyalloc, src: [*]T, count: usize) void {
+    switch (field) {
+        .yyss => {
+            for (0..count) |i| dst[i].yyss_alloc = src[i];
+        },
+        .yyvs => {
+            for (0..count) |i| dst[i].yyvs_alloc = src[i];
+        },
+        .yyls => {},
     }
 }
 
@@ -191,7 +226,7 @@ pub const YYMAXUTOK = 265;
 //    as returned by yylex, with out-of-bounds checking.  */
 pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
     if (YYX >= 0 and YYX <= YYMAXUTOK) {
-        return yytranslate[YYX];
+        return @as(yysymbol_kind_t, @enumFromInt(yytranslate[YYX]));
     } else {
         return yysymbol_kind_t.YYSYMBOL_YYUNDEF;
     }
@@ -214,17 +249,16 @@ pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
 pub fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
     const YY_NULLPTR = "";
     const yy_sname = [_][]const u8{ "end-of-file", "error", "invalid token", "+", "-", "*", "/", "end-of-line", "number", "string", "UNARY", "$accept", "input", "line", "eol", "exp", YY_NULLPTR };
-    return yy_sname[yysymbol];
+    return yy_sname[@as(usize, @intCast(@intFromEnum(yysymbol)))];
 }
 
-pub const YYPACT_NINF = -5;
+const YYPACT_NINF = -5;
 
-pub inline fn yypact_value_is_default(Yyn: anytype) bool {
+inline fn yypact_value_is_default(yyn: anytype) bool {
     // TODO: check for all case
     // #define yypact_value_is_default(Yyn) \
     //  ((Yyn) == YYPACT_NINF)
-    _ = Yyn;
-    return false;
+    return yyn == YYPACT_NINF;
 }
 
 pub const YYTABLE_NINF = -1;
@@ -295,7 +329,7 @@ pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 //    If N is 0, then set CURRENT to the empty location which ends
 //    the previous symbol: RHS[0] (always defined).  */
 
-fn YYLLOC_DEFAULT(current: *YYLTYPE, rhs: *YYLTYPE, N: usize) void {
+fn YYLLOC_DEFAULT(current: *YYLTYPE, rhs: [*]YYLTYPE, N: usize) void {
     if (N > 0) {
         current.first_line = rhs[1].first_line;
         current.first_column = rhs[1].first_column;
@@ -334,9 +368,9 @@ fn yy_location_print_(yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
 
 pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, kind: anytype, value: anytype, location: anytype) void {
     if (yydebug) {
-        std.debug.print("%s", .{title});
+        std.debug.print("{s}", .{title});
     }
-    std.debug.print("{any}{any}{any} {any}\n", .{ kind, value, location, yyctx.result });
+    std.debug.print("{any}{any}{any} {any}\n", .{ kind, value, location, yyctx.res });
     if (yydebug) {
         std.debug.print("\n", .{});
     }
@@ -349,23 +383,23 @@ pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, kind: anyty
 
 pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
     _ = yylocationp;
-    if (yyvaluep == null) return;
-    switch (yykind) {
+    // if (yyvaluep == null) return;
+    switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
         yysymbol_kind_t.YYSYMBOL_NUM => { // /* "number"//  */
             {
-                try yyo.writer().print("{d}", ((*yyvaluep).TOK_NUM));
+                try yyo.writer().print("{d}", .{(yyvaluep.TOK_NUM)});
             }
         },
 
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
             {
-                try yyo.writer().print("{s}", ((*yyvaluep).TOK_STR));
+                try yyo.writer().print("{s}", .{(yyvaluep.TOK_STR)});
             }
         },
 
         yysymbol_kind_t.YYSYMBOL_exp => { // /* exp//  */
             {
-                try yyo.writer().print("{d}", ((*yyvaluep).TOK_exp));
+                try yyo.writer().print("{d}", .{(yyvaluep.TOK_exp)});
             }
         },
 
@@ -377,10 +411,10 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
 // | Print this symbol on YYO.  |
 // `---------------------------*/
 
-pub fn yy_symbol_print(yyo: std.fs.File, yykind: usize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
+pub fn yy_symbol_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
     try yyo.writer().print("{s} {s} (", .{
         if (yykind < YYNTOKENS) "token" else "nterm",
-        yysymbol_name(yykind),
+        yysymbol_name(@enumFromInt(yykind)),
     });
     try yy_location_print_(yyo, yylocationp);
     try yyo.writer().print(": ", .{});
@@ -393,13 +427,13 @@ pub fn yy_symbol_print(yyo: std.fs.File, yykind: usize, yyvaluep: *const YYSTYPE
 // | TOP (included).                                                   |
 // `------------------------------------------------------------------*/
 
-pub fn yy_stack_print(yybottom: [*c]yy_state_t, yytop: [*c]yy_state_t) void {
+pub fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
     if (yydebug) {
         std.debug.print("Stack now", .{});
         var yyb = yybottom;
         const yyt = yytop;
-        while (yyb <= yyt) : (yyb += 1) {
-            std.debug.print(" {d}", .{yyb.*});
+        while (ptrLessThanEql(yy_state_t, yyb, yyt)) : (yyb += 1) {
+            std.debug.print(" {d}", .{yyb[0]});
         }
         std.debug.print("\n", .{});
     }
@@ -409,19 +443,23 @@ pub fn yy_stack_print(yybottom: [*c]yy_state_t, yytop: [*c]yy_state_t) void {
 // | Report that the YYRULE is going to be reduced.  |
 // `------------------------------------------------*/
 
-pub fn yy_reduce_print(yyctx: *yyparse_context_t, yylsp: [*c]YYLTYPE, yyrule: usize) void {
-    _ = yylsp;
+pub fn yy_reduce_print(yyctx: *yyparse_context_t, yyrule: usize) !void {
     const yylno = yyrline[yyrule];
-    const yynrhs = yyr2[yyrule];
+    const yynrhs: usize = @intCast(yyr2[yyrule]);
     if (yydebug) {
         std.debug.print("Reducing stack by rule {d} (line {d}):\n", .{ yyrule - 1, yylno });
     }
     // /* The symbols being reduced.  */
-    for (0..@intCast(yynrhs)) |yyi| {
+    for (0..yynrhs) |yyi| {
         if (yydebug) {
             std.debug.print("   ${d} = ", .{yyi + 1});
         }
-        yy_symbol_print(std.io.getStdErr(), YY_ACCESSING_SYMBOL(yyctx.yyssp[yyi + 1 - yynrhs]), &yyctx.yyvsp[(yyi + 1) - (yynrhs)], &(yyctx.yylsp[(yyi + 1) - (yynrhs)]));
+        try yy_symbol_print(
+            std.io.getStdErr(),
+            @intCast(YY_ACCESSING_SYMBOL(@intCast(yyctx.yyssp[yyi + 1 - yynrhs]))),
+            &yyctx.yyvsp[(yyi + 1) - (yynrhs)],
+            &(yyctx.yylsp[(yyi + 1) - (yynrhs)]),
+        );
         if (yydebug) {
             std.debug.print("\n", .{});
         }
@@ -442,7 +480,7 @@ pub const YYMAXDEPTH = 10000;
 
 // /* Context of a parse error.  */
 pub const yypcontext_t = struct {
-    yyssp: [*c]yy_state_t,
+    yyssp: [*]yy_state_t,
     yytoken: yysymbol_kind_t,
     yylloc: *YYLTYPE,
 };
@@ -453,42 +491,47 @@ pub const yypcontext_t = struct {
 //    be less than YYNTOKENS).  Return YYENOMEM on memory exhaustion.
 //    Return 0 if there are more than YYARGN expected tokens, yet fill
 //    YYARG up to YYARGN. */
-pub fn yypcontext_expected_tokens(yyctx: *yypcontext_t, yyarg: [*c]yysymbol_kind_t, yyargn: usize) usize {
+pub fn yypcontext_expected_tokens(yypctx: *yypcontext_t, yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize {
     // /* Actual size of YYARG. */
-    var yycount: usize = 0;
+    var yycount: isize = 0;
 
-    const yyn = yypact[yyctx.yyssp];
+    const yyn = yypact[@intCast(yypctx.yyssp[0])];
     if (!yypact_value_is_default(yyn)) {
         // /* Start YYX at -YYN if negative to avoid negative indexes in
         //    YYCHECK.  In other words, skip the first -YYN actions for
         //    this state because they are default actions.  */
-        const yyxbegin = if (yyn < 0) -yyn else 0;
+        const yyxbegin: isize = if (yyn < 0) -yyn else 0;
         // /* Stay within bounds of both yycheck and yytname.  */
-        const yychecklim = YYLAST - yyn + 1;
-        const yyxend = if (yychecklim < YYNTOKENS) yychecklim else YYNTOKENS;
-        var yyx = yyxbegin;
+        const yychecklim: isize = YYLAST - yyn + 1;
+        const yyxend: isize = if (yychecklim < YYNTOKENS) yychecklim else YYNTOKENS;
+        var yyx: isize = yyxbegin;
         while (yyx < yyxend) : (yyx += 1) {
-            if (yycheck[yyx + yyn] == yyx and yyx != yysymbol_kind_t.YYSYMBOL_YYerror and !yytable_value_is_error(yytable[yyx + yyn])) {
-                if (yyarg == null) {
+            if (yycheck[@intCast(yyx + yyn)] == yyx and
+                yyx != @as(isize, @intFromEnum(yysymbol_kind_t.YYSYMBOL_YYerror)) and
+                !yytable_value_is_error(yytable[@intCast(yyx + yyn)]))
+            {
+                if (@intFromPtr(yyarg) == 0) {
                     yycount += 1;
                 } else if (yycount == yyargn) {
                     return 0;
                 } else {
-                    yyarg[yycount] = yyx;
+                    yyarg[@intCast(yycount)] = @enumFromInt(yyx);
                     yycount += 1;
                 }
             }
         }
         // TODO: need confirm this with c source
-        if (yyarg and yycount == 0 and yyargn > 0)
+        if (@intFromPtr(yyarg) != 0 and yycount == 0 and yyargn > 0)
             yyarg[0] = yysymbol_kind_t.YYSYMBOL_YYEMPTY;
         return yycount;
     }
+
+    return yycount;
 }
 
-pub fn yy_syntax_error_arguments(yyctx: *yypcontext_t, yyarg: [*c]yysymbol_kind_t, yyargn: usize) c_int {
+pub fn yy_syntax_error_arguments(yypctx: *yypcontext_t, yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize {
     //   /* Actual size of YYARG. */
-    var yycount: usize = 0;
+    var yycount: isize = 0;
     //   /* There are many possibilities here to consider:
     //      - If this state is a consistent state with a default action, then
     //        the only way this function was invoked is if the default action
@@ -512,12 +555,12 @@ pub fn yy_syntax_error_arguments(yyctx: *yypcontext_t, yyarg: [*c]yysymbol_kind_
     //        one exception: it will still contain any token that will not be
     //        accepted due to an error action in a later state.
     //   */
-    if (yyctx.yytoken != yysymbol_kind_t.YYSYMBOL_YYEMPTY) {
-        var yyn: c_int = 0;
-        if (yyarg)
-            yyarg[yycount] = yyctx.yytoken;
+    if (yypctx.yytoken != yysymbol_kind_t.YYSYMBOL_YYEMPTY) {
+        if (@intFromPtr(yyarg) != 0) {
+            yyarg[@intCast(yycount)] = yypctx.yytoken;
+        }
         yycount += 1;
-        yyn = yypcontext_expected_tokens(yyctx, if (yyarg > 0) yyarg + 1 else yyarg, yyargn - 1);
+        const yyn = yypcontext_expected_tokens(yypctx, if (@intFromPtr(yyarg) != 0) @ptrCast(yyarg + 1) else @ptrCast(yyarg), yyargn - 1);
         if (yyn == YYENOMEM) {
             return YYENOMEM;
         } else {
@@ -535,18 +578,19 @@ pub fn yy_syntax_error_arguments(yyctx: *yypcontext_t, yyarg: [*c]yysymbol_kind_
 //    not large enough to hold the message.  In that case, also set
 //    *YYMSG_ALLOC to the required number of bytes.  Return YYENOMEM if the
 //    required number of bytes is too large to store.  */
-pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[*c]u8, yyctx: *yypcontext_t) c_int {
+pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]const u8, yypctx: *yypcontext_t) isize {
+    _ = yymsg;
     const YYARGS_MAX = 5;
     // /* Internationalized format string. */
-    var yyformat: []u8 = undefined;
+    var yyformat: []const u8 = undefined;
     // /* Arguments of yyformat: reported tokens (one for the "unexpected",
     //    one per "expected"). */
-    const yyarg: [YYARGS_MAX]yysymbol_kind_t = undefined;
+    var yyarg: [YYARGS_MAX]yysymbol_kind_t = undefined;
     // /* Cumulated lengths of YYARG.  */
     var yysize: usize = 0;
 
     // /* Actual size of YYARG. */
-    const yycount = yy_syntax_error_arguments(yyctx, yyarg, YYARGS_MAX);
+    const yycount = yy_syntax_error_arguments(yypctx, yyarg[0..].ptr, YYARGS_MAX);
     if (yycount == YYENOMEM)
         return YYENOMEM;
 
@@ -562,7 +606,7 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[*c]u8, yyctx: *yypcontext_t)
 
     // /* Compute error message size.  Don't count the "%s"s, but reserve
     //    room for the terminator.  */
-    yysize = yyformat.len - 2 * yycount + 1;
+    yysize = yyformat.len - @as(usize, @intCast(2 * yycount)) + 1;
     {
         var yyi: usize = 0;
         while (yyi < yycount) : (yyi += 1) {
@@ -586,25 +630,25 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[*c]u8, yyctx: *yypcontext_t)
     // /* Avoid sprintf, as that infringes on the user's name space.
     //    Don't have undefined behavior even if the translation
     //    produced a string with the wrong number of "%s"s.  */
-    {
-        var yyp: [*c]u8 = yymsg.*;
-        var yyi: usize = 0;
-        yyp.* = yyformat.*;
-        while (yyp.* != 0) : (yyp.* = yyformat.*) {
-            if (yyp.* == '%' and yyformat[1] == 's' and yyi < yycount) {
-                yyi += 1;
-                yyp = @memcpy(
-                    yyp[0..yysymbol_name(yyarg[yyi]).len],
-                    yysymbol_name(yyarg[yyi]),
-                );
-                yyi += 1;
-                yyformat += 2;
-            } else {
-                yyp += 1;
-                yyformat += 1;
-            }
-        }
-    }
+    // {
+    //     var yyp: [*c]u8 = yymsg.*;
+    //     var yyi: usize = 0;
+    //     yyp.* = yyformat.*;
+    //     while (yyp.* != 0) : (yyp.* = yyformat.*) {
+    //         if (yyp.* == '%' and yyformat[1] == 's' and yyi < yycount) {
+    //             yyi += 1;
+    //             yyp = @memcpy(
+    //                 yyp[0..yysymbol_name(yyarg[yyi]).len],
+    //                 yysymbol_name(yyarg[yyi]),
+    //             );
+    //             yyi += 1;
+    //             yyformat += 2;
+    //         } else {
+    //             yyp += 1;
+    //             yyformat += 1;
+    //         }
+    //     }
+    // }
     return 0;
 }
 
@@ -612,17 +656,17 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[*c]u8, yyctx: *yypcontext_t)
 // | Release the memory associated to this symbol.  |
 // `-----------------------------------------------*/
 
-pub fn yydestruct(yymsg: [*c]u8, yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
+pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
     _ = yylocationp;
-    if (yymsg == null) {
-        yymsg = "Deleting";
-    }
-    YY_SYMBOL_PRINT(yymsg, yykind, yyvaluep, null);
+    // if (yymsg == null) {
+    //     yymsg = "Deleting";
+    // }
+    YY_SYMBOL_PRINT(yyctx, yymsg, yykind, yyvaluep, null);
 
     switch (yykind) {
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
             {
-                allocator.free(((*yyvaluep).TOK_STR));
+                allocator.free(yyvaluep.*.TOK_STR);
             }
         },
 
@@ -633,33 +677,23 @@ pub fn yydestruct(yymsg: [*c]u8, yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE, yy
 // collect all yyparse loop variables into one struct so that when we deal with
 // gotos, we will be with easier life
 const yyparse_context_t = struct {
-    scanner: *YYLexer,
-    res: *Result,
+    scanner: *YYLexer = undefined,
+    res: *Result = undefined,
 
     // /* Lookahead token kind.  */
-    yychar: i32 = yytoken_kind_t.TOK_YYEMPTY, // /* Cause a token to be read.  */
+    yychar: isize = @intFromEnum(yytoken_kind_t.TOK_YYEMPTY), // /* Cause a token to be read.  */
 
     // /* The semantic value of the lookahead symbol.  */
     // /* Default value used for initialization, for pacifying older GCCs
     //    or non-GCC compilers.  */
     // YY_INITIAL_VALUE (static YYSTYPE yyval_default;)
     // YYSTYPE yylval YY_INITIAL_VALUE (= yyval_default);
-    yyval_default: YYSTYPE,
-    yylval: YYSTYPE,
+    yyval_default: YYSTYPE = undefined,
+    yylval: YYSTYPE = undefined,
 
     // /* Location data for the lookahead symbol.  */
-    yyloc_default: YYLTYPE = YYLTYPE{
-        .first_line = 1,
-        .first_column = 1,
-        .last_line = 1,
-        .last_column = 1,
-    },
-    yylloc: YYLTYPE = YYLTYPE{
-        .first_line = 1,
-        .first_column = 1,
-        .last_line = 1,
-        .last_column = 1,
-    },
+    yyloc_default: YYLTYPE = YYLTYPE{},
+    yylloc: YYLTYPE = YYLTYPE{},
 
     // /* Number of syntax errors so far.  */
     yynerrs: usize = 0,
@@ -675,41 +709,41 @@ const yyparse_context_t = struct {
     yystacksize: usize = YYINITDEPTH,
 
     // /* The state stack: array, bottom, top.  */
-    yyssa: [YYINITDEPTH]yy_state_t,
-    yyss: [*c]yy_state_t, // need init to  = yyssa;
-    yyssp: [*c]yy_state_t, // need init to  = yyss;
+    yyssa: [YYINITDEPTH]yy_state_t = undefined,
+    yyss: [*]yy_state_t = undefined, // need init to  = yyssa;
+    yyssp: [*]yy_state_t = undefined, // need init to  = yyss;
 
     // /* The semantic value stack: array, bottom, top.  */
-    yyvsa: YYSTYPE[YYINITDEPTH],
-    yyvs: [*c]YYSTYPE, // need init to  = yyvsa;
-    yyvsp: [*c]YYSTYPE, // need init to  = yyvs;
+    yyvsa: [YYINITDEPTH]YYSTYPE = undefined,
+    yyvs: [*]YYSTYPE = undefined, // need init to  = yyvsa;
+    yyvsp: [*]YYSTYPE = undefined, // need init to  = yyvs;
 
     // /* The location stack: array, bottom, top.  */
-    yylsa: [YYINITDEPTH]YYLTYPE,
-    yyls: *YYLTYPE, // need init to  = yylsa;
-    yylsp: *YYLTYPE, // need init to  = yyls;
+    yylsa: [YYINITDEPTH]YYLTYPE = undefined,
+    yyls: [*]YYLTYPE = undefined, // need init to  = yylsa;
+    yylsp: [*]YYLTYPE = undefined, // need init to  = yyls;
 
-    yyn: c_int,
+    yyn: isize = 0,
     // /* The return value of yyparse.  */
-    yyresult: c_int,
+    yyresult: usize = 0,
     // /* Lookahead symbol kind.  */
     yytoken: yysymbol_kind_t = yysymbol_kind_t.YYSYMBOL_YYEMPTY,
     // /* The variables used to return semantic value and location from the
     //    action routines.  */
-    yyval: YYSTYPE,
-    yyloc: YYLTYPE,
+    yyval: YYSTYPE = undefined,
+    yyloc: YYLTYPE = undefined,
 
     // /* The locations where the error started and ended.  */
-    yyerror_range: [3]YYLTYPE,
+    yyerror_range: [3]YYLTYPE = undefined,
 
     // /* Buffer for error messages, and its allocated size.  */
-    yymsgbuf: [128]u8,
-    yymsg: [*c]u8, // need init to = yymsgbuf;
+    yymsgbuf: [128]u8 = undefined,
+    yymsg: []u8 = undefined, // need init to = yymsgbuf;
     yymsg_alloc: usize = 128,
 
     // /* The number of symbols on the RHS of the reduced rule.
     //    Keep to zero when no symbol should be popped.  */
-    yylen: c_int = 0,
+    yylen: usize = 0,
 
     pub fn YYPOPSTACK(this: *yyparse_context_t, N: usize) void {
         this.yyvsp -= N;
@@ -745,20 +779,20 @@ fn label_yynewstate(yyctx: *yyparse_context_t) usize {
 // /*--------------------------------------------------------------------.
 // | yysetstate -- set current state (the top of the stack) to yystate.  |
 // `--------------------------------------------------------------------*/
-fn label_yysetstate(yyctx: *yyparse_context_t) usize {
+fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
     if (yydebug) {
         std.debug.print("Entering state {d}\n", .{yyctx.yystate});
     }
     YY_ASSERT(0 <= yyctx.yystate and yyctx.yystate < YYNSTATES);
-    yyctx.yyssp.* = yyctx.yystate;
+    yyctx.yyssp[0] = @as(yy_state_t, @intCast(yyctx.yystate));
     yy_stack_print(yyctx.yyss, yyctx.yyssp);
 
-    if (yyctx.yyss + yyctx.yystacksize - 1 <= yyctx.yyssp) {
+    if (ptrLessThan(isize, yyctx.yyss + yyctx.yystacksize - 1, yyctx.yyssp)) {
         if (!with_yyoverflow and !WITH_YYSTACK_RELOCATE) {
             return LABEL_YYEXHAUSTEDLAB;
         } else {
             // /* Get the current used size of the three stacks, in elements.  */
-            const yysize: usize = yyctx.yyssp - yyctx.yyss + 1;
+            const yysize: usize = @intCast(cPtrDistance(isize, yyctx.yyss, yyctx.yyssp) + 1);
 
             if (with_yyoverflow) {
                 // /* Give user a chance to reallocate the stack.  Use copies of
@@ -800,31 +834,33 @@ fn label_yysetstate(yyctx: *yyparse_context_t) usize {
 
                 {
                     const yyss1 = yyctx.yyss;
-                    var yyptr: [*c]yyalloc = YYSTACK_BYTES(yyctx.yystacksize);
-                    if (yyptr == null) {
-                        return LABEL_YYEXHAUSTEDLAB;
-                    }
-                    YYSTACK_RELOCATE(&yyctx, .yyss, &yyptr, yysize);
-                    YYSTACK_RELOCATE(&yyctx, .yyvs, &yyptr, yysize);
-                    YYSTACK_RELOCATE(&yyctx, .yyls, &yyptr, yysize);
+                    var yyptr: [*]yyalloc = try YYSTACK_ALLOC(YYSTACK_BYTES(yyctx.yystacksize));
+                    // TODO: really necessary in zig as we have try?
+                    // if (yyptr == null) {
+                    //     return LABEL_YYEXHAUSTEDLAB;
+                    // }
+                    YYSTACK_RELOCATE(yyctx, .yyss, &yyptr, yysize);
+                    YYSTACK_RELOCATE(yyctx, .yyvs, &yyptr, yysize);
+                    YYSTACK_RELOCATE(yyctx, .yyls, &yyptr, yysize);
                     // YYSTACK_RELOCATE = false;
                     // TODO: why undef?
                     // #  undef YYSTACK_RELOCATE
-                    if (yyss1 != yyctx.yyssa) {
-                        allocator.free(yyss1);
+                    if (yyss1 != yyctx.yyssa[0..].ptr) {
+                        // TODO: rethink
+                        // allocator.free(yyss1);
                     }
                 }
             }
 
-            yyctx.yyssp = yyctx.yyss + yyctx.yysize - 1;
-            yyctx.yyvsp = yyctx.yyvs + yyctx.yysize - 1;
-            yyctx.yylsp = yyctx.yyls + yyctx.yysize - 1;
+            yyctx.yyssp = yyctx.yyss + yysize - 1;
+            yyctx.yyvsp = yyctx.yyvs + yysize - 1;
+            yyctx.yylsp = yyctx.yyls + yysize - 1;
 
             if (yydebug) {
                 std.debug.print("Stack size increased to {d}\n", .{yyctx.yystacksize});
             }
 
-            if (yyctx.yyss + yyctx.yystacksize - 1 <= yyctx.yyssp) {
+            if (ptrLessThan(isize, yyctx.yyss + yyctx.yystacksize - 1, yyctx.yyssp)) {
                 return LABEL_YYABORTLAB;
             }
         }
@@ -845,7 +881,7 @@ fn label_yybackup(yyctx: *yyparse_context_t) usize {
     //    lookahead token if we need one and don't already have one.  */
 
     // /* First try to decide what to do without reference to lookahead token.  */
-    yyctx.yyn = yypact[yyctx.yystate];
+    yyctx.yyn = yypact[@intCast(yyctx.yystate)];
     if (yypact_value_is_default(yyctx.yyn)) {
         return LABEL_YYDEFAULT;
     }
@@ -853,44 +889,44 @@ fn label_yybackup(yyctx: *yyparse_context_t) usize {
     // /* Not known => get a lookahead token if don't already have one.  */
 
     // /* YYCHAR is either empty, or end-of-input, or a valid lookahead.  */
-    if (yyctx.yychar == yysymbol_kind_t.TOK_YYEMPTY) {}
+    if (yyctx.yychar == @intFromEnum(yytoken_kind_t.TOK_YYEMPTY)) {}
     return LABEL_YYREAD_PUSHED_TOKEN;
 }
 
 fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
     if (yydebug) {
-        std.debug.print("Reading a token\n");
+        std.debug.print("Reading a token\n", .{});
     }
 
-    yyctx.yychar = try yyctx.scanner.yylex(yyctx.yylval, yyctx.yylloc, YYLexer, Result);
+    yyctx.yychar = @intCast(try yyctx.scanner.yylex(&yyctx.yylval, &yyctx.yylloc));
 
-    if (yyctx.yychar <= yytoken_kind_t.TOK_EOF) {
-        yyctx.yychar = yytoken_kind_t.TOK_EOF;
+    if (yyctx.yychar <= @as(isize, @intFromEnum(yytoken_kind_t.TOK_EOF))) {
+        yyctx.yychar = @intFromEnum(yytoken_kind_t.TOK_EOF);
         yyctx.yytoken = yysymbol_kind_t.YYSYMBOL_YYEOF;
         if (yydebug) {
-            std.debug.print("Now at end of input.\n");
+            std.debug.print("Now at end of input.\n", .{});
         }
-    } else if (yyctx.yychar == yytoken_kind_t.TOK_YYerror) {
+    } else if (yyctx.yychar == @as(isize, @intFromEnum(yytoken_kind_t.TOK_YYerror))) {
         // /* The scanner already issued an error message, process directly
         //    to error recovery.  But do not keep the error token as
         //    lookahead, it is too special and may lead us to an endless
         //    loop in error recovery. */
-        yyctx.yychar = yytoken_kind_t.TOK_YYUNDEF;
+        yyctx.yychar = @intFromEnum(yytoken_kind_t.TOK_YYUNDEF);
         yyctx.yytoken = yysymbol_kind_t.YYSYMBOL_YYerror;
         yyctx.yyerror_range[1] = yyctx.yylloc;
         return LABEL_YYERRLAB1;
     } else {
-        yyctx.yytoken = YYTRANSLATE(yyctx.yychar);
-        YY_SYMBOL_PRINT("Next token is", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+        yyctx.yytoken = YYTRANSLATE(@as(usize, @intCast(yyctx.yychar)));
+        YY_SYMBOL_PRINT(yyctx, "Next token is", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     }
 
     // /* If the proper action on seeing token YYTOKEN is to reduce or to
     //    detect an error, take that action.  */
-    yyctx.yyn += yyctx.yytoken;
-    if (yyctx.yyn < 0 or YYLAST < yyctx.yyn or yyctx.yycheck[yyctx.yyn] != yyctx.yytoken)
+    yyctx.yyn += @as(isize, @intFromEnum(yyctx.yytoken));
+    if (yyctx.yyn < 0 or YYLAST < yyctx.yyn or yycheck[@intCast(yyctx.yyn)] != @intFromEnum(yyctx.yytoken))
         return LABEL_YYDEFAULT;
 
-    yyctx.yyn = yytable[yyctx.yyn];
+    yyctx.yyn = yytable[@intCast(yyctx.yyn)];
     if (yyctx.yyn <= 0) {
         if (yytable_value_is_error(yyctx.yyn)) {
             return LABEL_YYERRLAB;
@@ -901,21 +937,21 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
 
     // /* Count tokens shifted since error; after three, turn off error
     //    status.  */
-    if (yyctx.yyerrstatus) {
+    if (yyctx.yyerrstatus > 0) {
         yyctx.yyerrstatus -= 1;
     }
 
     // /* Shift the lookahead token.  */
-    YY_SYMBOL_PRINT("Shifting", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+    YY_SYMBOL_PRINT(yyctx, "Shifting", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     yyctx.yystate = yyctx.yyn;
     yyctx.yyvsp += 1;
-    yyctx.yyvsp.* = yyctx.yylval;
+    yyctx.yyvsp[0] = yyctx.yylval;
 
     yyctx.yylsp += 1;
-    yyctx.yylsp.* = yyctx.yylloc;
+    yyctx.yylsp[0] = yyctx.yylloc;
 
     // /* Discard the shifted token.  */
-    yyctx.yychar = yytoken_kind_t.TOK_YYEMPTY;
+    yyctx.yychar = @intFromEnum(yytoken_kind_t.TOK_YYEMPTY);
     return LABEL_YYNEWSTATE;
 }
 
@@ -933,9 +969,9 @@ fn label_yydefault(yyctx: *yyparse_context_t) usize {
 // /*-----------------------------.
 // | yyreduce -- do a reduction.  |
 // `-----------------------------*/
-fn label_yyreduce(yyctx: *yyparse_context_t) usize {
+fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     // /* yyn is the number of a rule to reduce with.  */
-    yyctx.yylen = yyr2[yyctx.yyn];
+    yyctx.yylen = @intCast(yyr2[@intCast(yyctx.yyn)]);
 
     // /* If YYLEN is nonzero, implement the default value of the action:
     //    '$$ = $1'.
@@ -947,15 +983,15 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
     //    GCC warning that YYVAL may be used uninitialized.  */
     yyctx.yyval = yyctx.yyvsp[1 - yyctx.yylen];
     // /* Default location. */
-    YYLLOC_DEFAULT(yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);
+    YYLLOC_DEFAULT(&yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);
     yyctx.yyerror_range[1] = yyctx.yyloc;
-    yy_reduce_print(yyctx.yyssp, yyctx.yyvsp, yyctx.yyn);
+    try yy_reduce_print(yyctx, @intCast(yyctx.yyn));
     switch (yyctx.yyn) {
         4 => { // /* line: exp eol//  */
             {
-                yyctx.res.value = (yyctx.yyvsp[-1].TOK_exp);
+                yyctx.res.value = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp);
                 if (yyctx.res.verbose) {
-                    std.debug.print("{d}\n", .{(yyctx.yyvsp[-1].TOK_exp)});
+                    std.debug.print("{d}\n", .{ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp});
                 }
             }
         },
@@ -968,54 +1004,56 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
 
         8 => { // /* exp: "number"//  */
             {
-                (yyctx.yyval.TOK_exp) = (yyctx.yyvsp[0].TOK_NUM);
+                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_NUM;
             }
         },
 
         9 => { // /* exp: exp "+" exp//  */
             {
-                (yyctx.yyval.TOK_exp) = (yyctx.yyvsp[-2].TOK_exp) + (yyctx.yyvsp[0].TOK_exp);
+                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp + ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
             }
         },
 
         10 => { // /* exp: exp "-" exp//  */
             {
-                (yyctx.yyval.TOK_exp) = (yyctx.yyvsp[-2].TOK_exp) - (yyctx.yyvsp[0].TOK_exp);
+                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp - ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
             }
         },
 
         11 => { // /* exp: exp "*" exp//  */
             {
-                (yyctx.yyval.TOK_exp) = (yyctx.yyvsp[-2].TOK_exp) * (yyctx.yyvsp[0].TOK_exp);
+                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp * ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
             }
         },
 
         12 => { // /* exp: exp "/" exp//  */
             {
-                if ((yyctx.yyvsp[0].TOK_exp) == 0) {
+                if (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp == 0) {
                     std.debug.print("invalid division by zero", .{});
                     unreachable;
-                } else (yyctx.yyval.TOK_exp) = (yyctx.yyvsp[-2].TOK_exp) / (yyctx.yyvsp[0].TOK_exp);
+                } else {
+                    yyctx.yyval.TOK_exp = @divTrunc(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp, ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
+                }
             }
         },
 
         13 => { // /* exp: "+" exp//  */
             {
-                (yyctx.yyval.TOK_exp) = (yyctx.yyvsp[0].TOK_exp);
+                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
             }
         },
 
         14 => { // /* exp: "-" exp//  */
             {
-                (yyctx.yyval.TOK_exp) = -(yyctx.yyvsp[0].TOK_exp);
+                yyctx.yyval.TOK_exp = -ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
             }
         },
 
         15 => { // /* exp: "string"//  */
             {
-                const int_value = try std.fmt.parseInt(c_int, (yyctx.yyvsp[0].TOK_STR), 10);
-                allocator.free((yyctx.yyvsp[0].TOK_STR));
-                (yyctx.yyval.TOK_exp) = int_value;
+                const int_value = try std.fmt.parseInt(c_int, ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR, 10);
+                allocator.free(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR);
+                yyctx.yyval.TOK_exp = int_value;
             }
         },
 
@@ -1032,32 +1070,26 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
     //    case of YYERROR or YYBACKUP, subsequent parser actions might lead
     //    to an incorrect destructor call or verbose syntax error message
     //    before the lookahead is translated.  */
-    YY_SYMBOL_PRINT("-> $$ =", yyr1[yyctx.yyn], &yyctx.yyval, &yyctx.yyloc);
+    YY_SYMBOL_PRINT(yyctx, "-> $$ =", yyr1[@intCast(yyctx.yyn)], &yyctx.yyval, &yyctx.yyloc);
 
     yyctx.YYPOPSTACK(yyctx.yylen);
     yyctx.yylen = 0;
 
     yyctx.yyvsp += 1;
-    yyctx.yyvsp.* = yyctx.yyval;
+    yyctx.yyvsp[0] = yyctx.yyval;
     yyctx.yylsp += 1;
-    yyctx.yylsp.* = yyctx.yyloc;
+    yyctx.yylsp[0] = yyctx.yyloc;
 
     // /* Now 'shift' the result of the reduction.  Determine what state
     //    that goes to, based on the state we popped back to and the rule
     //    number reduced by.  */
     {
-        const yylhs = yyr1[yyctx.yyn] - YYNTOKENS;
-        {
-            _ = yylhs;
-        }
-        const yyi = yypgoto[yyctx.yylhs] + yyctx.yyssp.*;
-        {
-            _ = yyi;
-        }
-        yyctx.yystate = if (0 <= yyctx.yyi and yyctx.yyi <= YYLAST and yycheck[yyctx.yyi] == yyctx.yyssp.*)
-            yytable[yyctx.yyi]
+        const yylhs = yyr1[@intCast(yyctx.yyn)] - YYNTOKENS;
+        const yyi = yypgoto[@intCast(yylhs)] + yyctx.yyssp[0];
+        yyctx.yystate = if (0 <= yyi and yyi <= YYLAST and yycheck[@intCast(yyi)] == yyctx.yyssp[0])
+            yytable[@intCast(yyi)]
         else
-            yydefgoto[yyctx.yylhs];
+            yydefgoto[@intCast(yylhs)];
     }
 
     return LABEL_YYNEWSTATE;
@@ -1069,29 +1101,31 @@ fn label_yyreduce(yyctx: *yyparse_context_t) usize {
 fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
     // /* Make sure we have latest lookahead translation.  See comments at
     //    user semantic actions for why this is necessary.  */
-    yyctx.yytoken = if (yyctx.yychar == yytoken_kind_t.TOK_YYEMPTY) yysymbol_kind_t.YYSYMBOL_YYEMPTY else YYTRANSLATE(yyctx.yychar);
+    yyctx.yytoken = if (yyctx.yychar == @intFromEnum(yytoken_kind_t.TOK_YYEMPTY)) yysymbol_kind_t.YYSYMBOL_YYEMPTY else YYTRANSLATE(@as(usize, @intCast(yyctx.yychar)));
     // /* If not already recovering from an error, report this error.  */
-    if (!yyctx.yyerrstatus) {
+    if (yyctx.yyerrstatus == 0) {
         yyctx.yynerrs += 1;
         {
             var yypctx = yypcontext_t{ .yyssp = yyctx.yyssp, .yytoken = yyctx.yytoken, .yylloc = &yyctx.yylloc };
             var yymsgp: []const u8 = "syntax error";
-            var yysyntax_error_status: c_int = 0;
-            yysyntax_error_status = yysyntax_error(&yyctx.yymsg_alloc, &yyctx.yymsg, &yypctx);
+            var yysyntax_error_status = yysyntax_error(&yyctx.yymsg_alloc, &yyctx.yymsg, &yypctx);
             if (yysyntax_error_status == 0) {
                 yymsgp = yyctx.yymsg;
             } else if (yysyntax_error_status == -1) {
-                if (yyctx.yymsg != yyctx.yymsgbuf)
+                if (yyctx.yymsg.ptr != yyctx.yymsgbuf[0..].ptr) {
                     allocator.free(yyctx.yymsg);
-                yyctx.yymsg = yyctx.yymsg_alloc;
-                if (yyctx.yymsg != null) {
-                    yysyntax_error_status = yysyntax_error(&yyctx.yymsg_alloc, &yyctx.yymsg, &yypctx);
-                    yymsgp = yyctx.yymsg;
-                } else {
-                    yymsgp = yyctx.yymsgbuf;
-                    yyctx.yymsg_alloc = yyctx.yymsgbuf.len;
-                    yysyntax_error_status = YYENOMEM;
                 }
+                yyctx.yymsg = brk: {
+                    yyctx.yymsg = allocator.alloc(u8, yyctx.yymsg_alloc) catch {
+                        yymsgp = yyctx.yymsgbuf[0..];
+                        yyctx.yymsg_alloc = yyctx.yymsgbuf.len;
+                        yysyntax_error_status = YYENOMEM;
+                        break :brk yyctx.yymsgbuf[0..];
+                    };
+                    yymsgp = yyctx.yymsg;
+                    yysyntax_error_status = yysyntax_error(&yyctx.yymsg_alloc, &yyctx.yymsg, &yypctx);
+                    break :brk yyctx.yymsg;
+                };
             }
             // yyerror (&yylloc, YYLexer, Result, yymsgp);
             if (yysyntax_error_status == YYENOMEM) {
@@ -1105,14 +1139,14 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
         // /* If just tried and failed to reuse lookahead token after an
         //    error, discard it.  */
 
-        if (yyctx.yychar <= yytoken_kind_t.TOK_EOF) {
+        if (yyctx.yychar <= @intFromEnum(yytoken_kind_t.TOK_EOF)) {
             // /* Return failure if at end of input.  */
-            if (yyctx.yychar == yytoken_kind_t.TOK_EOF) {
+            if (yyctx.yychar == @intFromEnum(yytoken_kind_t.TOK_EOF)) {
                 return LABEL_YYABORTLAB;
             }
         } else {
-            yydestruct("Error: discarding", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
-            yyctx.yychar = yytoken_kind_t.TOK_YYEMPTY;
+            yydestruct(yyctx, "Error: discarding", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+            yyctx.yychar = @intFromEnum(yytoken_kind_t.TOK_YYEMPTY);
         }
     }
 
@@ -1127,14 +1161,14 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
 fn label_yyerrorlab(yyctx: *yyparse_context_t) usize {
     // /* Pacify compilers when the user code never invokes YYERROR and the
     //    label yyerrorlab therefore never appears in user code.  */
-    yyctx.yynerrs ++ 1;
+    yyctx.yynerrs += 1;
 
     // /* Do not reclaim the symbols of the rule whose action triggered
     //    this YYERROR.  */
     yyctx.YYPOPSTACK(yyctx.yylen);
     yyctx.yylen = 0;
     yy_stack_print(yyctx.yyss, yyctx.yyssp);
-    yyctx.yystate = yyctx.yyssp.*;
+    yyctx.yystate = yyctx.yyssp[0];
     return LABEL_YYERRLAB1;
 }
 
@@ -1146,11 +1180,11 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
 
     // /* Pop stack until we find a state that shifts the error token.  */
     while (true) {
-        yyctx.yyn = yypact[yyctx.yystate];
+        yyctx.yyn = yypact[@intCast(yyctx.yystate)];
         if (!yypact_value_is_default(yyctx.yyn)) {
-            yyctx.yyn += yysymbol_kind_t.YYSYMBOL_YYerror;
-            if (0 <= yyctx.yyn and yyctx.yyn <= YYLAST and yycheck[yyctx.yyn] == yysymbol_kind_t.YYSYMBOL_YYerror) {
-                yyctx.yyn = yytable[yyctx.yyn];
+            yyctx.yyn += @intFromEnum(yysymbol_kind_t.YYSYMBOL_YYerror);
+            if (0 <= yyctx.yyn and yyctx.yyn <= YYLAST and yycheck[@intCast(yyctx.yyn)] == @intFromEnum(yysymbol_kind_t.YYSYMBOL_YYerror)) {
+                yyctx.yyn = yytable[@intCast(yyctx.yyn)];
                 if (0 < yyctx.yyn)
                     break;
             }
@@ -1161,24 +1195,22 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
             return LABEL_YYABORTLAB;
         }
 
-        yyctx.yyerror_range[1] = yyctx.yylsp.*;
-        yydestruct("Error: popping", YY_ACCESSING_SYMBOL(yyctx.yystate), yyctx.yyvsp, yyctx.yylsp);
+        yyctx.yyerror_range[1] = yyctx.yylsp[0];
+        yydestruct(yyctx, "Error: popping", @enumFromInt(YY_ACCESSING_SYMBOL(@intCast(yyctx.yystate))), &yyctx.yyvsp[0], &yyctx.yylsp[0]);
         yyctx.YYPOPSTACK(1);
-        yyctx.yystate = yyctx.yyssp.*;
+        yyctx.yystate = yyctx.yyssp[0];
         yy_stack_print(yyctx.yyss, yyctx.yyssp);
     }
 
-    // YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
     yyctx.yyvsp += 1;
-    yyctx.yyvsp = yyctx.yylval;
-    // YY_IGNORE_MAYBE_UNINITIALIZED_END
+    yyctx.yyvsp[0] = yyctx.yylval;
 
     yyctx.yyerror_range[2] = yyctx.yylloc;
     yyctx.yylsp += 1;
-    YYLLOC_DEFAULT(yyctx.yylsp.*, yyctx.yyerror_range, 2);
+    YYLLOC_DEFAULT(&yyctx.yylsp[0], yyctx.yyerror_range[0..].ptr, 2);
 
     // /* Shift the error token.  */
-    YY_SYMBOL_PRINT("Shifting", YY_ACCESSING_SYMBOL(yyctx.yyn), yyctx.yyvsp, yyctx.yylsp);
+    YY_SYMBOL_PRINT(yyctx, "Shifting", YY_ACCESSING_SYMBOL(@intCast(yyctx.yyn)), yyctx.yyvsp, yyctx.yylsp);
 
     yyctx.yystate = yyctx.yyn;
     return LABEL_YYNEWSTATE;
@@ -1213,18 +1245,18 @@ fn label_yyexhaustedlab(yyctx: *yyparse_context_t) usize {
 // | yyreturnlab -- parsing is finished, clean up and return.  |
 // `----------------------------------------------------------*/
 fn label_yyreturnlab(yyctx: *yyparse_context_t) usize {
-    if (yyctx.yychar != yysymbol_kind_t.TOK_YYEMPTY) {
+    if (yyctx.yychar != @intFromEnum(yytoken_kind_t.TOK_YYEMPTY)) {
         // /* Make sure we have latest lookahead translation.  See comments at
         //   user semantic actions for why this is necessary.  */
-        yyctx.yytoken = YYTRANSLATE(yyctx.yychar);
-        yydestruct("Cleanup: discarding lookahead", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+        yyctx.yytoken = YYTRANSLATE(@as(usize, @intCast(yyctx.yychar)));
+        yydestruct(yyctx, "Cleanup: discarding lookahead", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     }
     // /* Do not reclaim the symbols of the rule whose action triggered
     //    this YYABORT or YYACCEPT.  */
     yyctx.YYPOPSTACK(yyctx.yylen);
     yy_stack_print(yyctx.yyss, yyctx.yyssp);
     while (yyctx.yyssp != yyctx.yyss) {
-        yydestruct("Cleanup: popping", YY_ACCESSING_SYMBOL(yyctx.yyssp.*), yyctx.yyvsp, yyctx.yylsp);
+        yydestruct(yyctx, "Cleanup: popping", @enumFromInt(YY_ACCESSING_SYMBOL(@intCast(yyctx.yyssp[0]))), &yyctx.yyvsp[0], &yyctx.yylsp[0]);
         yyctx.YYPOPSTACK(1);
     }
     return LABEL_YYPUSHRETURN;
@@ -1234,23 +1266,26 @@ fn label_yyreturnlab(yyctx: *yyparse_context_t) usize {
 // | yyparse.  |
 // `----------*/
 
-pub fn yyparse(scanner: *YYLexer, res: *Result) c_int {
+pub fn yyparse(scanner: *YYLexer, res: *Result) !usize {
     // replace all local variables with yyps, so later when access should use yyps
     var yyctx = yyparse_context_t{};
     yyctx.scanner = scanner;
     yyctx.res = res;
-    yyctx.yyss = yyctx.yyssa.ptr;
+    yyctx.yyss = yyctx.yyssa[0..].ptr;
     yyctx.yyssp = yyctx.yyss;
-    yyctx.yyvs = yyctx.yyvsa.ptr;
+    yyctx.yyvs = yyctx.yyvsa[0..].ptr;
     yyctx.yyvsp = yyctx.yyvs;
-    yyctx.yymsg = yyctx.yymsgbuf;
+    yyctx.yyls = yyctx.yylsa[0..].ptr;
+    yyctx.yylsp = yyctx.yyls;
+    yyctx.yymsg = yyctx.yymsgbuf[0..];
 
     if (yydebug) {
-        std.debug.print("Starting parse\n");
+        std.debug.print("Starting parse\n", .{});
     }
 
-    yyctx.yychar = yytoken_kind_t.TOK_YYEMPTY; // /* Cause a token to be read.  */
+    yyctx.yychar = @intFromEnum(yytoken_kind_t.TOK_YYEMPTY); // /* Cause a token to be read.  */
 
+    // TODO: fix this
     yyctx.yylsp[0] = yyctx.yylloc;
 
     var loop_control: usize = LABEL_YYSETSTATE;
@@ -1262,7 +1297,7 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) c_int {
             },
 
             LABEL_YYSETSTATE => {
-                loop_control = label_yysetstate(&yyctx);
+                loop_control = try label_yysetstate(&yyctx);
             },
 
             LABEL_YYEXHAUSTEDLAB => {
@@ -1288,7 +1323,7 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) c_int {
             },
 
             LABEL_YYREAD_PUSHED_TOKEN => {
-                loop_control = label_yyread_pushed_token(&yyctx);
+                loop_control = try label_yyread_pushed_token(&yyctx);
             },
 
             LABEL_YYERRLAB1 => {
@@ -1300,7 +1335,7 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) c_int {
             },
 
             LABEL_YYREDUCE => {
-                loop_control = label_yyreduce(&yyctx);
+                loop_control = try label_yyreduce(&yyctx);
             },
 
             LABEL_YYERRORLAB => {
@@ -1319,18 +1354,22 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) c_int {
     // | yypushreturn -- return.  |
     // `-------------------------*/
     if (with_yyoverflow) {
-        if (yyctx.yyss != yyctx.yyssa)
-            allocator.free(yyctx.yyss);
+        if (yyctx.yyss != yyctx.yyssa[0..].ptr) {
+            // TODO: rethink
+            // allocator.free(yyctx.yyss[0..yyctx.yyss]);
+        }
     }
-    if (yyctx.yymsg != yyctx.yymsgbuf)
-        allocator.free(yyctx.yymsg);
+    if (yyctx.yymsg.ptr != yyctx.yymsgbuf[0..].ptr) {
+        // TODO: rethink
+        // allocator.free(yyctx.yymsg);
+    }
     return yyctx.yyresult;
 }
 
 pub fn main() !u8 {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.heap.page_allocator.free(args);
-    var aa = std.heap.ArenaAllocator(std.heap.page_allocator);
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const arena = aa.allocator();
 
@@ -1345,7 +1384,9 @@ pub fn main() !u8 {
     try YYLexer.yylex_init(&scanner);
     defer YYLexer.yylex_destroy(&scanner);
 
-    try YYParser.yyparse(&scanner, &res);
+    _ = try YYParser.yyparse(&scanner, &res);
 
     std.debug.print("{any}\n", .{res});
+
+    return 0;
 }

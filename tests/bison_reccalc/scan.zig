@@ -32,8 +32,17 @@ pub fn YY_USER_ACTION(this: *Self) anyerror!void {
 pub fn YY_USER_INIT(this: *Self) anyerror!void {
     _ = this;
 }
-pub const YYSTYPE = struct {};
-pub const YYLTYPE = struct {};
+pub const YYSTYPE = struct {
+    TOK_STR: []const u8 = undefined, // /* "string"//  */
+    TOK_NUM: c_int = 0, // /* "number"//  */
+    TOK_exp: c_int = 0, // /* exp//  */
+};
+pub const YYLTYPE = struct {
+    first_line: usize = 1,
+    first_column: usize = 1,
+    last_line: usize = 1,
+    last_column: usize = 1,
+};
 pub const YY_EXTRA_TYPE = struct {};
 
 allocator: std.mem.Allocator = undefined,
@@ -323,10 +332,10 @@ pub const Context = struct {
     }
 };
 
-var context: Context = undefined;
-// #line 370 "scan.zig"
+pub var context: Context = undefined;
+// #line 375 "scan.zig"
 
-// #line 372 "scan.zig"
+// #line 377 "scan.zig"
 
 pub const INITIAL = 0;
 pub const SC_STRING = 1;
@@ -491,7 +500,7 @@ pub fn yylex(this: *Self, yylval_param: *YYSTYPE, yylloc_param: *YYLTYPE) !usize
 
     // #line 47 "scan.l"
 
-    // #line 539 "scan.zig"
+    // #line 544 "scan.zig"
 
     while (true) { // /* loops until end-of-file is reached */
         // LOOP_START_INIT
@@ -705,7 +714,7 @@ pub fn yylex(this: *Self, yylval_param: *YYSTYPE, yylloc_param: *YYLTYPE) !usize
                 // #line 101 "scan.l"
                 try ECHO(yyg);
             },
-            // #line 739 "scan.zig"
+            // #line 744 "scan.zig"
 
             YY_END_OF_BUFFER => {
                 // Amount of text matched not including the EOB char.

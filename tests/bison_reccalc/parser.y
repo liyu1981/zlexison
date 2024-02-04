@@ -4,6 +4,7 @@
 // Emitted in the header file, before the definition of YYSTYPE.
 %code requires
 {
+  // need to build with: ../../zig-out/bin/zison zbison --locations --no-lines -o parser.zig parser.y
   const YYLexer = @import("scan.zig");
 
   pub const Result = struct {

@@ -39,7 +39,7 @@ pub const Context = struct {
     }
 };
 
-var context: Context = undefined;
+pub var context: Context = undefined;
 %}
 
 %x SC_STRING
