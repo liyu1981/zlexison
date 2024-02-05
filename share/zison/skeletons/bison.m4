@@ -499,7 +499,7 @@ m4_define([b4_symbol_tag_comment],
 # Run the action ACTION ("destructor" or "printer") for SYMBOL-NUM.
 m4_define([b4_symbol_action],
 [b4_symbol_if([$1], [has_$2],
-[b4_dollar_pushdef([(*yyvaluep)],
+[b4_dollar_pushdef([(yyvaluep)],
                    [$1],
                    [],
                    [(*yylocationp)])dnl
@@ -532,7 +532,7 @@ m4_define([b4_symbol_tok_printer],    [b4_symbol_action([$1], [printer], [yytoke
 m4_define([b4_symbol_actions],
 [m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_sym_$1])]))dnl
 m4_ifval(m4_defn([b4_actions_]),
-[switch (m4_default([$2], [yykind]))
+[switch (@@as(yysymbol_kind_t, @@enumFromInt(m4_default([$2], [yykind]))))
     {
 m4_defn([b4_actions_])[]dnl
       else => {},

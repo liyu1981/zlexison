@@ -30,7 +30,7 @@ pub var with_yyoverflow: bool = false;
 
 pub var allocator: std.mem.Allocator = undefined;
 
-/// util for calculate c pointer distance.
+/// utils for pointer operations.
 inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
     return (@intFromPtr(p2) - @intFromPtr(p1)) / @sizeOf(T);
 }
@@ -67,6 +67,7 @@ pub var yydebug: bool = YYDEBUG == 1;
 
 // /* "%code requires" blocks.//  */
 
+// need to build with: ../../zig-out/bin/zison zbison --locations --no-lines -o parser.zig parser.y
 const YYLexer = @import("scan.zig");
 
 pub const Result = struct {
@@ -237,7 +238,7 @@ pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
 pub const yytranslate = [_]isize{ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
 // /* YYRLINE[YYN] -- Source line where rule number YYN was defined.//  */
-pub const yyrline = [_]isize{ 0, 85, 85, 86, 90, 97, 104, 105, 109, 110, 111, 112, 113, 123, 124, 125 };
+pub const yyrline = [_]isize{ 0, 86, 86, 87, 91, 98, 105, 106, 110, 111, 112, 113, 114, 125, 126, 127 };
 
 // /** Accessing symbol of state STATE.  */
 pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
@@ -387,19 +388,19 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
     switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
         yysymbol_kind_t.YYSYMBOL_NUM => { // /* "number"//  */
             {
-                try yyo.writer().print("{d}", .{(yyvaluep.TOK_NUM)});
+                try yyo.writer().print("{d}", .{((yyvaluep).TOK_NUM)});
             }
         },
 
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
             {
-                try yyo.writer().print("{s}", .{(yyvaluep.TOK_STR)});
+                try yyo.writer().print("{s}", .{((yyvaluep).TOK_STR)});
             }
         },
 
         yysymbol_kind_t.YYSYMBOL_exp => { // /* exp//  */
             {
-                try yyo.writer().print("{d}", .{(yyvaluep.TOK_exp)});
+                try yyo.writer().print("{d}", .{((yyvaluep).TOK_exp)});
             }
         },
 
@@ -506,10 +507,7 @@ pub fn yypcontext_expected_tokens(yypctx: *yypcontext_t, yyarg: [*]allowzero yys
         const yyxend: isize = if (yychecklim < YYNTOKENS) yychecklim else YYNTOKENS;
         var yyx: isize = yyxbegin;
         while (yyx < yyxend) : (yyx += 1) {
-            if (yycheck[@intCast(yyx + yyn)] == yyx and
-                yyx != @as(isize, @intFromEnum(yysymbol_kind_t.YYSYMBOL_YYerror)) and
-                !yytable_value_is_error(yytable[@intCast(yyx + yyn)]))
-            {
+            if (yycheck[@intCast(yyx + yyn)] == yyx and yyx != @as(isize, @intFromEnum(yysymbol_kind_t.YYSYMBOL_YYerror)) and !yytable_value_is_error(yytable[@intCast(yyx + yyn)])) {
                 if (@intFromPtr(yyarg) == 0) {
                     yycount += 1;
                 } else if (yycount == yyargn) {
@@ -631,23 +629,23 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]const u8, yypctx: *yypconte
     //    Don't have undefined behavior even if the translation
     //    produced a string with the wrong number of "%s"s.  */
     // {
-    //     var yyp: [*c]u8 = yymsg.*;
-    //     var yyi: usize = 0;
-    //     yyp.* = yyformat.*;
-    //     while (yyp.* != 0) : (yyp.* = yyformat.*) {
-    //         if (yyp.* == '%' and yyformat[1] == 's' and yyi < yycount) {
-    //             yyi += 1;
-    //             yyp = @memcpy(
-    //                 yyp[0..yysymbol_name(yyarg[yyi]).len],
-    //                 yysymbol_name(yyarg[yyi]),
-    //             );
-    //             yyi += 1;
-    //             yyformat += 2;
-    //         } else {
-    //             yyp += 1;
-    //             yyformat += 1;
-    //         }
-    //     }
+    //   var yyp: [*c]u8 = yymsg.*;
+    //   var yyi: usize = 0;
+    //   yyp.* = yyformat.*;
+    //   while (yyp.* != 0) : (yyp.* = yyformat.*) {
+    //     if (yyp.* == '%' and yyformat[1] == 's' and yyi < yycount)
+    //       {
+    //         yyi += 1;
+    //         yyp =  @memcpy(yyp[0..yysymbol_name(yyarg[yyi]).len], yysymbol_name(yyarg[yyi]),);
+    //         yyi += 1;
+    //         yyformat += 2;
+    //       }
+    //     else
+    //       {
+    //         yyp += 1;
+    //         yyformat += 1;
+    //       }
+    //   }
     // }
     return 0;
 }
@@ -656,17 +654,17 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]const u8, yypctx: *yypconte
 // | Release the memory associated to this symbol.  |
 // `-----------------------------------------------*/
 
-pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
+pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
     _ = yylocationp;
     // if (yymsg == null) {
-    //     yymsg = "Deleting";
+    //  yymsg = "Deleting";
     // }
     YY_SYMBOL_PRINT(yyctx, yymsg, yykind, yyvaluep, null);
 
-    switch (yykind) {
+    switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
             {
-                allocator.free(yyvaluep.*.TOK_STR);
+                allocator.free(((yyvaluep).TOK_STR));
             }
         },
 
@@ -692,8 +690,18 @@ const yyparse_context_t = struct {
     yylval: YYSTYPE = undefined,
 
     // /* Location data for the lookahead symbol.  */
-    yyloc_default: YYLTYPE = YYLTYPE{},
-    yylloc: YYLTYPE = YYLTYPE{},
+    yyloc_default: YYLTYPE = YYLTYPE{
+        .first_line = 1,
+        .first_column = 1,
+        .last_line = 1,
+        .last_column = 1,
+    },
+    yylloc: YYLTYPE = YYLTYPE{
+        .first_line = 1,
+        .first_column = 1,
+        .last_line = 1,
+        .last_column = 1,
+    },
 
     // /* Number of syntax errors so far.  */
     yynerrs: usize = 0,
@@ -991,7 +999,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 yyctx.res.value = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp);
                 if (yyctx.res.verbose) {
-                    std.debug.print("{d}\n", .{ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp});
+                    std.debug.print("{d}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp)});
                 }
             }
         },
@@ -1004,56 +1012,56 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
 
         8 => { // /* exp: "number"//  */
             {
-                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_NUM;
+                (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_NUM);
             }
         },
 
         9 => { // /* exp: exp "+" exp//  */
             {
-                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp + ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
+                (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
         },
 
         10 => { // /* exp: exp "-" exp//  */
             {
-                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp - ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
+                (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
         },
 
         11 => { // /* exp: exp "*" exp//  */
             {
-                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp * ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
+                (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
         },
 
         12 => { // /* exp: exp "/" exp//  */
             {
-                if (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp == 0) {
+                if ((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp) == 0) {
                     std.debug.print("invalid division by zero", .{});
                     unreachable;
                 } else {
-                    yyctx.yyval.TOK_exp = @divTrunc(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp, ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
+                    (yyctx.yyval.TOK_exp) = @divTrunc((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp), (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp));
                 }
             }
         },
 
         13 => { // /* exp: "+" exp//  */
             {
-                yyctx.yyval.TOK_exp = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
+                (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
         },
 
         14 => { // /* exp: "-" exp//  */
             {
-                yyctx.yyval.TOK_exp = -ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp;
+                (yyctx.yyval.TOK_exp) = -(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
         },
 
         15 => { // /* exp: "string"//  */
             {
-                const int_value = try std.fmt.parseInt(c_int, ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR, 10);
-                allocator.free(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR);
-                yyctx.yyval.TOK_exp = int_value;
+                const int_value = try std.fmt.parseInt(c_int, (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR), 10);
+                allocator.free((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR));
+                (yyctx.yyval.TOK_exp) = int_value;
             }
         },
 
@@ -1145,7 +1153,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
                 return LABEL_YYABORTLAB;
             }
         } else {
-            yydestruct(yyctx, "Error: discarding", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+            yydestruct(yyctx, "Error: discarding", @intFromEnum(yyctx.yytoken), &yyctx.yylval, &yyctx.yylloc);
             yyctx.yychar = @intFromEnum(yytoken_kind_t.TOK_YYEMPTY);
         }
     }
@@ -1196,7 +1204,7 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
         }
 
         yyctx.yyerror_range[1] = yyctx.yylsp[0];
-        yydestruct(yyctx, "Error: popping", @enumFromInt(YY_ACCESSING_SYMBOL(@intCast(yyctx.yystate))), &yyctx.yyvsp[0], &yyctx.yylsp[0]);
+        yydestruct(yyctx, "Error: popping", YY_ACCESSING_SYMBOL(@intCast(yyctx.yystate)), &yyctx.yyvsp[0], &yyctx.yylsp[0]);
         yyctx.YYPOPSTACK(1);
         yyctx.yystate = yyctx.yyssp[0];
         yy_stack_print(yyctx.yyss, yyctx.yyssp);
@@ -1249,14 +1257,14 @@ fn label_yyreturnlab(yyctx: *yyparse_context_t) usize {
         // /* Make sure we have latest lookahead translation.  See comments at
         //   user semantic actions for why this is necessary.  */
         yyctx.yytoken = YYTRANSLATE(@as(usize, @intCast(yyctx.yychar)));
-        yydestruct(yyctx, "Cleanup: discarding lookahead", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+        yydestruct(yyctx, "Cleanup: discarding lookahead", @intFromEnum(yyctx.yytoken), &yyctx.yylval, &yyctx.yylloc);
     }
     // /* Do not reclaim the symbols of the rule whose action triggered
     //    this YYABORT or YYACCEPT.  */
     yyctx.YYPOPSTACK(yyctx.yylen);
     yy_stack_print(yyctx.yyss, yyctx.yyssp);
     while (yyctx.yyssp != yyctx.yyss) {
-        yydestruct(yyctx, "Cleanup: popping", @enumFromInt(YY_ACCESSING_SYMBOL(@intCast(yyctx.yyssp[0]))), &yyctx.yyvsp[0], &yyctx.yylsp[0]);
+        yydestruct(yyctx, "Cleanup: popping", YY_ACCESSING_SYMBOL(@intCast(yyctx.yyssp[0])), &yyctx.yyvsp[0], &yyctx.yylsp[0]);
         yyctx.YYPOPSTACK(1);
     }
     return LABEL_YYPUSHRETURN;
@@ -1361,7 +1369,7 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) !usize {
     }
     if (yyctx.yymsg.ptr != yyctx.yymsgbuf[0..].ptr) {
         // TODO: rethink
-        // allocator.free(yyctx.yymsg);
+        // allocator.free (yyctx.yymsg);
     }
     return yyctx.yyresult;
 }

@@ -112,9 +112,9 @@ b4_percent_define_default([[api.symbol.prefix]], [[YYSYMBOL_]])
 # All the yylex formal arguments.
 # b4_lex_param arrives quoted twice, but we want to keep only one level.
 m4_define([b4_yylex_formals],
-[b4_pure_if([[[b4_api_PREFIX[STYPE *yylvalp]], [[yyctx.yylval]]][]dnl
-b4_locations_if([, [b4_api_PREFIX[LTYPE *yyllocp], [yyctx.yylloc]]])])dnl
-m4_ifdef([b4_lex_param], [, ]b4_lex_param)])
+[b4_pure_if([[[b4_api_PREFIX[STYPE *yylvalp]], [[&yyctx.yylval]]][]dnl
+b4_locations_if([, [b4_api_PREFIX[LTYPE *yyllocp], [&yyctx.yylloc]]])])dnl
+])
 
 
 # b4_yylex
@@ -470,6 +470,15 @@ m4_define([b4_formal],
 [$1])
 
 
+m4_define([b4_formals_struct],
+[m4_if([$#], [0], [void],
+       [$#$1], [1], [void],
+               [m4_map_sep([b4_formal_struct], [, ], [$@])])])
+
+m4_define([b4_formal_struct],
+[$1 = undefined])
+
+
 # b4_function_declare(NAME, RETURN-VALUE, [DECL1, NAME1], ...)
 # ------------------------------------------------------------
 # Declare the function NAME.
@@ -542,14 +551,15 @@ m4_define_default([b4_yydestruct_define],
 // | Release the memory associated to this symbol.  |
 // `-----------------------------------------------*/
 
-pub fn yydestruct (yymsg: [*c]u8,
-            yykind: yysymbol_kind_t, yyvaluep: *YYSTYPE]b4_locations_if(dnl
+pub fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
+            yykind: isize, yyvaluep: *YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *YYLTYPE]])[][)
 void {
-][ if (yymsg == null) {
-    yymsg = "Deleting";
-  }
-  YY_SYMBOL_PRINT (yymsg, yykind, yyvaluep, null);
+][_ = yylocationp;
+  // if (yymsg == null) {
+  //  yymsg = "Deleting";
+  // }
+  YY_SYMBOL_PRINT (yyctx, yymsg, yykind, yyvaluep, null);
 
   ]b4_symbol_actions([destructor])[
 }]dnl
@@ -570,7 +580,8 @@ pub fn yy_symbol_value_print (
   yykind: isize,
   yyvaluep: *const YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *const YYLTYPE]])[][) !void {
-   ][  if (yyvaluep == null) return;]
+   ]b4_locations_if([[_ = yylocationp;]])[
+   ][  // if (yyvaluep == null) return;]
    b4_percent_code_get([[pre-printer]])dnl
    b4_symbol_actions([printer])
    b4_percent_code_get([[post-printer]])dnl
@@ -582,11 +593,11 @@ pub fn yy_symbol_value_print (
 // `---------------------------*/
 
 pub fn yy_symbol_print (yyo: std.fs.File,
-                  yykind: usize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
+                  yykind: isize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *const YYLTYPE]])[][) !void {
   try yyo.writer().print("{s} {s} (", .{
       if (yykind < YYNTOKENS) "token" else "nterm",
-      yysymbol_name(yykind),
+      yysymbol_name(@@enumFromInt(yykind)),
   });
 ]b4_locations_if([  try yy_location_print_(yyo, yylocationp);
   try yyo.writer().print(": ", .{});
@@ -738,13 +749,14 @@ typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
 [m4_bmatch(b4_percent_define_get([[api.value.type]]),
 [union\|union-directive],
 [dnl
-[pub const ]b4_percent_define_get([[api.value.union.name]])[ = union ][
-{
-]b4_user_union_members[
-};
+[pub const ]b4_percent_define_get([[api.value.union.name]])[ = YYLexer.YYSTYPE;
 ]dnl
 ])])])
 
+# [pub const ]b4_percent_define_get([[api.value.union.name]])[ = union ][
+# {
+# ]b4_user_union_members[
+# };
 
 # b4_location_type_define
 # -----------------------
@@ -797,7 +809,7 @@ m4_define([b4_yylloc_default_define],
 //    If N is 0, then set CURRENT to the empty location which ends
 //    the previous symbol: RHS[0] (always defined).  */
 
-fn YYLLOC_DEFAULT(current: *YYLTYPE, rhs: *YYLTYPE, N: usize) void {
+fn YYLLOC_DEFAULT(current: *YYLTYPE, rhs: [*]YYLTYPE, N: usize) void {
     if (N > 0) {
       current.first_line = rhs[1].first_line;
       current.first_column = rhs[1].first_column;

@@ -9,11 +9,11 @@
 
   pub const Result = struct {
     // Whether to print the intermediate results.
-    verbose: bool,
+    verbose: bool = true,
     // Value of the last computation.
-    value: i64,
+    value: i64 = -1,
     // Number of errors.
-    nerrs: usize,
+    nerrs: usize = 0,
   };
 }
 
@@ -69,10 +69,10 @@
 
 %token <c_int> NUM "number"
 %type <c_int> exp
-%printer { try yyo.writer().print("{d}", $$); } <c_int>
+%printer { try yyo.writer().print("{d}", .{$$}); } <c_int>
 
 %token <[]const u8> STR "string"
-%printer { try yyo.writer().print("{s}", $$); } <[]const u8>
+%printer { try yyo.writer().print("{s}", .{$$}); } <[]const u8>
 %destructor { allocator.free($$); } <[]const u8>
 
 // Precedence (from lowest to highest) and associativity.
@@ -118,8 +118,9 @@ exp:
         std.debug.print("invalid division by zero", .{});
         unreachable;
       }
-    else
-      $$ = $1 / $3;
+    else {
+      $$ = @divTrunc($1, $3);
+    }
   }
 | "+" exp %prec UNARY  { $$ = $2; }
 | "-" exp %prec UNARY  { $$ = -$2; }
@@ -136,7 +137,7 @@ exp:
 pub fn main() !u8 {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.heap.page_allocator.free(args);
-    var aa = std.heap.ArenaAllocator(std.heap.page_allocator);
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const arena = aa.allocator();
 
@@ -151,7 +152,9 @@ pub fn main() !u8 {
     try YYLexer.yylex_init(&scanner);
     defer YYLexer.yylex_destroy(&scanner);
 
-    try YYParser.yyparse(&scanner, &res);
+    _ = try YYParser.yyparse(&scanner, &res);
 
     std.debug.print("{any}\n", .{res});
+
+    return 0;
 }
