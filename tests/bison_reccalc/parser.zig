@@ -26,6 +26,7 @@ const std = @import("std");
 const Self = @This();
 const YYParser = @This();
 
+// TODO: we actually do not need this in zig
 pub var with_yyoverflow: bool = false;
 
 pub var allocator: std.mem.Allocator = undefined;
@@ -145,8 +146,9 @@ pub const yyalloc = union {
     yyls_alloc: YYLTYPE,
 };
 
-fn YYSTACK_ALLOC(size: usize) ![*]yyalloc {
+fn YYSTACK_ALLOC(yyctx: *yyparse_context_t, size: usize) ![*]yyalloc {
     var yyalloc_array = try allocator.alloc(yyalloc, size);
+    yyctx.yystack_alloc_size = size;
     _ = &yyalloc_array;
     return yyalloc_array.ptr;
 }
@@ -158,7 +160,7 @@ pub const YYSTACK_GAP_MAXIMUM = @sizeOf(yyalloc) - 1;
 // /* The size of an array large to enough to hold all stacks, each with
 //    N elements.  */
 pub fn YYSTACK_BYTES(N: usize) usize {
-    return N + @sizeOf(yy_state_t) + @sizeOf(YYSTYPE) + @sizeOf(YYLTYPE) + 2 * YYSTACK_GAP_MAXIMUM;
+    return N * (@sizeOf(yy_state_t) + @sizeOf(YYSTYPE) + @sizeOf(YYLTYPE)) + 2 * YYSTACK_GAP_MAXIMUM;
 }
 
 const WITH_YYSTACK_RELOCATE = true;
@@ -187,7 +189,11 @@ fn YYSTACK_RELOCATE(
             yyctx.yyvs[0] = yyptr[0].yyvs_alloc;
             yynewbytes = yyctx.yystacksize * @sizeOf(yyalloc) + YYSTACK_GAP_MAXIMUM;
         },
-        .yyls => {},
+        .yyls => {
+            YYCOPY(YYLTYPE, .yyls, yyptr, yyctx.yyls, yysize);
+            yyctx.yyls[0] = yyptr[0].yyls_alloc;
+            yynewbytes = yyctx.yystacksize * @sizeOf(yyalloc) + YYSTACK_GAP_MAXIMUM;
+        },
     }
     yyptr_.* = @ptrCast(yyptr + yynewbytes / @sizeOf(*yyalloc));
 }
@@ -202,7 +208,9 @@ pub fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: 
         .yyvs => {
             for (0..count) |i| dst[i].yyvs_alloc = src[i];
         },
-        .yyls => {},
+        .yyls => {
+            for (0..count) |i| dst[i].yyls_alloc = src[i];
+        },
     }
 }
 
@@ -715,6 +723,7 @@ const yyparse_context_t = struct {
 
     // /* Their size.  */
     yystacksize: usize = YYINITDEPTH,
+    yystack_alloc_size: usize = 0,
 
     // /* The state stack: array, bottom, top.  */
     yyssa: [YYINITDEPTH]yy_state_t = undefined,
@@ -803,6 +812,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
             const yysize: usize = @intCast(cPtrDistance(isize, yyctx.yyss, yyctx.yyssp) + 1);
 
             if (with_yyoverflow) {
+                // TODO: we actually do not need this in zig
                 // /* Give user a chance to reallocate the stack.  Use copies of
                 //    these so that the &'s don't force the real ones into
                 //    memory.  */
@@ -842,7 +852,8 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
 
                 {
                     const yyss1 = yyctx.yyss;
-                    var yyptr: [*]yyalloc = try YYSTACK_ALLOC(YYSTACK_BYTES(yyctx.yystacksize));
+                    const yystack_alloc_size1 = yyctx.yystack_alloc_size;
+                    var yyptr: [*]yyalloc = try YYSTACK_ALLOC(yyctx, YYSTACK_BYTES(yyctx.yystacksize));
                     // TODO: really necessary in zig as we have try?
                     // if (yyptr == null) {
                     //     return LABEL_YYEXHAUSTEDLAB;
@@ -854,8 +865,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
                     // TODO: why undef?
                     // #  undef YYSTACK_RELOCATE
                     if (yyss1 != yyctx.yyssa[0..].ptr) {
-                        // TODO: rethink
-                        // allocator.free(yyss1);
+                        allocator.free(yyss1[0..yystack_alloc_size1]);
                     }
                 }
             }
