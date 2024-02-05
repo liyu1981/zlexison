@@ -75,7 +75,7 @@ pub const Result = struct {
     // Whether to print the intermediate results.
     verbose: bool = true,
     // Value of the last computation.
-    value: i64 = -1,
+    value: c_int = -1,
     // Number of errors.
     nerrs: usize = 0,
 };
@@ -991,7 +991,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     //    users should not rely upon it.  Assigning to YYVAL
     //    unconditionally makes the parser a bit smaller, and it avoids a
     //    GCC warning that YYVAL may be used uninitialized.  */
-    yyctx.yyval = if (yyctx.yylen <= 1) yyctx.yyvsp[1 - yyctx.yylen] else YYSTYPE{};
+    yyctx.yyval = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 1 - @as(isize, @intCast(yyctx.yylen)));
     // /* Default location. */
     YYLLOC_DEFAULT(&yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);
     yyctx.yyerror_range[1] = yyctx.yyloc;

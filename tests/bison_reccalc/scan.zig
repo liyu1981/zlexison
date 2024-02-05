@@ -641,6 +641,7 @@ pub fn yylex(this: *Self, yylval_param: *YYSTYPE, yylloc_param: *YYLTYPE) !usize
                     // Scan an integer.
                     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
                     context.cur_tok = .{ .TOK_NUM = intval };
+                    yylval_param.TOK_NUM = @intCast(intval);
                     return @intFromEnum(Context.TOK_TYPE.TOK_NUM);
                 }
             },
@@ -688,6 +689,7 @@ pub fn yylex(this: *Self, yylval_param: *YYSTYPE, yylloc_param: *YYLTYPE) !usize
                         BEGIN(INITIAL, yyg);
                         if (context.str.items.len > 0) {
                             context.cur_tok = .{ .TOK_STR = context.str.items[0..] };
+                            yylval_param.TOK_STR = context.str.items[0..];
                             return @intFromEnum(Context.TOK_TYPE.TOK_STR);
                         }
                     } else {

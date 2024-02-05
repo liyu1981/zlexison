@@ -1664,7 +1664,9 @@ fn label_yybackup(yyctx: *yyparse_context_t) usize {
 
   // /* YYCHAR is either empty, or end-of-input, or a valid lookahead.  */
   if (yyctx.yychar == @@intFromEnum(yytoken_kind_t.]b4_symbol(empty, id)[))
-    {]b4_push_if([[if (!yyps.yynew) {]b4_use_push_for_pull_if([], [[
+    {]b4_push_if([[
+      if (!yyps.yynew)
+        {]b4_use_push_for_pull_if([], [[
           if (yydebug) {
             std.debug.print("Return for a new token:\n", .{});
           }
@@ -1790,7 +1792,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
   //    users should not rely upon it.  Assigning to YYVAL
   //    unconditionally makes the parser a bit smaller, and it avoids a
   //    GCC warning that YYVAL may be used uninitialized.  */
-  yyctx.yyval = if (yyctx.yylen <= 1) yyctx.yyvsp[1 - yyctx.yylen] else YYSTYPE{};
+    yyctx.yyval = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 1 - @@as(isize, @@intCast(yyctx.yylen)));
 ]b4_locations_if(
 [[// /* Default location. */
   YYLLOC_DEFAULT (&yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);

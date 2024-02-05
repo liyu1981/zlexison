@@ -11,7 +11,7 @@
     // Whether to print the intermediate results.
     verbose: bool = true,
     // Value of the last computation.
-    value: i64 = -1,
+    value: c_int = -1,
     // Number of errors.
     nerrs: usize = 0,
   };

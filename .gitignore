@@ -1,3 +1,4 @@
+parser
 main
 src/bison.bin
 src/flex.bin
