@@ -60,6 +60,9 @@ inline fn ptrLhsWithOffset(comptime T: type, p: [*]T, offset: isize) *T {
 }
 
 // /* "%code top" blocks.//  */
+// #line 27 "parser.y"
+
+// #line 67 "parser.zig"
 
 // /* Debug traces.  */
 const YYDEBUG = 1;
@@ -67,6 +70,7 @@ const YYDEBUG = 1;
 pub var yydebug: bool = YYDEBUG == 1;
 
 // /* "%code requires" blocks.//  */
+// #line 6 "parser.y"
 
 // need to build with: ../../zig-out/bin/zison zbison --locations --no-lines -o parser.zig parser.y
 const YYLexer = @import("scan.zig");
@@ -79,6 +83,8 @@ pub const Result = struct {
     // Number of errors.
     nerrs: usize = 0,
 };
+
+// #line 96 "parser.zig"
 
 // /* Token kinds.  */
 pub const yytoken_kind_t = enum(i32) {
@@ -103,6 +109,9 @@ pub const YYSTYPE = YYLexer.YYSTYPE;
 const YYLTYPE = YYLexer.YYLTYPE;
 
 // /* "%code provides" blocks.//  */
+// #line 22 "parser.y"
+
+// #line 128 "parser.zig"
 
 // /* Symbol kind.  */
 pub const yysymbol_kind_t = enum(i32) {
@@ -126,6 +135,9 @@ pub const yysymbol_kind_t = enum(i32) {
 };
 
 // /* Unqualified %code blocks.//  */
+// #line 31 "parser.y"
+
+// #line 158 "parser.zig"
 
 pub const YYSIZE_MAXIMUM = std.math.maxInt(usize);
 pub const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
@@ -393,21 +405,27 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
     // if (yyvaluep == null) return;
     switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
         yysymbol_kind_t.YYSYMBOL_NUM => { // /* "number"//  */
+            // #line 72 "parser.y"
             {
                 try yyo.writer().print("{d}", .{((yyvaluep).TOK_NUM)});
             }
+            // #line 519 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
+            // #line 75 "parser.y"
             {
                 try yyo.writer().print("{s}", .{((yyvaluep).TOK_STR)});
             }
+            // #line 525 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_exp => { // /* exp//  */
+            // #line 72 "parser.y"
             {
                 try yyo.writer().print("{d}", .{((yyvaluep).TOK_exp)});
             }
+            // #line 531 "parser.zig"
         },
 
         else => {},
@@ -663,9 +681,11 @@ pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, y
 
     switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
+            // #line 76 "parser.y"
             {
                 allocator.free(((yyvaluep).TOK_STR));
             }
+            // #line 820 "parser.zig"
         },
 
         else => {},
@@ -998,45 +1018,58 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     try yy_reduce_print(yyctx, @intCast(yyctx.yyn));
     switch (yyctx.yyn) {
         4 => { // /* line: exp eol//  */
+            // #line 92 "parser.y"
             {
                 yyctx.res.value = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp);
                 if (yyctx.res.verbose) {
                     std.debug.print("{d}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp)});
                 }
             }
+            // #line 1163 "parser.zig"
         },
 
         5 => { // /* line: error eol//  */
+            // #line 99 "parser.y"
             {
                 std.debug.print("yyerrok!", .{});
             }
+            // #line 1171 "parser.zig"
         },
 
         8 => { // /* exp: "number"//  */
+            // #line 110 "parser.y"
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_NUM);
             }
+            // #line 1177 "parser.zig"
         },
 
         9 => { // /* exp: exp "+" exp//  */
+            // #line 111 "parser.y"
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
+            // #line 1183 "parser.zig"
         },
 
         10 => { // /* exp: exp "-" exp//  */
+            // #line 112 "parser.y"
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
+            // #line 1189 "parser.zig"
         },
 
         11 => { // /* exp: exp "*" exp//  */
+            // #line 113 "parser.y"
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
+            // #line 1195 "parser.zig"
         },
 
         12 => { // /* exp: exp "/" exp//  */
+            // #line 115 "parser.y"
             {
                 if ((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp) == 0) {
                     std.debug.print("invalid division by zero", .{});
@@ -1045,27 +1078,36 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
                     (yyctx.yyval.TOK_exp) = @divTrunc((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp), (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp));
                 }
             }
+            // #line 1210 "parser.zig"
         },
 
         13 => { // /* exp: "+" exp//  */
+            // #line 125 "parser.y"
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
+            // #line 1216 "parser.zig"
         },
 
         14 => { // /* exp: "-" exp//  */
+            // #line 126 "parser.y"
             {
                 (yyctx.yyval.TOK_exp) = -(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
+            // #line 1222 "parser.zig"
         },
 
         15 => { // /* exp: "string"//  */
+            // #line 128 "parser.y"
             {
                 const int_value = try std.fmt.parseInt(c_int, (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR), 10);
                 allocator.free((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR));
                 (yyctx.yyval.TOK_exp) = int_value;
             }
+            // #line 1232 "parser.zig"
         },
+
+        // #line 1236 "parser.zig"
 
         else => {},
     }
@@ -1377,6 +1419,8 @@ pub fn yyparse(scanner: *YYLexer, res: *Result) !usize {
     }
     return yyctx.yyresult;
 }
+
+// #line 135 "parser.y"
 
 pub fn main() !u8 {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
