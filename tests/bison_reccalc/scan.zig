@@ -294,22 +294,22 @@ pub fn yymore(yyg: *yyguts_t) void {
 // #line 2 "scan.l"
 pub const Context = struct {
     pub const TOK_TYPE = enum(u32) {
-        TOK_PLUS,
+        TOK_EOF = 0,
+        TOK_PLUS = 258,
         TOK_MINUS,
         TOK_STAR,
         TOK_SLASH,
-        TOK_EOF,
         TOK_EOL,
         TOK_NUM,
         TOK_STR,
     };
 
     pub const TOK = union(TOK_TYPE) {
+        TOK_EOF: u8,
         TOK_PLUS: u8,
         TOK_MINUS: u8,
         TOK_STAR: u8,
         TOK_SLASH: u8,
-        TOK_EOF: u8,
         TOK_EOL: u8,
         TOK_NUM: i64,
         TOK_STR: []const u8,

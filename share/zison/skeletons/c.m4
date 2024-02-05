@@ -556,10 +556,7 @@ pub fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
 [[, yylocationp: *YYLTYPE]])[][)
 void {
 ][_ = yylocationp;
-  // if (yymsg == null) {
-  //  yymsg = "Deleting";
-  // }
-  YY_SYMBOL_PRINT (yyctx, yymsg, yykind, yyvaluep, null);
+    YY_SYMBOL_PRINT(yyctx, yymsg, @@enumFromInt(yykind));
 
   ]b4_symbol_actions([destructor])[
 }]dnl

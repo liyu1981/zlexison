@@ -741,14 +741,12 @@ pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 ]])[
 ]b4_yylocation_print_define[
 
-pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, kind: anytype, value: anytype, location: anytype) void {
-  if (yydebug) {
-        std.debug.print("{s}", .{title});
-  }
-    std.debug.print("{any}{any}{any} {any}\n", .{ kind, value, location, yyctx.res });
-  if (yydebug) {
-      std.debug.print("\n", .{});
-  }
+pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
+    if (yydebug) {
+        std.debug.print("{s}: ", .{title});
+        std.debug.print("{any}, {any}, {any}\n", .{ token, yyctx.yylval, yyctx.yyloc });
+        std.debug.print("\n", .{});
+    }
 }
 
 // ]b4_yy_symbol_print_define[
@@ -775,23 +773,20 @@ pub fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
 // `------------------------------------------------*/
 
 pub fn yy_reduce_print(yyctx: *yyparse_context_t,][yyrule: usize][) !void {
-   const yylno = yyrline[yyrule];
-   const yynrhs: usize = @@intCast(yyr2[yyrule]);
    if (yydebug) {
-      std.debug.print("Reducing stack by rule {d} (line {d}):\n", .{yyrule - 1, yylno});
-   }
-   // /* The symbols being reduced.  */
-   for (0..yynrhs) |yyi| {
-      if (yydebug) {
-          std.debug.print("   ${d} = ", .{ yyi + 1 });
-      }
-      try yy_symbol_print (std.io.getStdErr(),
-                        @@intCast(YY_ACCESSING_SYMBOL (@@intCast(yyctx.yyssp[yyi + 1 - yynrhs]))),
-                        &yyctx.yyvsp@{(yyi + 1) - (yynrhs)@}]b4_locations_if([,
-                        &]b4_rhs_location(yynrhs, yyi + 1))[][,);
-      if (yydebug) {
-          std.debug.print("\n", .{});
-      }
+    const yylno = yyrline[yyrule];
+    const yynrhs: usize = @@intCast(yyr2[yyrule]);
+    const iyynrhs: isize = @@as(isize, @@intCast(yynrhs));
+    std.debug.print("Reducing stack by rule {d} (line {d}):\n", .{yyrule - 1, yylno});
+    // /* The symbols being reduced.  */
+    for (0..yynrhs) |yyi| {
+            std.debug.print("   ${d} = ", .{ yyi + 1 });
+        try yy_symbol_print (std.io.getStdErr(),
+                          @@intCast(YY_ACCESSING_SYMBOL (@@intCast(ptrRhsWithOffset(isize, yyctx.yyssp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs)))),
+                          ptrLhsWithOffset(YYSTYPE, yyctx.yyvsp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs)]b4_locations_if([,
+                          ]ptrLhsWithOffset(YYLTYPE, yyctx.yylsp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs))[][,);
+            std.debug.print("\n", .{});
+    }
    }
 }
 
@@ -1723,7 +1718,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
   else
     {
       yyctx.yytoken = YYTRANSLATE(@@as(usize, @@intCast(yyctx.yychar)));
-      YY_SYMBOL_PRINT (yyctx, "Next token is", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+      YY_SYMBOL_PRINT(yyctx, "Next token is", yyctx.yytoken);
     }
 
   // /* If the proper action on seeing token YYTOKEN is to reduce or to
@@ -1754,7 +1749,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
     }
 
     // /* Shift the lookahead token.  */
-    YY_SYMBOL_PRINT (yyctx, "Shifting", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
+    YY_SYMBOL_PRINT(yyctx, "Shifting", yyctx.yytoken);
     yyctx.yystate = yyctx.yyn;
     yyctx.yyvsp += 1;
     yyctx.yyvsp[0] = yyctx.yylval;
@@ -1773,7 +1768,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
 // | yydefault -- do the default action for the current state.  |
 // `-----------------------------------------------------------*/
 fn label_yydefault(yyctx: *yyparse_context_t) usize {
-  yyctx.yyn = yydefact[yyctx.yystate];
+  yyctx.yyn = yydefact[@@intCast(yyctx.yystate)];
   if (yyctx.yyn == 0) {
     return LABEL_YYERRLAB;
   }
@@ -1795,7 +1790,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
   //    users should not rely upon it.  Assigning to YYVAL
   //    unconditionally makes the parser a bit smaller, and it avoids a
   //    GCC warning that YYVAL may be used uninitialized.  */
-  yyctx.yyval = yyctx.yyvsp[1-yyctx.yylen];
+  yyctx.yyval = if (yyctx.yylen <= 1) yyctx.yyvsp[1 - yyctx.yylen] else YYSTYPE{};
 ]b4_locations_if(
 [[// /* Default location. */
   YYLLOC_DEFAULT (&yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);
@@ -1828,7 +1823,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     //    case of YYERROR or YYBACKUP, subsequent parser actions might lead
     //    to an incorrect destructor call or verbose syntax error message
     //    before the lookahead is translated.  */
-    YY_SYMBOL_PRINT (yyctx, "-> $$ =", yyr1[@@intCast(yyctx.yyn)], &yyctx.yyval, &yyctx.yyloc);
+    YY_SYMBOL_PRINT(yyctx, "-> $$ =", @@enumFromInt(yyr1[@@intCast(yyctx.yyn)]));
 
     yyctx.YYPOPSTACK (yyctx.yylen);
     yyctx.yylen = 0;
@@ -1997,7 +1992,7 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
   YYLLOC_DEFAULT (&yyctx.yylsp[0], yyctx.yyerror_range[0..].ptr, 2);]])[
 
   // /* Shift the error token.  */
-  YY_SYMBOL_PRINT (yyctx, "Shifting", YY_ACCESSING_SYMBOL (@@intCast(yyctx.yyn)), yyctx.yyvsp, yyctx.yylsp);
+  YY_SYMBOL_PRINT(yyctx, "Shifting", @@enumFromInt(YY_ACCESSING_SYMBOL(@@intCast(yyctx.yyn))));
 
   yyctx.yystate = yyctx.yyn;
   return LABEL_YYNEWSTATE;
@@ -2166,7 +2161,9 @@ b4_locations_if([[
         loop_control = label_yybackup(&yyctx);
       },
 
-      LABEL_YYDEFAULT => {},
+      LABEL_YYDEFAULT => {
+        loop_control = label_yydefault(&yyctx);
+      },
 
       LABEL_YYPUSHRETURN => { break; },
 

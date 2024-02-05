@@ -152,12 +152,12 @@ pub fn main() !u8 {
 
     const stdout_writer = std.io.getStdOut().writer();
 
-    var content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
-    defer allocator.free(content);
+    var content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
+    defer arena.free(content);
     _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    YYParser.allocator = allocator;
+    YYParser.allocator = arena;
     yydebug = true;
     var res: Result = Result{};
 
@@ -168,7 +168,7 @@ pub fn main() !u8 {
     try YYLexer.yylex_init(&scanner);
     defer YYLexer.yylex_destroy(&scanner);
 
-    _ = try YYLexer.yy_scan_string(content, lexer.yyg);
+    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
 
     _ = try YYParser.yyparse(&scanner, &res);
 

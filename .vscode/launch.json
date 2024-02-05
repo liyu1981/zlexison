@@ -7,6 +7,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug bison_parser parser",
+      "program": "${workspaceFolder}/parser",
+      "args": ["tests/bison_reccalc/data.txt"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug flex_parser main",
       "program": "${workspaceFolder}/main",
       "args": ["test.txt"],
