@@ -95,9 +95,9 @@ pub fn runAsZlex(opts: struct {
     try writer.print("{s}", .{yyc_final3});
 }
 
-extern fn flex_main(argc: usize, argv: [*c]const u8) u8;
+extern fn flex_main(argc: usize, argv: [*c]const u8, m4path: [*c]const u8) u8;
 
-pub fn runAsZflex(args: [][:0]const u8) void {
+pub fn runAsZflex(args: [][:0]const u8, m4_path: []const u8) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // later there is no going back, so Cool Guys Don't Look At Explosions
     // defer arena_allocator.deinit();
@@ -111,8 +111,12 @@ pub fn runAsZflex(args: [][:0]const u8) void {
         };
         argv_buf[i] = duped.ptr;
     }
+    const m4pathZ = arena.dupeZ(u8, m4_path) catch {
+        @panic("Oops! OOM!");
+    };
     std.os.exit(flex_main(
         args.len,
         @as([*c]const u8, @ptrCast(argv_buf.ptr)),
+        m4pathZ.ptr,
     ));
 }

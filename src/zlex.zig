@@ -113,8 +113,8 @@ pub fn main() !u8 {
             };
         },
         .zflex => {
-            // const m4_path = try runAsM4.ensureZm4(arena, opts.zlex_exe);
-            @import("zlex/runAsZlex.zig").runAsZflex(args[1..]);
+            const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
+            @import("zlex/runAsZlex.zig").runAsZflex(args[1..], m4_path);
         },
         .flex => {
             const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
