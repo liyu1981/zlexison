@@ -5,6 +5,7 @@ const jstring = @import("jstring");
 pub fn runAsZlex(opts: struct {
     input_file_path: []const u8,
     output_file_path: []const u8,
+    with_parser_type: bool,
     zlex_exe: []const u8,
 }) !void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -17,7 +18,10 @@ pub fn runAsZlex(opts: struct {
     const writer: std.fs.File.Writer = brk: {
         const trimed_out_path = std.mem.trim(u8, opts.output_file_path, &std.ascii.whitespace);
         if (trimed_out_path.len <= 0) {
-            break :brk std.io.getStdOut().writer();
+            var autogen_file_out = try jstring.JString.newFromFormat(arena, "{s}.zig", .{std.fs.path.basename(opts.input_file_path)});
+            defer autogen_file_out.deinit();
+            f = try std.fs.cwd().createFile(autogen_file_out.valueOf(), .{});
+            break :brk f.?.writer();
         } else {
             f = try std.fs.cwd().createFile(trimed_out_path, .{});
             // do not close f, let exit do it
@@ -29,6 +33,11 @@ pub fn runAsZlex(opts: struct {
     }
 
     const raw_yyc = brk: {
+        var envmap = try std.process.getEnvMap(arena);
+        defer envmap.deinit();
+        if (opts.with_parser_type) {
+            try envmap.put("ZLEX_WITH_PARSER_TYPE", "1");
+        }
         // zflex in default enabled
         //   -R --yylineno --stack --bison-bridge --bison-locations
         //   %option reject,unput,yymore
@@ -42,6 +51,7 @@ pub fn runAsZlex(opts: struct {
                     opts.input_file_path,
                 },
             },
+            .env_map = &envmap,
         });
         result.assertSucceeded(.{
             .print_cmd_term = false,

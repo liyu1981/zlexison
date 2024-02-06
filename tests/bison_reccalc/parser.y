@@ -73,7 +73,7 @@
 
 %token <[]const u8> STR "string"
 %printer { try yyo.writer().print("{s}", .{$$}); } <[]const u8>
-%destructor { allocator.free($$); } <[]const u8>
+%destructor { yyctx.allocator.free($$); } <[]const u8>
 
 // Precedence (from lowest to highest) and associativity.
 %left "+" "-"
@@ -127,7 +127,7 @@ exp:
 | STR
   {
     const int_value = try std.fmt.parseInt(c_int, $1, 10);
-    allocator.free($1);
+    yyctx.allocator.free($1);
     $$ = int_value;
   }
 ;
@@ -157,8 +157,7 @@ pub fn main() !u8 {
     _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    YYParser.allocator = arena;
-    yydebug = true;
+    YYParser.yydebug = true;
     var res: Result = Result{};
 
     var scanner = YYLexer{ .allocator = arena };
@@ -170,7 +169,7 @@ pub fn main() !u8 {
 
     _ = try YYLexer.yy_scan_string(content, scanner.yyg);
 
-    _ = try YYParser.yyparse(&scanner, &res);
+    _ = try YYParser.yyparse(arena, &scanner, &res);
 
     std.debug.print("{any}\n", .{res});
 

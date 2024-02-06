@@ -3,7 +3,7 @@ const util = @import("util.zig");
 const runAsM4 = @import("runAsM4.zig");
 
 const usage =
-    \\ usage: zlex -o <output_file_path> <input_file_path>
+    \\ usage: zlex -o <output_file_path> -p <input_file_path>
     \\        zlex flex <all_flex_options>
     \\
 ;
@@ -19,6 +19,7 @@ const ZlexOptions = struct {
     runMode: ZlexRunMode,
     input_file_path: []const u8,
     output_file_path: []const u8,
+    with_parser_type: bool,
     zlex_exe: []const u8 = undefined,
 };
 
@@ -32,6 +33,7 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         .runMode = .zlex,
         .input_file_path = "",
         .output_file_path = "",
+        .with_parser_type = false,
         .zlex_exe = args[0],
     };
     const args1 = args[1..];
@@ -63,6 +65,12 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
             } else {
                 return ZlexError.InvalidOption;
             }
+        }
+
+        if (std.mem.eql(u8, arg, "-p")) {
+            r.with_parser_type = true;
+            i += 1;
+            continue;
         }
 
         if (r.input_file_path.len > 0) {
@@ -104,6 +112,7 @@ pub fn main() !u8 {
             @import("zlex/runAsZlex.zig").runAsZlex(.{
                 .input_file_path = opts.input_file_path,
                 .output_file_path = opts.output_file_path,
+                .with_parser_type = opts.with_parser_type,
                 .zlex_exe = opts.zlex_exe,
             }) catch |err| {
                 printErrAndUsageExit(err);
