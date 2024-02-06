@@ -436,11 +436,6 @@ const std = @@import("std");
 const Self = @@This();
 const YYParser = @@This();
 
-// TODO: we actually do not need this in zig
-pub var with_yyoverflow: bool = false;
-
-pub var allocator: std.mem.Allocator = undefined;
-
 /// utils for pointer operations.
 inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
     return (@@intFromPtr(p2) - @@intFromPtr(p1)) / @@sizeOf(T);
@@ -545,7 +540,7 @@ pub const yyalloc = union {
 };
 
 fn YYSTACK_ALLOC(yyctx: *yyparse_context_t, size: usize) ![*]yyalloc {
-    var yyalloc_array = try allocator.alloc(yyalloc, size);
+    var yyalloc_array = try yyctx.allocator.alloc(yyalloc, size);
     yyctx.yystack_alloc_size = size;
     _ = &yyalloc_array;
     return yyalloc_array.ptr;
@@ -563,8 +558,6 @@ pub const YYSTACK_GAP_MAXIMUM = ]@@sizeOf[(yyalloc) - 1;
 [pub fn YYSTACK_BYTES(N: usize) usize {
     return N * (@@sizeOf(yy_state_t) + @@sizeOf(YYSTYPE)) + YYSTACK_GAP_MAXIMUM;
 }])[
-
-const WITH_YYSTACK_RELOCATE = true;
 
 // /* Relocate STACK from its old location to the new one.  The
 //    local variables YYSIZE and YYSTACKSIZE give the old and new number of
@@ -714,11 +707,6 @@ pub fn yytable_value_is_error(Yyn: anytype) bool {
 ]b4_parser_tables_define[
 
 pub const YYENOMEM = -2;
-
-// #define yyerrok         (yyerrstatus = 0)
-// #define yyclearin       (yychar = ]b4_symbol(empty, id)[)
-
-// #define YYRECOVERING()  (!!yyerrstatus)
 
 // TODO: a case really YYBACKUP?
 pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
@@ -1114,8 +1102,7 @@ yypcontext_expected_tokens (yypctx: *yypcontext_t,
     }]],
 [[
   const yyn = yypact@{@@intCast(]b4_push_if([yyps], [yypctx])[.yyssp[0])@};
-  if (!yypact_value_is_default (yyn))
-    {
+  if (!yypact_value_is_default (yyn)) {
       // /* Start YYX at -YYN if negative to avoid negative indexes in
       //    YYCHECK.  In other words, skip the first -YYN actions for
       //    this state because they are default actions.  */
@@ -1138,13 +1125,19 @@ yypcontext_expected_tokens (yypctx: *yypcontext_t,
             }
           }
     }]])[
-    // TODO: need confirm this with c source
+  }
     if (@@intFromPtr(yyarg) != 0 and yycount == 0 and yyargn > 0)
       yyarg[0] = yysymbol_kind_t.]b4_symbol(empty, kind)[;
     return yycount;
-  }
+}
 
-  return yycount;
+// /* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
+//    YYDEST.  */
+fn yystpcpy(yydest: [*]u8, yysrc: []const u8) [*]u8 {
+    for (0..yysrc.len) |i| {
+        yydest[i] = yysrc[i];
+    }
+    return yydest + yysrc.len;
 }
 
 ]b4_push_if([[
@@ -1303,10 +1296,9 @@ pub fn yy_syntax_error_arguments (yypctx: *yypcontext_t,
 //    *YYMSG_ALLOC to the required number of bytes.  Return YYENOMEM if the
 //    required number of bytes is too large to store]b4_lac_if([[ or if
 //    yy_lac returned YYENOMEM]])[.  */
-pub fn yysyntax_error (yymsg_alloc: *usize, yymsg: *[]const u8,
+pub fn yysyntax_error (yymsg_alloc: *usize, yymsg: *[]u8,
                 yypctx: *yypcontext_t) isize
 {
-  _ = yymsg;
   const YYARGS_MAX = 5;
   // /* Internationalized format string. */
   var yyformat: []const u8 = undefined;
@@ -1359,31 +1351,26 @@ pub fn yysyntax_error (yymsg_alloc: *usize, yymsg: *[]const u8,
       return -1;
     }
 
-  // TODO: there must be issue, fix it :)
   // /* Avoid sprintf, as that infringes on the user's name space.
   //    Don't have undefined behavior even if the translation
   //    produced a string with the wrong number of "%s"s.  */
-  // {
-  //   var yyp: [*c]u8 = yymsg.*;
-  //   var yyi: usize = 0;
-  //   yyp.* = yyformat.*;
-  //   while (yyp.* != 0) : (yyp.* = yyformat.*) {
-  //     if (yyp.* == '%' and yyformat[1] == 's' and yyi < yycount)
-  //       {]b4_parse_error_case([verbose], [[
-  //         yyp += yytnamerr (yyp, yytname[yyarg[yyi]]);]], [[
-  //         yyi += 1;
-  //         yyp =  @@memcpy(yyp[0..yysymbol_name(yyarg[yyi]).len], yysymbol_name(yyarg[yyi]),);]])[
-  //         yyi += 1;
-  //         yyformat += 2;
-  //       }
-  //     else
-  //       {
-  //         yyp += 1;
-  //         yyformat += 1;
-  //       }
-  //   }
-  // }
-  return 0;
+    {
+        var yyp = yymsg.*.ptr;
+        var yyi: usize = 0;
+        var yyformat_ = yyformat[0..].ptr;
+        yyp[0] = yyformat_[0];
+        while (yyp[0] != 0) : (yyp[0] = yyformat_[0]) {
+            if (yyp[0] == '%' and yyformat_[1] == 's' and yyi < yycount) {
+                yyp = yystpcpy(yyp, yysymbol_name(yyarg[yyi]));
+                yyi += 1;
+                yyformat_ += 2;
+            } else {
+                yyp += 1;
+                yyformat_ += 1;
+            }
+        }
+    }
+    return 0;
 }
 ]])[
 
@@ -1491,6 +1478,8 @@ yypstate_delete (yypstate *yyps)
 // collect all yyparse loop variables into one struct so that when we deal with
 // gotos, we will be with easier life
 const yyparse_context_t = struct {
+    allocator: std.mem.Allocator,
+
     ]b4_formals_struct(b4_parse_param)[,
     ]b4_pure_if([b4_declare_scanner_communication_variables])[
     ]b4_declare_parser_state_variables([init])[
@@ -1565,38 +1554,9 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
   yy_stack_print (yyctx.yyss, yyctx.yyssp);
 
   if (ptrLessThan(isize, yyctx.yyss + yyctx.yystacksize - 1, yyctx.yyssp)) {
-    if (!with_yyoverflow and !WITH_YYSTACK_RELOCATE) {
-      return LABEL_YYEXHAUSTEDLAB;
-    } else {
       // /* Get the current used size of the three stacks, in elements.  */
       const yysize: usize = @@intCast(cPtrDistance(isize, yyctx.yyss, yyctx.yyssp) + 1);
 
-      if (with_yyoverflow) {
-        // TODO: we actually do not need this in zig
-        // /* Give user a chance to reallocate the stack.  Use copies of
-        //    these so that the &'s don't force the real ones into
-        //    memory.  */
-        var yyss1 = yyctx.yyss;
-        { _ = &yyss1; }
-        var yyvs1 = yyctx.yyvs;
-        { _ = &yyvs1; }
-        ]b4_locations_if([
-        const yyls1 = yyctx.yyls;])[
-
-        // /* Each stack pointer address is followed by the size of the
-        //    data in use in that stack, in bytes.  This used to be a
-        //    conditional around just the two extra args, but that might
-        //    be undefined if yyoverflow is a macro.  */
-        // TODO: revisit this later;
-        // yyoverflow (YY_("memory exhausted"),
-        //            &yyss1, yysize * YYSIZEOF (*yyssp),
-        //            &yyvs1, yysize * YYSIZEOF (*yyvsp),]b4_locations_if([
-        //            &yyls1, yysize * YYSIZEOF (*yylsp),])[
-        //            &yystacksize);
-        yyctx.yyss = yyss1;
-        yyctx.yyvs = yyvs1;]b4_locations_if([
-        yyctx.yyls = yyls1;])[
-      } else if (WITH_YYSTACK_RELOCATE) {
         // /* Extend the stack our own way.  */
         if (YYMAXDEPTH <= yyctx.yystacksize) {
           return LABEL_YYEXHAUSTEDLAB;
@@ -1610,21 +1570,15 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
           const yyss1 = yyctx.yyss;
           const yystack_alloc_size1 = yyctx.yystack_alloc_size;
           var yyptr: [*]yyalloc = try YYSTACK_ALLOC(yyctx, YYSTACK_BYTES(yyctx.yystacksize));
-          // TODO: really necessary in zig as we have try?
-          // if (yyptr == null) {
-          //     return LABEL_YYEXHAUSTEDLAB;
-          // }
           YYSTACK_RELOCATE(yyctx, .yyss, &yyptr, yysize);
           YYSTACK_RELOCATE(yyctx, .yyvs, &yyptr, yysize);]b4_locations_if([
           YYSTACK_RELOCATE(yyctx, .yyls, &yyptr, yysize);])[
-          // YYSTACK_RELOCATE = false;
           // TODO: why undef?
           // #  undef YYSTACK_RELOCATE
           if (yyss1 != yyctx.yyssa[0..].ptr) {
-            allocator.free(yyss1[0..yystack_alloc_size1]);
+            yyctx.allocator.free(yyss1[0..yystack_alloc_size1]);
           }
         }
-      }
 
       yyctx.yyssp = yyctx.yyss + yysize - 1;
       yyctx.yyvsp = yyctx.yyvs + yysize - 1;]b4_locations_if([
@@ -1638,7 +1592,6 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
         return LABEL_YYABORTLAB;
       }
     }
-  }
 ]m4_ifdef([b4_start_symbols], [], [[
   if (yyctx.yystate == YYFINAL) {
     return LABEL_YYACCEPTLAB;
@@ -1885,10 +1838,10 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
         } else if (yysyntax_error_status == -1)
           {
             if (yyctx.yymsg.ptr != yyctx.yymsgbuf[0..].ptr) {
-              allocator.free (yyctx.yymsg);
+              yyctx.allocator.free (yyctx.yymsg);
             }
             yyctx.yymsg = brk: {
-                    yyctx.yymsg = allocator.alloc(u8, yyctx.yymsg_alloc) catch {
+                    yyctx.yymsg = yyctx.allocator.alloc(u8, yyctx.yymsg_alloc) catch {
                         yymsgp = yyctx.yymsgbuf[0..];
                         yyctx.yymsg_alloc = yyctx.yymsgbuf.len;
                         yysyntax_error_status = YYENOMEM;
@@ -2088,9 +2041,11 @@ yyparse (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)
 
 static int
 yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [, b4_formals(b4_parse_param)])[)]],
-[[pub fn yyparse (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)]])])[ !usize {
+[[pub fn yyparse (allocator: std.mem.Allocator,]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)]])])[ !usize {
   // replace all local variables with yyps, so later when access should use yyps
-  var yyctx = yyparse_context_t{};
+  var yyctx = yyparse_context_t{
+    .allocator = allocator,
+  };
   yyctx.scanner = scanner;
   yyctx.res = res;
   yyctx.yyss = yyctx.yyssa[0..].ptr;
@@ -2200,18 +2155,15 @@ b4_locations_if([[
   // /*-------------------------.
   // | yypushreturn -- return.  |
   // `-------------------------*/
-  if (with_yyoverflow) {
     if (yyctx.yyss != yyctx.yyssa[0..].ptr) {
-      // TODO: rethink
-      // allocator.free(yyctx.yyss[0..yyctx.yyss]);
+        yyctx.allocator.free(yyctx.yyss[0..yyctx.yystack_alloc_size]);
     }
-  }]b4_lac_if([[
+  ]b4_lac_if([[
     if (yyctx.yyes != yyctx.yyesa)
-      allocator.free (yyctx.yyes);]])[
+      yyctx.allocator.free (yyctx.yyes);]])[
   ]b4_parse_error_bmatch([detailed\|verbose],
   [[  if (yyctx.yymsg.ptr != yyctx.yymsgbuf[0..].ptr) {
-      // TODO: rethink
-      // allocator.free (yyctx.yymsg);
+        yyctx.allocator.free(yyctx.yymsg);
   }]])[]m4_ifdef([b4_start_symbols], [[
     if (yyimpl)
       yyimpl.yynerrs = yyctx.yynerrs;]])[
