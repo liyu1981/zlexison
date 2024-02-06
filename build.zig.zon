@@ -17,6 +17,9 @@
         .bison = .{
             .path = "./bison",
         },
+        .m4 = .{
+            .path = "./m4",
+        },
     },
 
     .paths = .{

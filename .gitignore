@@ -1,5 +1,6 @@
 parser
 main
+src/m4.bin
 src/bison.bin
 src/flex.bin
 *.orig.*

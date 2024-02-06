@@ -1,11 +1,11 @@
 .{
-    .name = "m4",
+    .name = "zflex",
     .version = "0.0.0",
 
     .dependencies = .{
         .zcmd = .{
             .url = "../../zcmd",
-            .hash = "122033f9f96de4c22c2ddd31ee5a72e474dbe37f0a21dedf34907e7392430460fb2f",
+            .hash = "1220bae2383cacd9a8aec7ad866b6e1d5bc12acfb8902ab5a2e04c63c0fe094c7437",
         },
         .jstring = .{
             .url = "../../jstring",

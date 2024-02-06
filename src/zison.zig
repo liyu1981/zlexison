@@ -12,6 +12,7 @@ const ZisonRunMode = enum {
     zison,
     zbison,
     bison,
+    zm4,
 };
 
 const ZisonOptions = struct {
@@ -43,6 +44,11 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
 
     if (std.mem.eql(u8, args1[0], "zbison")) {
         r.runMode = .zbison;
+        return r;
+    }
+
+    if (std.mem.eql(u8, args1[0], "m4")) {
+        r.runMode = .zm4;
         return r;
     }
 
@@ -102,6 +108,9 @@ pub fn main() !u8 {
         },
         .bison => {
             @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe, .{});
+        },
+        .zm4 => {
+            @import("runAsM4.zig").runAsM4(args[1..], opts.zison_exe);
         },
     }
 

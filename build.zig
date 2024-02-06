@@ -19,6 +19,9 @@ pub fn build(b: *std.Build) !void {
     const zcmd_dep = b.dependency("zcmd", .{});
     var jstring_dep = b.dependency("jstring", .{});
 
+    const m4_dep = b.dependency("m4", .{});
+    const m4phony = m4_dep.artifact("m4_as_lib_phony");
+
     const flex_dep = b.dependency("flex", .{});
     const libflex_a = flex_dep.artifact("flex_as_lib");
 
@@ -33,6 +36,7 @@ pub fn build(b: *std.Build) !void {
     flex_bin_step.makeFn = flexBinStepMakeFn;
 
     zlex_exe.step.dependOn(flex_bin_step);
+    zlex_exe.step.dependOn(&m4phony.step);
     zlex_exe.step.dependOn(&libflex_a.step);
     zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
     zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
@@ -55,6 +59,7 @@ pub fn build(b: *std.Build) !void {
     bison_bin_step.makeFn = bisonBinStepMakeFn;
 
     zison_exe.step.dependOn(bison_bin_step);
+    zison_exe.step.dependOn(&m4phony.step);
     zison_exe.step.dependOn(&libbison_a.step);
     zison_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
     zison_exe.addModule("jstring", jstring_dep.module("jstring"));
@@ -80,6 +85,17 @@ fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!v
         } });
         result.assertSucceededPanic(.{});
     }
+
+    {
+        const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
+            &[_][]const u8{
+                "chmod",
+                "0644",
+                g_build.pathFromRoot("src/flex.bin"),
+            },
+        } });
+        result.assertSucceededPanic(.{});
+    }
 }
 
 fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
@@ -94,6 +110,17 @@ fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) anyerror!
             &[_][]const u8{
                 "cp",
                 g_build.pathFromRoot("bison/bison/src/bison"),
+                g_build.pathFromRoot("src/bison.bin"),
+            },
+        } });
+        result.assertSucceededPanic(.{});
+    }
+
+    {
+        const result = try zcmd.run(.{ .allocator = allocator, .commands = &[_][]const []const u8{
+            &[_][]const u8{
+                "chmod",
+                "0644",
                 g_build.pathFromRoot("src/bison.bin"),
             },
         } });

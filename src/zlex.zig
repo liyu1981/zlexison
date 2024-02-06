@@ -10,6 +10,7 @@ const ZlexRunMode = enum {
     zlex,
     zflex,
     flex,
+    zm4,
 };
 
 const ZlexOptions = struct {
@@ -42,6 +43,11 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
 
     if (std.mem.eql(u8, args1[0], "zflex")) {
         r.runMode = .zflex;
+        return r;
+    }
+
+    if (std.mem.eql(u8, args1[0], "m4")) {
+        r.runMode = .zm4;
         return r;
     }
 
@@ -101,6 +107,9 @@ pub fn main() !u8 {
         },
         .flex => {
             @import("zlex/runAsFlex.zig").runAsFlex(args[1..], opts.zlex_exe);
+        },
+        .zm4 => {
+            @import("runAsM4.zig").runAsM4(args[1..], opts.zlex_exe);
         },
     }
 
