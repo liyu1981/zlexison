@@ -96,9 +96,6 @@ pub fn main() !u8 {
         std.os.exit(1);
     };
 
-    const cwd_dir = try std.process.getCwdAlloc(arena);
-    defer arena.free(cwd_dir);
-
     var exe_info = try util.getCurrentExeInfo(opts.zlex_exe);
     defer exe_info.deinit();
 

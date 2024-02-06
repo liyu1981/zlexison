@@ -3,8 +3,9 @@ const bisonbin = @embedFile("../bison.bin");
 
 pub fn runAsBison(
     args: [][:0]const u8,
-    zison_exe_path: []const u8,
     opts: struct {
+        zison_exe_path: []const u8,
+        m4_exe_path: []const u8,
         bison_rel_pkgdatadir: []const u8 = "share/bison",
     },
 ) void {
@@ -15,7 +16,7 @@ pub fn runAsBison(
 
     // std.debug.print("embed bison: {d} bytes.\n", .{bisonbin.len});
 
-    const zison_exe_dir = std.fs.path.dirname(zison_exe_path);
+    const zison_exe_dir = std.fs.path.dirname(opts.zison_exe_path);
     // std.debug.print("zison exe dir: {?s}\n", .{zison_exe_dir});
     const zison_bison_path = ensureZisonBison(arena, zison_exe_dir.?) catch |err| {
         std.debug.print("{any}\n", .{err});
@@ -33,6 +34,7 @@ pub fn runAsBison(
     };
     const bison_share_path = std.fs.path.join(arena, &[_][]const u8{ zison_exe_dir.?, opts.bison_rel_pkgdatadir }) catch @panic("OOM!");
     envmap.put("BISON_PKGDATADIR", bison_share_path) catch @panic("BISON_PKGDATADIR set failed!");
+    envmap.put("M4", opts.m4_exe_path) catch @panic("M4 set failed!");
 
     const ret = std.process.execve(arena, argv, &envmap);
     std.debug.print("Oops, {any}\n", .{ret});

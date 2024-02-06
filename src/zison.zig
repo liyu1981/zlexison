@@ -1,6 +1,8 @@
 const std = @import("std");
 const zcmd = @import("zcmd");
 const jstring = @import("jstring");
+const util = @import("util.zig");
+const runAsM4 = @import("runAsM4.zig");
 
 const usage =
     \\ usage: zison -o <output_file_prefix> <input_file_path>
@@ -83,15 +85,20 @@ fn printErrAndUsageExit(err: anyerror) noreturn {
 var opts: ZisonOptions = undefined;
 
 pub fn main() !u8 {
-    const allocator = std.heap.page_allocator;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
 
-    const args = try std.process.argsAlloc(allocator);
-    defer allocator.free(args);
+    const args = try std.process.argsAlloc(arena);
+    defer arena.free(args);
 
     opts = parseArgs(args) catch {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
         std.os.exit(1);
     };
+
+    var exe_info = try util.getCurrentExeInfo(opts.zison_exe);
+    defer exe_info.deinit();
 
     switch (opts.runMode) {
         .zison => {
@@ -102,15 +109,22 @@ pub fn main() !u8 {
             });
         },
         .zbison => {
-            @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe, .{
+            const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
+            @import("zison/runAsBison.zig").runAsBison(args[1..], .{
+                .zison_exe_path = exe_info.exe_path,
+                .m4_exe_path = m4_path,
                 .bison_rel_pkgdatadir = "share/zison",
             });
         },
         .bison => {
-            @import("zison/runAsBison.zig").runAsBison(args[1..], opts.zison_exe, .{});
+            const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
+            @import("zison/runAsBison.zig").runAsBison(args[1..], .{
+                .zison_exe_path = exe_info.exe_path,
+                .m4_exe_path = m4_path,
+            });
         },
         .zm4 => {
-            @import("runAsM4.zig").runAsM4(args[1..], opts.zison_exe);
+            runAsM4.runAsM4(args[1..], opts.zison_exe);
         },
     }
 
