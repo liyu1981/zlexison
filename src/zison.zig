@@ -97,7 +97,7 @@ pub fn main() !u8 {
         std.os.exit(1);
     };
 
-    var exe_info = try util.getCurrentExeInfo(opts.zison_exe);
+    var exe_info = try util.ExeInfo.init(arena);
     defer exe_info.deinit();
 
     switch (opts.runMode) {
