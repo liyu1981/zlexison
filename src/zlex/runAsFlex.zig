@@ -1,7 +1,7 @@
 const std = @import("std");
 const flexbin = @embedFile("../flex.bin");
 
-pub fn runAsFlex(args: [][:0]const u8, zlex_exe_path: []const u8) void {
+pub fn runAsFlex(args: [][:0]const u8, zlex_exe_path: []const u8, m4_exe_path: []const u8) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // later there is no going back, so Cool Guys Don't Look At Explosions
     // defer arena_allocator.deinit();
@@ -22,7 +22,10 @@ pub fn runAsFlex(args: [][:0]const u8, zlex_exe_path: []const u8) void {
     argv[0] = zlex_flex_path;
     for (1..args.len) |i| argv[i] = args[i];
 
-    const envmap = std.process.getEnvMap(arena) catch {
+    var envmap = std.process.getEnvMap(arena) catch {
+        @panic("OOM!");
+    };
+    envmap.put("M4", m4_exe_path) catch {
         @panic("OOM!");
     };
 

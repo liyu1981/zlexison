@@ -31,7 +31,7 @@ pub fn runAsM4(args: [][:0]const u8, exe_path: []const u8) void {
     std.os.exit(1);
 }
 
-fn ensureZm4(allocator: std.mem.Allocator, exe_dir: []const u8) ![]const u8 {
+pub fn ensureZm4(allocator: std.mem.Allocator, exe_dir: []const u8) ![]const u8 {
     const zm4_path = try std.fs.path.join(allocator, &[_][]const u8{ exe_dir, "zm4" });
 
     const cwd = std.fs.cwd();

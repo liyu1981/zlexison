@@ -1,4 +1,6 @@
 const std = @import("std");
+const util = @import("util.zig");
+const runAsM4 = @import("runAsM4.zig");
 
 const usage =
     \\ usage: zlex -o <output_file_path> <input_file_path>
@@ -82,15 +84,23 @@ fn printErrAndUsageExit(err: anyerror) noreturn {
 var opts: ZlexOptions = undefined;
 
 pub fn main() !u8 {
-    const allocator = std.heap.page_allocator;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
 
-    const args = try std.process.argsAlloc(allocator);
-    defer allocator.free(args);
+    const args = try std.process.argsAlloc(arena);
+    defer arena.free(args);
 
     opts = parseArgs(args) catch {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
         std.os.exit(1);
     };
+
+    const cwd_dir = try std.process.getCwdAlloc(arena);
+    defer arena.free(cwd_dir);
+
+    var exe_info = try util.getCurrentExeInfo(opts.zlex_exe);
+    defer exe_info.deinit();
 
     switch (opts.runMode) {
         .zlex => {
@@ -103,13 +113,15 @@ pub fn main() !u8 {
             };
         },
         .zflex => {
+            // const m4_path = try runAsM4.ensureZm4(arena, opts.zlex_exe);
             @import("zlex/runAsZlex.zig").runAsZflex(args[1..]);
         },
         .flex => {
-            @import("zlex/runAsFlex.zig").runAsFlex(args[1..], opts.zlex_exe);
+            const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
+            @import("zlex/runAsFlex.zig").runAsFlex(args[1..], exe_info.exe_path, m4_path);
         },
         .zm4 => {
-            @import("runAsM4.zig").runAsM4(args[1..], opts.zlex_exe);
+            runAsM4.runAsM4(args[1..], opts.zlex_exe);
         },
     }
 
