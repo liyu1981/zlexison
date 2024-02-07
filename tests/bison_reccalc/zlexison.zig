@@ -5,6 +5,7 @@ pub const YYSTYPE = struct {
 };
 pub const TOK_TYPE = enum(u32) {
     TOK_EOF = 0,
+    // first TOK should start from 258, e.g., TOK_NUM = 258,
     TOK_PLUS = 258,
     TOK_MINUS,
     TOK_STAR,

@@ -1398,7 +1398,7 @@ pub fn main() !u8 {
     _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    YYParser.yydebug = true;
+    YYParser.yydebug = false;
     var res: Result = Result{};
 
     var scanner = YYLexer{ .allocator = arena };

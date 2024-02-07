@@ -32,12 +32,26 @@ pub fn YY_USER_ACTION(this: *Self) anyerror!void {
 pub fn YY_USER_INIT(this: *Self) anyerror!void {
     _ = this;
 }
-pub const YYSTYPE = @import("parser_type.zig").YYSTYPE;
+pub const YYSTYPE = @import("zlexison.zig").YYSTYPE;
 pub const YYLTYPE = struct {
     first_line: usize = 1,
     first_column: usize = 1,
     last_line: usize = 1,
     last_column: usize = 1,
+
+    pub fn format(this: YYLTYPE, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) @TypeOf(writer).Error!void {
+        _ = options;
+        if (std.mem.eql(u8, fmt, "s")) {
+            try writer.print("L{d}:C{d} - L{d}:C{d}", .{ this.first_line, this.first_column, this.last_line, this.last_column });
+        } else if (std.mem.eql(u8, fmt, "sb")) {
+            try writer.print("L{d}:C{d}", .{ this.first_line, this.first_column });
+        } else if (std.mem.eql(u8, fmt, "se")) {
+            try writer.print("L{d}:C{d}", .{ this.last_line, this.last_column });
+        } else {
+            std.debug.print("print YYLTYPE with 's'(full L<begin>:C<begin> - L<end>:C<end>) or 'sb'(L<begin>:C<begin>) or 'se'(L<end>:C<end>)", .{});
+            unreachable;
+        }
+    }
 };
 pub const YY_EXTRA_TYPE = struct {};
 
@@ -228,6 +242,8 @@ pub fn YY_DO_BEFORE_ACTION(yy_cp_: *[*c]u8, yy_bp_: *[*c]u8, yyg: *yyguts_t) voi
     yyg.yy_c_buf_p = yy_cp;
 }
 
+pub const TOK_TYPE = @import("zlexison.zig").TOK_TYPE;
+
 pub const YY_NUM_RULES = 13;
 pub const YY_END_OF_BUFFER = 14;
 
@@ -287,9 +303,6 @@ pub fn yymore(yyg: *yyguts_t) void {
 }
 // #line 1 "../flex_reccalc/scan.l"
 // #line 2 "../flex_reccalc/scan.l"
-pub const TOK_TYPE = @import("parser_type.zig").TOK_TYPE;
-pub const TOK = @import("parser_type.zig").TOK;
-
 pub const Context = struct {
     allocator: std.mem.Allocator,
     nesting: usize = 0,
@@ -308,9 +321,9 @@ pub const Context = struct {
 };
 
 pub var context: Context = undefined;
-// #line 354 "scan.zig"
+// #line 383 "scan.zig"
 
-// #line 356 "scan.zig"
+// #line 385 "scan.zig"
 
 pub const INITIAL = 0;
 pub const SC_STRING = 1;
@@ -362,6 +375,13 @@ pub const yyguts_t = struct {
     yylval_r: *YYSTYPE = undefined,
 
     yylloc_r: *YYLTYPE = undefined,
+
+    pub fn updateYylloc(yyg: *yyguts_t) void {
+        yyg.yylloc_r.first_line = yyg.yylineno_r;
+        yyg.yylloc_r.first_column = yyg.yycolumn_r;
+        yyg.yylloc_r.last_line = yyg.yylineno_r;
+        yyg.yylloc_r.last_column = yyg.yycolumn_r + yyg.yyleng_r;
+    }
 };
 
 /// Copy whatever the last rule matched to the standard output.
@@ -405,6 +425,7 @@ pub const YY_START_STACK_INCR = 25;
 pub fn YY_RULE_SETUP(this: *Self) !void {
     try YY_USER_ACTION(this);
     yyset_column(this.yyg.yycolumn_r + this.yyg.yyleng_r, this.yyg);
+    this.yyg.updateYylloc();
 }
 
 /// The main scanner function which does all the work.
@@ -414,15 +435,12 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
     var yy_act: usize = 0;
     var yyg = this.yyg;
 
+    yyg.yylval_r = yylval;
+    yyg.yylloc_r = yylloc;
+
     var yy_current_state: usize = 0;
     var yy_current_state_: *usize = &yy_current_state;
     _ = &yy_current_state_;
-    {
-        _ = &yylval;
-    }
-    {
-        _ = &yylloc;
-    }
 
     // simulate goto with step&start - definition start
     const LOOP_STEP_YY_ACT = 0x0001;
@@ -469,9 +487,9 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
         yy_load_buffer_state(yyg);
     }
 
-    // #line 27 "../flex_reccalc/scan.l"
+    // #line 24 "../flex_reccalc/scan.l"
 
-    // #line 515 "scan.zig"
+    // #line 552 "scan.zig"
 
     while (true) { // /* loops until end-of-file is reached */
         // LOOP_START_INIT
@@ -566,35 +584,35 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
         switch (yy_act) { // beginning of action switch
             1 => {
                 try YY_RULE_SETUP(this);
-                // #line 29 "../flex_reccalc/scan.l"
+                // #line 26 "../flex_reccalc/scan.l"
                 {
                     return @intFromEnum(TOK_TYPE.TOK_PLUS);
                 }
             },
             2 => {
                 try YY_RULE_SETUP(this);
-                // #line 30 "../flex_reccalc/scan.l"
+                // #line 27 "../flex_reccalc/scan.l"
                 {
                     return @intFromEnum(TOK_TYPE.TOK_MINUS);
                 }
             },
             3 => {
                 try YY_RULE_SETUP(this);
-                // #line 31 "../flex_reccalc/scan.l"
+                // #line 28 "../flex_reccalc/scan.l"
                 {
                     return @intFromEnum(TOK_TYPE.TOK_STAR);
                 }
             },
             4 => {
                 try YY_RULE_SETUP(this);
-                // #line 32 "../flex_reccalc/scan.l"
+                // #line 29 "../flex_reccalc/scan.l"
                 {
                     return @intFromEnum(TOK_TYPE.TOK_SLASH);
                 }
             },
             5 => {
                 try YY_RULE_SETUP(this);
-                // #line 34 "../flex_reccalc/scan.l"
+                // #line 31 "../flex_reccalc/scan.l"
                 {
                     context.nesting += 1;
                     context.str.clearAndFree();
@@ -603,7 +621,7 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
             },
             6 => {
                 try YY_RULE_SETUP(this);
-                // #line 40 "../flex_reccalc/scan.l"
+                // #line 37 "../flex_reccalc/scan.l"
                 {
                     // Scan an integer.
                     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
@@ -613,20 +631,20 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
             },
             7 => {
                 try YY_RULE_SETUP(this);
-                // #line 47 "../flex_reccalc/scan.l"
+                // #line 44 "../flex_reccalc/scan.l"
                 {}
             },
             8 => {
                 // /* rule 8 can match eol */
                 try YY_RULE_SETUP(this);
-                // #line 49 "../flex_reccalc/scan.l"
+                // #line 46 "../flex_reccalc/scan.l"
                 {
                     return @intFromEnum(TOK_TYPE.TOK_EOL);
                 }
             },
             9 => {
                 try YY_RULE_SETUP(this);
-                // #line 51 "../flex_reccalc/scan.l"
+                // #line 48 "../flex_reccalc/scan.l"
                 {
                     std.io.getStdErr().writer().print(
                         "syntax error, invalid character: {c} at line: {d}, column: {d}.\n",
@@ -639,7 +657,7 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
             },
             10 => {
                 try YY_RULE_SETUP(this);
-                // #line 59 "../flex_reccalc/scan.l"
+                // #line 56 "../flex_reccalc/scan.l"
                 {
                     context.nesting += yyget_leng(yyg);
                     try context.str.appendSlice(yyget_text(yyg));
@@ -647,7 +665,7 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
             },
             11 => {
                 try YY_RULE_SETUP(this);
-                // #line 64 "../flex_reccalc/scan.l"
+                // #line 61 "../flex_reccalc/scan.l"
                 {
                     context.nesting -= 1;
                     if (context.nesting == 0) {
@@ -664,22 +682,22 @@ pub fn yylex(this: *Self, yylval: *YYSTYPE, yylloc: *YYLTYPE) !usize {
             12 => {
                 // /* rule 12 can match eol */
                 try YY_RULE_SETUP(this);
-                // #line 77 "../flex_reccalc/scan.l"
+                // #line 74 "../flex_reccalc/scan.l"
                 {
                     try context.str.appendSlice(yyget_text(yyg));
                 }
             },
-            YY_STATE_EOF(INITIAL), YY_STATE_EOF(SC_STRING) => { // #line 79 "../flex_reccalc/scan.l"
+            YY_STATE_EOF(INITIAL), YY_STATE_EOF(SC_STRING) => { // #line 76 "../flex_reccalc/scan.l"
                 {
                     return @intFromEnum(TOK_TYPE.TOK_EOF);
                 }
             },
             13 => {
                 try YY_RULE_SETUP(this);
-                // #line 81 "../flex_reccalc/scan.l"
+                // #line 78 "../flex_reccalc/scan.l"
                 try ECHO(yyg);
             },
-            // #line 715 "scan.zig"
+            // #line 752 "scan.zig"
 
             YY_END_OF_BUFFER => {
                 // Amount of text matched not including the EOB char.
@@ -1626,7 +1644,7 @@ pub fn yylex_destroy(this: *Self) void {
 
 pub const deinit = yylex_destroy;
 
-// #line 81 "../flex_reccalc/scan.l"
+// #line 78 "../flex_reccalc/scan.l"
 
 pub fn main() !u8 {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
@@ -1649,10 +1667,10 @@ pub fn main() !u8 {
     _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    var yylval_param: YYLexer.YYSTYPE = .{};
-    _ = &yylval_param;
-    var yylloc_param: YYLexer.YYLTYPE = .{};
-    _ = &yylval_param;
+    var yylval: YYLexer.YYSTYPE = .{};
+    _ = &yylval;
+    var yylloc: YYLexer.YYLTYPE = .{};
+    _ = &yylloc;
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };
     YYLexer.context = YYLexer.Context.init(allocator);
@@ -1664,17 +1682,17 @@ pub fn main() !u8 {
     _ = try YYLexer.yy_scan_string(content, lexer.yyg);
 
     while (true) {
-        const tk = lexer.yylex(&yylval_param, &yylloc_param) catch |err| {
+        const tk = lexer.yylex(&yylval, &yylloc) catch |err| {
             std.debug.print("{any}\n", .{err});
             return 1;
         };
         if (tk == YYLexer.YY_TERMINATED) break;
-        switch (context.cur_tok) {
+        switch (@as(TOK_TYPE, @enumFromInt(tk))) {
             .TOK_EOF => {
                 break;
             },
             else => |cur_tk| {
-                try stdout_writer.print("tk: {any}\n", .{cur_tk});
+                try stdout_writer.print("tk: {any} at loc: {s}\n", .{ cur_tk, yylloc });
             },
         }
     }
