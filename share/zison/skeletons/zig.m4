@@ -4,6 +4,8 @@
 # Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software
 # Foundation, Inc.
 
+m4_pushdef([b4_zison_version], [z4_zison_version])
+
 m4_pushdef([b4_copyright_years],
             [1984, 1989-1990, 2000-2015, 2018-2021])
 
@@ -503,14 +505,14 @@ m4_if(b4_api_prefix, [yy], [],
 
 ]b4_sizes_types_define[
 
-pub const YYSIZE_MAXIMUM = std.math.maxInt(usize);
-pub const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
+const YYSIZE_MAXIMUM = std.math.maxInt(usize);
+const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
 
 // /* Stored state numbers (used for stacks). */
 pub const yy_state_t = isize;
 
 // /* State numbers in computations.  */
-pub const yy_state_fast_t = isize;
+const yy_state_fast_t = isize;
 ][
 
 ]b4_attribute_define[
@@ -521,10 +523,10 @@ pub const yy_state_fast_t = isize;
 // # include <assert.h> /* INFRINGES ON USER NAME SPACE */
 // # define YY_ASSERT(E) assert (E)
 // #endif
-pub const YY_ASSERT = std.debug.assert;
+const YY_ASSERT = std.debug.assert;
 ]],
 [[// #define YY_ASSERT(E) ((void) (0 && (E)))
-pub const YY_ASSERT = std.debug.assert;]])[
+const YY_ASSERT = std.debug.assert;]])[
 
 ][]dnl
 b4_push_if([], [b4_lac_if([], [[
@@ -547,15 +549,14 @@ fn YYSTACK_ALLOC(yyctx: *yyparse_context_t, size: usize) ![*]yyalloc {
 }
 
 // /* The size of the maximum gap between one aligned stack and the next.  */
-// # define YYSTACK_GAP_MAXIMUM (YYSIZEOF (union yyalloc) - 1)
-pub const YYSTACK_GAP_MAXIMUM = ]@@sizeOf[(yyalloc) - 1;
+const YYSTACK_GAP_MAXIMUM = ]@@sizeOf[(yyalloc) - 1;
 
 // /* The size of an array large to enough to hold all stacks, each with
 //    N elements.  */
-]b4_locations_if([pub fn YYSTACK_BYTES(N: usize) usize {
+]b4_locations_if([fn YYSTACK_BYTES(N: usize) usize {
     return N * (@@sizeOf(yy_state_t) + @@sizeOf(YYSTYPE) + @@sizeOf(YYLTYPE)) + 2 * YYSTACK_GAP_MAXIMUM;
 }],
-[pub fn YYSTACK_BYTES(N: usize) usize {
+[fn YYSTACK_BYTES(N: usize) usize {
     return N * (@@sizeOf(yy_state_t) + @@sizeOf(YYSTYPE)) + YYSTACK_GAP_MAXIMUM;
 }])[
 
@@ -594,7 +595,7 @@ fn YYSTACK_RELOCATE(
 
 // /* Copy COUNT objects from SRC to DST.  The source and destination do
 //    not overlap.  */
-pub fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: [*]yyalloc, src: [*]T, count: usize) void {
+fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: [*]yyalloc, src: [*]T, count: usize) void {
     switch (field) {
         .yyss => {
             for (0..count) |i| dst[i].yyss_alloc = src[i];
@@ -609,32 +610,32 @@ pub fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: 
 }
 
 // /* YYFINAL -- State number of the termination state.  */
-pub const YYFINAL = ]b4_final_state_number[;
+const YYFINAL = ]b4_final_state_number[;
 // /* YYLAST -- Last index in YYTABLE.  */
-pub const YYLAST = ]b4_last[;
+const YYLAST = ]b4_last[;
 
 // /* YYNTOKENS -- Number of terminals.  */
-pub const YYNTOKENS = ]b4_tokens_number[;
+const YYNTOKENS = ]b4_tokens_number[;
 // /* YYNNTS -- Number of nonterminals.  */
-pub const YYNNTS = ]b4_nterms_number[;
+const YYNNTS = ]b4_nterms_number[;
 // /* YYNRULES -- Number of rules.  */
-pub const YYNRULES = ]b4_rules_number[;
+const YYNRULES = ]b4_rules_number[;
 // /* YYNSTATES -- Number of states.  */
-pub const YYNSTATES = ]b4_states_number[;
+const YYNSTATES = ]b4_states_number[;
 
 // /* YYMAXUTOK -- Last valid token kind.  */
-pub const YYMAXUTOK = ]b4_code_max[;
+const YYMAXUTOK = ]b4_code_max[;
 
 
 // /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
 //    as returned by yylex, with out-of-bounds checking.  */
 ]b4_api_token_raw_if(dnl
 [[// #define YYTRANSLATE(YYX) YY_CAST (yysymbol_kind_t, YYX)
-pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
+fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
     return YYX;
 }
 ]],
-[[pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
+[[fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
     if (YYX >= 0 and YYX <= YYMAXUTOK) {
         return @@as(yysymbol_kind_t, @@enumFromInt(yytranslate[YYX]));
     } else {
@@ -644,7 +645,7 @@ pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
 
 // /* YYTRANSLATE[TOKEN-NUM] -- Symbol number corresponding to TOKEN-NUM
 //    as returned by yylex.  */
-pub const yytranslate = [_]]isize[{
+const yytranslate = [_]]isize[{
   ]b4_translate[
 };]])[
 
@@ -652,7 +653,7 @@ pub const yytranslate = [_]]isize[{
      [[YYRLINE[YYN] -- Source line where rule number YYN was defined.]])[
 
 // /** Accessing symbol of state STATE.  */
-pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
+inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
     return yystos[index];
 }
 
@@ -661,14 +662,14 @@ pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
 ]b4_parse_error_bmatch([simple\|verbose],
 [[// /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
 //    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
-pub const yytname = [_]u8 {
+const yytname = [_]u8 {
   ]b4_tname[
 };
 
-pub fn yysymbol_name(yysymbol: usize) [*c]const u8 {
+fn yysymbol_name(yysymbol: usize) [*c]const u8 {
     return yytname[yysymbol];
 }]],
-[[pub fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
+[[fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
   const YY_NULLPTR = "";
   const yy_sname = [_][]const u8 {
   ]b4_symbol_names[
@@ -694,9 +695,9 @@ inline fn yypact_value_is_default(yyn: anytype) bool {
     return yyn == YYPACT_NINF;
 }
 
-pub const YYTABLE_NINF = ]b4_table_ninf[;
+const YYTABLE_NINF = ]b4_table_ninf[;
 
-pub fn yytable_value_is_error(Yyn: anytype) bool {
+fn yytable_value_is_error(Yyn: anytype) bool {
   // TODO: check for all case
   // #define yytable_value_is_error(Yyn) \
   //   ]b4_table_value_equals([[table]], [[Yyn]], [b4_table_ninf], [YYTABLE_NINF])[
@@ -706,10 +707,10 @@ pub fn yytable_value_is_error(Yyn: anytype) bool {
 
 ]b4_parser_tables_define[
 
-pub const YYENOMEM = -2;
+const YYENOMEM = -2;
 
 // TODO: a case really YYBACKUP?
-pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
+fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
   if (yyctx.yychar == yytoken_kind_t.]b4_symbol(empty, id)[) {
     yyctx.yychar = token;
     yyctx.yylval = value;
@@ -729,7 +730,7 @@ pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 ]])[
 ]b4_yylocation_print_define[
 
-pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
+fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
         std.debug.print("{any}, {any}, {any}\n", .{ token, yyctx.yylval, yyctx.yyloc });
@@ -744,7 +745,7 @@ pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysy
 // | TOP (included).                                                   |
 // `------------------------------------------------------------------*/
 
-pub fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
+fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
   if (yydebug) {
     std.debug.print("Stack now", .{});
     var yyb = yybottom;
@@ -760,7 +761,7 @@ pub fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
 // | Report that the YYRULE is going to be reduced.  |
 // `------------------------------------------------*/
 
-pub fn yy_reduce_print(yyctx: *yyparse_context_t,][yyrule: usize][) !void {
+fn yy_reduce_print(yyctx: *yyparse_context_t,][yyrule: usize][) !void {
    if (yydebug) {
     const yylno = yyrline[yyrule];
     const yynrhs: usize = @@intCast(yyr2[yyrule]);
@@ -779,7 +780,7 @@ pub fn yy_reduce_print(yyctx: *yyparse_context_t,][yyrule: usize][) !void {
 }
 
 // /* YYINITDEPTH -- initial size of the parser's stacks.  */
-pub const YYINITDEPTH = ]b4_stack_depth_init[;
+const YYINITDEPTH = ]b4_stack_depth_init[;
 
 // /* YYMAXDEPTH -- maximum size the stacks can grow to (effective only
 //    if the built-in stack extension method is used).
@@ -788,7 +789,7 @@ pub const YYINITDEPTH = ]b4_stack_depth_init[;
 //    YYSTACK_ALLOC_MAXIMUM < YYSTACK_BYTES (YYMAXDEPTH)
 //    evaluated with infinite-precision integer arithmetic.  */
 
-pub const YYMAXDEPTH = ]b4_stack_depth_max[;
+const YYMAXDEPTH = ]b4_stack_depth_max[;
 ]b4_push_if([[
 // /* Parser data structure.  */
 pub const yypstate = struct {
@@ -1052,7 +1053,7 @@ yy_lac (yy_state_t *yyesa, yy_state_t **yyes,
 
 ]b4_parse_error_case([simple], [],
 [[// /* Context of a parse error.  */
-pub const yypcontext_t = struct {
+const yypcontext_t = struct {
 ]b4_push_if([[
   yyps: [*]yypstate,]], [[
   yyssp: [*]yy_state_t,]b4_lac_if([[
@@ -1069,10 +1070,10 @@ pub const yypcontext_t = struct {
 //    be less than YYNTOKENS).  Return YYENOMEM on memory exhaustion.
 //    Return 0 if there are more than YYARGN expected tokens, yet fill
 //    YYARG up to YYARGN. */]b4_push_if([[
-pub fn
+fn
 yypstate_expected_tokens (yyps: *yypstate,
                           yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize]], [[
-pub fn
+fn
 yypcontext_expected_tokens (yypctx: *yypcontext_t,
                             yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize]])[
 {
@@ -1230,7 +1231,7 @@ yytnamerr (char *yyres, const char *yystr)
 #endif
 ]])[
 
-pub fn yy_syntax_error_arguments (yypctx: *yypcontext_t,
+fn yy_syntax_error_arguments (yypctx: *yypcontext_t,
                           yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize
 {
 //   /* Actual size of YYARG. */
@@ -1296,7 +1297,7 @@ pub fn yy_syntax_error_arguments (yypctx: *yypcontext_t,
 //    *YYMSG_ALLOC to the required number of bytes.  Return YYENOMEM if the
 //    required number of bytes is too large to store]b4_lac_if([[ or if
 //    yy_lac returned YYENOMEM]])[.  */
-pub fn yysyntax_error (yymsg_alloc: *usize, yymsg: *[]u8,
+fn yysyntax_error (yymsg_alloc: *usize, yymsg: *[]u8,
                 yypctx: *yypcontext_t) isize
 {
   const YYARGS_MAX = 5;
@@ -1477,7 +1478,7 @@ yypstate_delete (yypstate *yyps)
 
 // collect all yyparse loop variables into one struct so that when we deal with
 // gotos, we will be with easier life
-const yyparse_context_t = struct {
+pub const yyparse_context_t = struct {
     allocator: std.mem.Allocator,
 
     ]b4_formals_struct(b4_parse_param)[,

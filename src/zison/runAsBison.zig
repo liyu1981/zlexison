@@ -9,6 +9,7 @@ pub fn runAsBison(
         zison_exe_path: []const u8,
         m4_exe_path: []const u8,
         bison_rel_pkgdatadir: []const u8 = "share/bison",
+        zison_version: []const u8,
     },
 ) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -34,6 +35,9 @@ pub fn runAsBison(
     var envmap = std.process.getEnvMap(arena) catch {
         @panic("OOM!");
     };
+    defer envmap.deinit();
+
+    envmap.put("ZISON_VERSION", opts.zison_version) catch @panic("ZISON_VERSION set failed!");
 
     const bison_share_path = ensureShare(arena, zison_exe_dir.?, opts.bison_rel_pkgdatadir) catch @panic("OOM!");
 

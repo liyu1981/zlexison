@@ -58,23 +58,26 @@ m4_define([b4_cpp_guard_close],
 # b4_pull_flag if they use the values of the %define variables api.pure or
 # api.push-pull.
 m4_define([b4_identification],
-[[// /* Identify Bison output, and Bison version.  */
-pub const YYBISON = ]b4_version[;
+[[// zison version
+const ZISON_VERSION = "]m4_ifdef([z4_zison_version], [z4_zison_version], [])[";
+
+// /* Identify Bison output, and Bison version.  */
+const YYBISON = ]b4_version[;
 
 // /* Bison version string.  */
-pub const YYBISON_VERSION = "]b4_version_string[";
+const YYBISON_VERSION = "]b4_version_string[";
 
 // /* Skeleton name.  */
-pub const YYSKELETON_NAME = ]b4_skeleton[;]m4_ifdef([b4_pure_flag], [[
+const YYSKELETON_NAME = ]b4_skeleton[;]m4_ifdef([b4_pure_flag], [[
 
 // /* Pure parsers.  */
-pub const YYPURE = ]b4_pure_flag])[;]m4_ifdef([b4_push_flag], [[
+const YYPURE = ]b4_pure_flag])[;]m4_ifdef([b4_push_flag], [[
 
 // /* Push parsers.  */
-pub const YYPUSH = ]b4_push_flag])[;]m4_ifdef([b4_pull_flag], [[
+const YYPUSH = ]b4_push_flag])[;]m4_ifdef([b4_pull_flag], [[
 
 // /* Pull parsers.  */
-pub const YYPULL = ]b4_pull_flag])[;
+const YYPULL = ]b4_pull_flag])[;
 ]])
 
 
@@ -323,7 +326,7 @@ m4_define([b4_null], [YY_NULLPTR])
 # Define "yy<TABLE-NAME>" whose contents is CONTENT.
 m4_define([b4_integral_parser_table_define],
 [m4_ifvaln([$3], [b4_comment([$3])])dnl
-pub const yy$1[] = [[_]]isize{
+const yy$1[] = [[_]]isize{
   $2
 };dnl
 ])
@@ -551,7 +554,7 @@ m4_define_default([b4_yydestruct_define],
 // | Release the memory associated to this symbol.  |
 // `-----------------------------------------------*/
 
-pub fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
+fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
             yykind: isize, yyvaluep: *YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *YYLTYPE]])[][)
 void {
@@ -572,7 +575,7 @@ m4_define_default([b4_yy_symbol_print_define],
 // | Print this symbol's value on YYO.  |
 // `-----------------------------------*/
 
-pub fn yy_symbol_value_print (
+fn yy_symbol_value_print (
   yyo: std.fs.File,
   yykind: isize,
   yyvaluep: *const YYSTYPE]b4_locations_if(dnl
@@ -589,7 +592,7 @@ pub fn yy_symbol_value_print (
 // | Print this symbol on YYO.  |
 // `---------------------------*/
 
-pub fn yy_symbol_print (yyo: std.fs.File,
+fn yy_symbol_print (yyo: std.fs.File,
                   yykind: isize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *const YYLTYPE]])[][) !void {
   try yyo.writer().print("{s} {s} (", .{

@@ -3,10 +3,12 @@ const zcmd = @import("zcmd");
 const jstring = @import("jstring");
 const util = @import("util.zig");
 const runAsM4 = @import("runAsM4.zig");
+const version = @import("version.zig");
 
 const usage =
     \\ usage: zison -o <output_file_prefix> <input_file_path>
     \\        zison bison <all_bison_options>
+    \\        zison --version
     \\
 ;
 
@@ -15,6 +17,7 @@ const ZisonRunMode = enum {
     zbison,
     bison,
     zm4,
+    version,
 };
 
 const ZisonOptions = struct {
@@ -66,6 +69,11 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
             }
         }
 
+        if (std.mem.eql(u8, arg, "--version")) {
+            r.runMode = .version;
+            return r;
+        }
+
         if (r.input_file_path.len > 0) {
             return ZisonError.InvalidOption;
         } else {
@@ -101,6 +109,9 @@ pub fn main() !u8 {
     defer exe_info.deinit();
 
     switch (opts.runMode) {
+        .version => {
+            try std.io.getStdOut().writer().print("{s}\n", .{version.zison_version});
+        },
         .zison => {
             try @import("zison/runAsZison.zig").runAsZison(.{
                 .input_file_path = opts.input_file_path,
@@ -114,6 +125,7 @@ pub fn main() !u8 {
                 .zison_exe_path = exe_info.exe_path,
                 .m4_exe_path = m4_path,
                 .bison_rel_pkgdatadir = "share/zison",
+                .zison_version = version.zison_version,
             });
         },
         .bison => {
@@ -121,6 +133,7 @@ pub fn main() !u8 {
             @import("zison/runAsBison.zig").runAsBison(args[1..], .{
                 .zison_exe_path = exe_info.exe_path,
                 .m4_exe_path = m4_path,
+                .zison_version = version.zison_version,
             });
         },
         .zm4 => {

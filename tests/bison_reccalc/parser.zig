@@ -1,26 +1,30 @@
-// /* A Bison parser, made by GNU Bison 3.8.2.1-118cd-dirty.//  */
+// /* A Bison parser, made by Zison (v1) through GNU Bison b4_version_string.//  */
+// /* zison is part of zlexison: https://github.com/liyu1981/zlexison//  */
 
 // /* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
 //    especially those whose name start with YY_ or yy_.  They are
 //    private implementation details that can be changed or removed.//  */
 
+// zison version
+const ZISON_VERSION = "1";
+
 // /* Identify Bison output, and Bison version.  */
-pub const YYBISON = 30802;
+const YYBISON = 30802;
 
 // /* Bison version string.  */
-pub const YYBISON_VERSION = "3.8.2.1-118cd-dirty";
+const YYBISON_VERSION = "3.8.2";
 
 // /* Skeleton name.  */
-pub const YYSKELETON_NAME = "zig.m4";
+const YYSKELETON_NAME = "zig.m4";
 
 // /* Pure parsers.  */
-pub const YYPURE = 2;
+const YYPURE = 2;
 
 // /* Push parsers.  */
-pub const YYPUSH = 0;
+const YYPUSH = 0;
 
 // /* Pull parsers.  */
-pub const YYPULL = 1;
+const YYPULL = 1;
 
 const std = @import("std");
 const Self = @This();
@@ -57,7 +61,7 @@ inline fn ptrLhsWithOffset(comptime T: type, p: [*]T, offset: isize) *T {
 // /* "%code top" blocks.//  */
 // #line 27 "parser.y"
 
-// #line 62 "parser.zig"
+// #line 66 "parser.zig"
 
 // /* Debug traces.  */
 const YYDEBUG = 1;
@@ -79,7 +83,7 @@ pub const Result = struct {
     nerrs: usize = 0,
 };
 
-// #line 91 "parser.zig"
+// #line 95 "parser.zig"
 
 // /* Token kinds.  */
 pub const yytoken_kind_t = enum(i32) {
@@ -106,7 +110,7 @@ const YYLTYPE = YYLexer.YYLTYPE;
 // /* "%code provides" blocks.//  */
 // #line 22 "parser.y"
 
-// #line 123 "parser.zig"
+// #line 127 "parser.zig"
 
 // /* Symbol kind.  */
 pub const yysymbol_kind_t = enum(i32) {
@@ -132,19 +136,19 @@ pub const yysymbol_kind_t = enum(i32) {
 // /* Unqualified %code blocks.//  */
 // #line 31 "parser.y"
 
-// #line 153 "parser.zig"
+// #line 157 "parser.zig"
 
-pub const YYSIZE_MAXIMUM = std.math.maxInt(usize);
-pub const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
+const YYSIZE_MAXIMUM = std.math.maxInt(usize);
+const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
 
 // /* Stored state numbers (used for stacks). */
 pub const yy_state_t = isize;
 
 // /* State numbers in computations.  */
-pub const yy_state_fast_t = isize;
+const yy_state_fast_t = isize;
 
 // #define YY_ASSERT(E) ((void) (0 && (E)))
-pub const YY_ASSERT = std.debug.assert;
+const YY_ASSERT = std.debug.assert;
 
 // /* A type that is properly aligned for any stack member.  */
 pub const yyalloc = union {
@@ -161,12 +165,11 @@ fn YYSTACK_ALLOC(yyctx: *yyparse_context_t, size: usize) ![*]yyalloc {
 }
 
 // /* The size of the maximum gap between one aligned stack and the next.  */
-// # define YYSTACK_GAP_MAXIMUM (YYSIZEOF (union yyalloc) - 1)
-pub const YYSTACK_GAP_MAXIMUM = @sizeOf(yyalloc) - 1;
+const YYSTACK_GAP_MAXIMUM = @sizeOf(yyalloc) - 1;
 
 // /* The size of an array large to enough to hold all stacks, each with
 //    N elements.  */
-pub fn YYSTACK_BYTES(N: usize) usize {
+fn YYSTACK_BYTES(N: usize) usize {
     return N * (@sizeOf(yy_state_t) + @sizeOf(YYSTYPE) + @sizeOf(YYLTYPE)) + 2 * YYSTACK_GAP_MAXIMUM;
 }
 
@@ -205,7 +208,7 @@ fn YYSTACK_RELOCATE(
 
 // /* Copy COUNT objects from SRC to DST.  The source and destination do
 //    not overlap.  */
-pub fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: [*]yyalloc, src: [*]T, count: usize) void {
+fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: [*]yyalloc, src: [*]T, count: usize) void {
     switch (field) {
         .yyss => {
             for (0..count) |i| dst[i].yyss_alloc = src[i];
@@ -220,25 +223,25 @@ pub fn YYCOPY(comptime T: type, comptime field: enum { yyss, yyvs, yyls }, dst: 
 }
 
 // /* YYFINAL -- State number of the termination state.  */
-pub const YYFINAL = 14;
+const YYFINAL = 14;
 // /* YYLAST -- Last index in YYTABLE.  */
-pub const YYLAST = 38;
+const YYLAST = 38;
 
 // /* YYNTOKENS -- Number of terminals.  */
-pub const YYNTOKENS = 11;
+const YYNTOKENS = 11;
 // /* YYNNTS -- Number of nonterminals.  */
-pub const YYNNTS = 5;
+const YYNNTS = 5;
 // /* YYNRULES -- Number of rules.  */
-pub const YYNRULES = 15;
+const YYNRULES = 15;
 // /* YYNSTATES -- Number of states.  */
-pub const YYNSTATES = 25;
+const YYNSTATES = 25;
 
 // /* YYMAXUTOK -- Last valid token kind.  */
-pub const YYMAXUTOK = 265;
+const YYMAXUTOK = 265;
 
 // /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
 //    as returned by yylex, with out-of-bounds checking.  */
-pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
+fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
     if (YYX >= 0 and YYX <= YYMAXUTOK) {
         return @as(yysymbol_kind_t, @enumFromInt(yytranslate[YYX]));
     } else {
@@ -248,19 +251,19 @@ pub fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
 
 // /* YYTRANSLATE[TOKEN-NUM] -- Symbol number corresponding to TOKEN-NUM
 //    as returned by yylex.  */
-pub const yytranslate = [_]isize{ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+const yytranslate = [_]isize{ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
 // /* YYRLINE[YYN] -- Source line where rule number YYN was defined.//  */
-pub const yyrline = [_]isize{ 0, 86, 86, 87, 91, 98, 105, 106, 110, 111, 112, 113, 114, 125, 126, 127 };
+const yyrline = [_]isize{ 0, 86, 86, 87, 91, 98, 105, 106, 110, 111, 112, 113, 114, 125, 126, 127 };
 
 // /** Accessing symbol of state STATE.  */
-pub inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
+inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
     return yystos[index];
 }
 
 // /* The user-facing name of the symbol whose (internal) number is
 //    YYSYMBOL.  No bounds checking.  */
-pub fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
+fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
     const YY_NULLPTR = "";
     const yy_sname = [_][]const u8{ "end-of-file", "error", "invalid token", "+", "-", "*", "/", "end-of-line", "number", "string", "UNARY", "$accept", "input", "line", "eol", "exp", YY_NULLPTR };
     return yy_sname[@as(usize, @intCast(@intFromEnum(yysymbol)))];
@@ -275,9 +278,9 @@ inline fn yypact_value_is_default(yyn: anytype) bool {
     return yyn == YYPACT_NINF;
 }
 
-pub const YYTABLE_NINF = -1;
+const YYTABLE_NINF = -1;
 
-pub fn yytable_value_is_error(Yyn: anytype) bool {
+fn yytable_value_is_error(Yyn: anytype) bool {
     // TODO: check for all case
     // #define yytable_value_is_error(Yyn) \
     //   0
@@ -287,40 +290,40 @@ pub fn yytable_value_is_error(Yyn: anytype) bool {
 
 // /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
 //    STATE-NUM.//  */
-pub const yypact = [_]isize{ 17, 12, 29, 29, -5, -5, 2, -5, 24, -5, -5, -5, -5, -5, -5, -5, 29, 29, 29, 29, -5, 3, 3, -5, -5 };
+const yypact = [_]isize{ 17, 12, 29, 29, -5, -5, 2, -5, 24, -5, -5, -5, -5, -5, -5, -5, 29, 29, 29, 29, -5, 3, 3, -5, -5 };
 
 // /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
 //    Performed when YYTABLE does not specify something else to do.  Zero
 //    means the default is an error.//  */
-pub const yydefact = [_]isize{ 0, 0, 0, 0, 8, 15, 0, 2, 0, 6, 7, 5, 13, 14, 1, 3, 0, 0, 0, 0, 4, 9, 10, 11, 12 };
+const yydefact = [_]isize{ 0, 0, 0, 0, 8, 15, 0, 2, 0, 6, 7, 5, 13, 14, 1, 3, 0, 0, 0, 0, 4, 9, 10, 11, 12 };
 
 // /* YYPGOTO[NTERM-NUM].//  */
-pub const yypgoto = [_]isize{ -5, -5, 1, -4, -2 };
+const yypgoto = [_]isize{ -5, -5, 1, -4, -2 };
 
 // /* YYDEFGOTO[NTERM-NUM].//  */
-pub const yydefgoto = [_]isize{ 0, 6, 7, 11, 8 };
+const yydefgoto = [_]isize{ 0, 6, 7, 11, 8 };
 
 // /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
 //    positive, shift that token.  If negative, reduce the rule whose
 //    number is the opposite.  If YYTABLE_NINF, syntax error.//  */
-pub const yytable = [_]isize{ 12, 13, 14, 1, 20, 2, 3, 15, 18, 19, 4, 5, 9, 0, 21, 22, 23, 24, 1, 10, 2, 3, 0, 0, 9, 4, 5, 16, 17, 18, 19, 10, 2, 3, 0, 0, 0, 4, 5 };
+const yytable = [_]isize{ 12, 13, 14, 1, 20, 2, 3, 15, 18, 19, 4, 5, 9, 0, 21, 22, 23, 24, 1, 10, 2, 3, 0, 0, 9, 4, 5, 16, 17, 18, 19, 10, 2, 3, 0, 0, 0, 4, 5 };
 
-pub const yycheck = [_]isize{ 2, 3, 0, 1, 8, 3, 4, 6, 5, 6, 8, 9, 0, -1, 16, 17, 18, 19, 1, 7, 3, 4, -1, -1, 0, 8, 9, 3, 4, 5, 6, 7, 3, 4, -1, -1, -1, 8, 9 };
+const yycheck = [_]isize{ 2, 3, 0, 1, 8, 3, 4, 6, 5, 6, 8, 9, 0, -1, 16, 17, 18, 19, 1, 7, 3, 4, -1, -1, 0, 8, 9, 3, 4, 5, 6, 7, 3, 4, -1, -1, -1, 8, 9 };
 
 // /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
 //    state STATE-NUM.//  */
-pub const yystos = [_]isize{ 0, 1, 3, 4, 8, 9, 12, 13, 15, 0, 7, 14, 15, 15, 0, 13, 3, 4, 5, 6, 14, 15, 15, 15, 15 };
+const yystos = [_]isize{ 0, 1, 3, 4, 8, 9, 12, 13, 15, 0, 7, 14, 15, 15, 0, 13, 3, 4, 5, 6, 14, 15, 15, 15, 15 };
 
 // /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.//  */
-pub const yyr1 = [_]isize{ 0, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15, 15, 15, 15, 15 };
+const yyr1 = [_]isize{ 0, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15, 15, 15, 15, 15 };
 
 // /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.//  */
-pub const yyr2 = [_]isize{ 0, 2, 1, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3, 2, 2, 1 };
+const yyr2 = [_]isize{ 0, 2, 1, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3, 2, 2, 1 };
 
-pub const YYENOMEM = -2;
+const YYENOMEM = -2;
 
 // TODO: a case really YYBACKUP?
-pub fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
+fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
     if (yyctx.yychar == yytoken_kind_t.TOK_YYEMPTY) {
         yyctx.yychar = token;
         yyctx.yylval = value;
@@ -375,7 +378,7 @@ fn yy_location_print_(yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
     }
 }
 
-pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
+fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
         std.debug.print("{any}, {any}, {any}\n", .{ token, yyctx.yylval, yyctx.yyloc });
@@ -388,7 +391,7 @@ pub fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysy
 // | Print this symbol's value on YYO.  |
 // `-----------------------------------*/
 
-pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
+fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
     _ = yylocationp;
     // if (yyvaluep == null) return;
     switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
@@ -397,7 +400,7 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
             {
                 try yyo.writer().print("{d}", .{((yyvaluep).TOK_NUM)});
             }
-            // #line 507 "parser.zig"
+            // #line 510 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_STR => { // /* "string"//  */
@@ -405,7 +408,7 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
             {
                 try yyo.writer().print("{s}", .{((yyvaluep).TOK_STR)});
             }
-            // #line 513 "parser.zig"
+            // #line 516 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_exp => { // /* exp//  */
@@ -413,7 +416,7 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
             {
                 try yyo.writer().print("{d}", .{((yyvaluep).TOK_exp)});
             }
-            // #line 519 "parser.zig"
+            // #line 522 "parser.zig"
         },
 
         else => {},
@@ -424,7 +427,7 @@ pub fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const Y
 // | Print this symbol on YYO.  |
 // `---------------------------*/
 
-pub fn yy_symbol_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
+fn yy_symbol_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE, yylocationp: *const YYLTYPE) !void {
     try yyo.writer().print("{s} {s} (", .{
         if (yykind < YYNTOKENS) "token" else "nterm",
         yysymbol_name(@enumFromInt(yykind)),
@@ -440,7 +443,7 @@ pub fn yy_symbol_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTYPE
 // | TOP (included).                                                   |
 // `------------------------------------------------------------------*/
 
-pub fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
+fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
     if (yydebug) {
         std.debug.print("Stack now", .{});
         var yyb = yybottom;
@@ -456,7 +459,7 @@ pub fn yy_stack_print(yybottom: [*]yy_state_t, yytop: [*]yy_state_t) void {
 // | Report that the YYRULE is going to be reduced.  |
 // `------------------------------------------------*/
 
-pub fn yy_reduce_print(yyctx: *yyparse_context_t, yyrule: usize) !void {
+fn yy_reduce_print(yyctx: *yyparse_context_t, yyrule: usize) !void {
     if (yydebug) {
         const yylno = yyrline[yyrule];
         const yynrhs: usize = @intCast(yyr2[yyrule]);
@@ -477,7 +480,7 @@ pub fn yy_reduce_print(yyctx: *yyparse_context_t, yyrule: usize) !void {
 }
 
 // /* YYINITDEPTH -- initial size of the parser's stacks.  */
-pub const YYINITDEPTH = 200;
+const YYINITDEPTH = 200;
 
 // /* YYMAXDEPTH -- maximum size the stacks can grow to (effective only
 //    if the built-in stack extension method is used).
@@ -486,10 +489,10 @@ pub const YYINITDEPTH = 200;
 //    YYSTACK_ALLOC_MAXIMUM < YYSTACK_BYTES (YYMAXDEPTH)
 //    evaluated with infinite-precision integer arithmetic.  */
 
-pub const YYMAXDEPTH = 10000;
+const YYMAXDEPTH = 10000;
 
 // /* Context of a parse error.  */
-pub const yypcontext_t = struct {
+const yypcontext_t = struct {
     yyssp: [*]yy_state_t,
     yytoken: yysymbol_kind_t,
     yylloc: *YYLTYPE,
@@ -501,7 +504,7 @@ pub const yypcontext_t = struct {
 //    be less than YYNTOKENS).  Return YYENOMEM on memory exhaustion.
 //    Return 0 if there are more than YYARGN expected tokens, yet fill
 //    YYARG up to YYARGN. */
-pub fn yypcontext_expected_tokens(yypctx: *yypcontext_t, yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize {
+fn yypcontext_expected_tokens(yypctx: *yypcontext_t, yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize {
     // /* Actual size of YYARG. */
     var yycount: isize = 0;
 
@@ -542,7 +545,7 @@ fn yystpcpy(yydest: [*]u8, yysrc: []const u8) [*]u8 {
     return yydest + yysrc.len;
 }
 
-pub fn yy_syntax_error_arguments(yypctx: *yypcontext_t, yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize {
+fn yy_syntax_error_arguments(yypctx: *yypcontext_t, yyarg: [*]allowzero yysymbol_kind_t, yyargn: usize) isize {
     //   /* Actual size of YYARG. */
     var yycount: isize = 0;
     //   /* There are many possibilities here to consider:
@@ -591,7 +594,7 @@ pub fn yy_syntax_error_arguments(yypctx: *yypcontext_t, yyarg: [*]allowzero yysy
 //    not large enough to hold the message.  In that case, also set
 //    *YYMSG_ALLOC to the required number of bytes.  Return YYENOMEM if the
 //    required number of bytes is too large to store.  */
-pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]u8, yypctx: *yypcontext_t) isize {
+fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]u8, yypctx: *yypcontext_t) isize {
     const YYARGS_MAX = 5;
     // /* Internationalized format string. */
     var yyformat: []const u8 = undefined;
@@ -664,7 +667,7 @@ pub fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]u8, yypctx: *yypcontext_t) 
 // | Release the memory associated to this symbol.  |
 // `-----------------------------------------------*/
 
-pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
+fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
     _ = yylocationp;
     YY_SYMBOL_PRINT(yyctx, yymsg, @enumFromInt(yykind));
 
@@ -674,7 +677,7 @@ pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, y
             {
                 yyctx.allocator.free(((yyvaluep).TOK_STR));
             }
-            // #line 808 "parser.zig"
+            // #line 811 "parser.zig"
         },
 
         else => {},
@@ -683,7 +686,7 @@ pub fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, y
 
 // collect all yyparse loop variables into one struct so that when we deal with
 // gotos, we will be with easier life
-const yyparse_context_t = struct {
+pub const yyparse_context_t = struct {
     allocator: std.mem.Allocator,
 
     scanner: *YYLexer = undefined,
@@ -976,7 +979,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
                     std.debug.print("{d}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).TOK_exp)});
                 }
             }
-            // #line 1117 "parser.zig"
+            // #line 1120 "parser.zig"
         },
 
         5 => { // /* line: error eol//  */
@@ -984,7 +987,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 std.debug.print("yyerrok!", .{});
             }
-            // #line 1125 "parser.zig"
+            // #line 1128 "parser.zig"
         },
 
         8 => { // /* exp: "number"//  */
@@ -992,7 +995,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_NUM);
             }
-            // #line 1131 "parser.zig"
+            // #line 1134 "parser.zig"
         },
 
         9 => { // /* exp: exp "+" exp//  */
@@ -1000,7 +1003,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
-            // #line 1137 "parser.zig"
+            // #line 1140 "parser.zig"
         },
 
         10 => { // /* exp: exp "-" exp//  */
@@ -1008,7 +1011,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
-            // #line 1143 "parser.zig"
+            // #line 1146 "parser.zig"
         },
 
         11 => { // /* exp: exp "*" exp//  */
@@ -1016,7 +1019,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
-            // #line 1149 "parser.zig"
+            // #line 1152 "parser.zig"
         },
 
         12 => { // /* exp: exp "/" exp//  */
@@ -1029,7 +1032,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
                     (yyctx.yyval.TOK_exp) = @divTrunc((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).TOK_exp), (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp));
                 }
             }
-            // #line 1164 "parser.zig"
+            // #line 1167 "parser.zig"
         },
 
         13 => { // /* exp: "+" exp//  */
@@ -1037,7 +1040,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 (yyctx.yyval.TOK_exp) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
-            // #line 1170 "parser.zig"
+            // #line 1173 "parser.zig"
         },
 
         14 => { // /* exp: "-" exp//  */
@@ -1045,7 +1048,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 (yyctx.yyval.TOK_exp) = -(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_exp);
             }
-            // #line 1176 "parser.zig"
+            // #line 1179 "parser.zig"
         },
 
         15 => { // /* exp: "string"//  */
@@ -1055,10 +1058,10 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
                 yyctx.allocator.free((ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).TOK_STR));
                 (yyctx.yyval.TOK_exp) = int_value;
             }
-            // #line 1186 "parser.zig"
+            // #line 1189 "parser.zig"
         },
 
-        // #line 1190 "parser.zig"
+        // #line 1193 "parser.zig"
 
         else => {},
     }

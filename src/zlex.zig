@@ -1,6 +1,7 @@
 const std = @import("std");
 const util = @import("util.zig");
 const runAsM4 = @import("runAsM4.zig");
+const version = @import("version.zig");
 
 const usage =
     \\ usage: zlex -o <output_file_path> -p <input_file_path>
@@ -13,6 +14,7 @@ const ZlexRunMode = enum {
     zflex,
     flex,
     zm4,
+    version,
 };
 
 const ZlexOptions = struct {
@@ -73,6 +75,11 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
             continue;
         }
 
+        if (std.mem.eql(u8, arg, "--version")) {
+            r.runMode = .version;
+            return r;
+        }
+
         if (r.input_file_path.len > 0) {
             return ZlexError.InvalidOption;
         } else {
@@ -108,6 +115,9 @@ pub fn main() !u8 {
     defer exe_info.deinit();
 
     switch (opts.runMode) {
+        .version => {
+            try std.io.getStdOut().writer().print("{s}\n", .{version.zison_version});
+        },
         .zlex => {
             @import("zlex/runAsZlex.zig").runAsZlex(.{
                 .input_file_path = opts.input_file_path,

@@ -49,7 +49,8 @@ m4_define([m4_shift4], [m4_shift(m4_shift(m4_shift(m4_shift($@))))])
 # b4_generated_by
 # ---------------
 m4_define([b4_generated_by],
-[b4_comment([A Bison parser, made by GNU Bison b4_version_string.])
+[b4_comment([[A Bison parser, made by Zison (v]z4_zison_version[) through GNU Bison b4_version_string.]])
+b4_comment([zison is part of zlexison: https://github.com/liyu1981/zlexison])
 ])
 
 # b4_copyright(TITLE, [YEARS])
