@@ -1,11 +1,14 @@
 const std = @import("std");
+const zcmd = @import("zcmd");
+const jstring = @import("jstring");
 const util = @import("util.zig");
 const runAsM4 = @import("runAsM4.zig");
 const version = @import("version.zig");
 
 const usage =
-    \\ usage: zlex -o <output_file_path> -p <input_file_path>
+    \\ usage: zlex -o <output_file_path> -z <zlexison_file_path> <input_file_path>
     \\        zlex flex <all_flex_options>
+    \\        zlex --version
     \\
 ;
 
@@ -21,7 +24,7 @@ const ZlexOptions = struct {
     runMode: ZlexRunMode,
     input_file_path: []const u8,
     output_file_path: []const u8,
-    with_parser_type: bool,
+    zlexison_file_path: ?[]const u8,
     zlex_exe: []const u8 = undefined,
 };
 
@@ -35,7 +38,7 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         .runMode = .zlex,
         .input_file_path = "",
         .output_file_path = "",
-        .with_parser_type = false,
+        .zlexison_file_path = null,
         .zlex_exe = args[0],
     };
     const args1 = args[1..];
@@ -69,10 +72,14 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
             }
         }
 
-        if (std.mem.eql(u8, arg, "-p")) {
-            r.with_parser_type = true;
-            i += 1;
-            continue;
+        if (std.mem.eql(u8, arg, "-z")) {
+            if (i + 1 < args1.len) {
+                r.zlexison_file_path = args1[i + 1];
+                i += 2;
+                continue;
+            } else {
+                return ZlexError.InvalidOption;
+            }
         }
 
         if (std.mem.eql(u8, arg, "--version")) {
@@ -116,13 +123,13 @@ pub fn main() !u8 {
 
     switch (opts.runMode) {
         .version => {
-            try std.io.getStdOut().writer().print("{s}\n", .{version.zison_version});
+            try printVersion();
         },
         .zlex => {
             @import("zlex/runAsZlex.zig").runAsZlex(.{
                 .input_file_path = opts.input_file_path,
                 .output_file_path = opts.output_file_path,
-                .with_parser_type = opts.with_parser_type,
+                .zlexison_file_path = opts.zlexison_file_path,
                 .zlex_exe = opts.zlex_exe,
             }) catch |err| {
                 printErrAndUsageExit(err);
@@ -142,4 +149,35 @@ pub fn main() !u8 {
     }
 
     return 0;
+}
+
+fn printVersion() !void {
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
+    const stdout_writer = std.io.getStdOut().writer();
+
+    const flex_version = brk: {
+        const result = try zcmd.run(.{
+            .allocator = arena,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{ opts.zlex_exe, "flex", "--version" },
+            },
+        });
+        defer result.deinit();
+        result.assertSucceededPanic(.{});
+        var tmpjs = try jstring.JString.newFromSlice(arena, result.trimedStdout());
+        const m = try tmpjs.match("zlex-flex (?<v>[^ ]+)", 0, true, 0, 0);
+        if (m.matchSucceed()) {
+            const maybe_r = m.getGroupResultByName("v");
+            if (maybe_r) |r| {
+                break :brk tmpjs.valueOf()[r.start .. r.start + r.len];
+            }
+        }
+
+        std.debug.print("oops! zlex-flex returned: {s}\n", .{tmpjs});
+        unreachable;
+    };
+
+    try stdout_writer.print("zlex v{s} with flex v{s}\n", .{ version.zlex_version, flex_version });
 }

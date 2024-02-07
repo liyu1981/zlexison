@@ -5,7 +5,7 @@ const jstring = @import("jstring");
 pub fn runAsZlex(opts: struct {
     input_file_path: []const u8,
     output_file_path: []const u8,
-    with_parser_type: bool,
+    zlexison_file_path: ?[]const u8,
     zlex_exe: []const u8,
 }) !void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -32,12 +32,11 @@ pub fn runAsZlex(opts: struct {
         if (f != null) f.?.close();
     }
 
+    try checkZlexisonFile(arena, opts.zlexison_file_path);
+
     const raw_yyc = brk: {
         var envmap = try std.process.getEnvMap(arena);
         defer envmap.deinit();
-        if (opts.with_parser_type) {
-            try envmap.put("ZLEX_WITH_PARSER_TYPE", "1");
-        }
         // zflex in default enabled
         //   -R --yylineno --stack --bison-bridge --bison-locations
         //   %option reject,unput,yymore
@@ -129,4 +128,37 @@ pub fn runAsZflex(args: [][:0]const u8, m4_path: []const u8) void {
         @as([*c]const u8, @ptrCast(argv_buf.ptr)),
         m4pathZ.ptr,
     ));
+}
+
+const zlexison_file_tpl =
+    \\pub const YYSTYPE = struct {
+    \\};
+    \\pub const TOK_TYPE = enum(u32) {
+    \\    TOK_EOF = 0,
+    \\    // first TOK should start from 258, e.g., TOK_NUM = 258,
+    \\};
+    \\
+;
+
+fn checkZlexisonFile(allocator: std.mem.Allocator, maybe_zlexison_file_path: ?[]const u8) !void {
+    _ = allocator;
+    const exist = brk: {
+        if (maybe_zlexison_file_path) |zfp| {
+            std.fs.cwd().access(zfp, .{}) catch {
+                break :brk false;
+            };
+            break :brk true;
+        } else {
+            std.fs.cwd().access("zlexison.zig", .{}) catch {
+                break :brk false;
+            };
+            std.debug.print("found existing zlexison.zig in current folder, with no -z option it may be overwroted. exit!", .{});
+            std.os.exit(1);
+        }
+    };
+    if (!exist) {
+        var f = try std.fs.cwd().createFile("zlexison.zig", .{});
+        defer f.close();
+        try f.writeAll(zlexison_file_tpl);
+    }
 }

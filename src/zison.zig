@@ -110,7 +110,7 @@ pub fn main() !u8 {
 
     switch (opts.runMode) {
         .version => {
-            try std.io.getStdOut().writer().print("{s}\n", .{version.zison_version});
+            try printVersion();
         },
         .zison => {
             try @import("zison/runAsZison.zig").runAsZison(.{
@@ -142,4 +142,35 @@ pub fn main() !u8 {
     }
 
     return 0;
+}
+
+fn printVersion() !void {
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
+    const stdout_writer = std.io.getStdOut().writer();
+
+    const bison_version = brk: {
+        const result = try zcmd.run(.{
+            .allocator = arena,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{ opts.zison_exe, "bison", "--version" },
+            },
+        });
+        defer result.deinit();
+        result.assertSucceededPanic(.{});
+        var tmpjs = try jstring.JString.newFromSlice(arena, result.trimedStdout());
+        const m = try tmpjs.match("bison \\(GNU Bison\\) (?<v>[^_\\n]+)", 0, true, 0, 0);
+        if (m.matchSucceed()) {
+            const maybe_r = m.getGroupResultByName("v");
+            if (maybe_r) |r| {
+                break :brk tmpjs.valueOf()[r.start .. r.start + r.len];
+            }
+        }
+
+        std.debug.print("oops! zison bison returned: {s}\n", .{tmpjs});
+        unreachable;
+    };
+
+    try stdout_writer.print("zison v{s} with bison v{s}\n", .{ version.zison_version, bison_version });
 }

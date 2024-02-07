@@ -1,7 +1,4 @@
 %{
-pub const TOK_TYPE = @import("parser_type.zig").TOK_TYPE;
-pub const TOK = @import("parser_type.zig").TOK;
-
 pub const Context = struct {
     allocator: std.mem.Allocator,
     nesting: usize = 0,
@@ -101,10 +98,10 @@ pub fn main() !u8 {
     _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    var yylval_param: YYLexer.YYSTYPE = .{};
-    _ = &yylval_param;
-    var yylloc_param: YYLexer.YYLTYPE = .{};
-    _ = &yylval_param;
+    var yylval: YYLexer.YYSTYPE = .{};
+    _ = &yylval;
+    var yylloc: YYLexer.YYLTYPE = .{};
+    _ = &yylloc;
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };
     YYLexer.context = YYLexer.Context.init(allocator);
@@ -116,17 +113,17 @@ pub fn main() !u8 {
     _ = try YYLexer.yy_scan_string(content, lexer.yyg);
 
     while (true) {
-        const tk = lexer.yylex(&yylval_param, &yylloc_param) catch |err| {
+        const tk = lexer.yylex(&yylval, &yylloc) catch |err| {
             std.debug.print("{any}\n", .{err});
             return 1;
         };
         if (tk == YYLexer.YY_TERMINATED) break;
-        switch (context.cur_tok) {
+        switch (@as(TOK_TYPE, @enumFromInt(tk))) {
             .TOK_EOF => {
                 break;
             },
             else => |cur_tk| {
-                try stdout_writer.print("tk: {any}\n", .{cur_tk});
+                try stdout_writer.print("tk: {any} at loc: {s}\n", .{ cur_tk, yylloc });
             },
         }
     }
