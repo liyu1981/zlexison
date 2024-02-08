@@ -6,7 +6,8 @@ const runAsM4 = @import("runAsM4.zig");
 const version = @import("version.zig");
 
 const usage =
-    \\ usage: zison -o <output_file_prefix> <input_file_path>
+    \\ usage: zison -o <output_file_path> <input_file_path>
+    \\        zison zlexison -o <output_file_path> <input_file_path>
     \\        zison bison <all_bison_options>
     \\        zison --version
     \\
@@ -14,6 +15,7 @@ const usage =
 
 const ZisonRunMode = enum {
     zison,
+    zlexison,
     zbison,
     bison,
     zm4,
@@ -54,6 +56,11 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
 
     if (std.mem.eql(u8, args1[0], "m4")) {
         r.runMode = .zm4;
+        return r;
+    }
+
+    if (std.mem.eql(u8, args1[0], "zlexison")) {
+        r.runMode = .zlexison;
         return r;
     }
 
@@ -100,9 +107,8 @@ pub fn main() !u8 {
     const args = try std.process.argsAlloc(arena);
     defer arena.free(args);
 
-    opts = parseArgs(args) catch {
-        try std.io.getStdErr().writer().print("{s}\n", .{usage});
-        std.os.exit(1);
+    opts = parseArgs(args) catch |err| {
+        printErrAndUsageExit(err);
     };
 
     var exe_info = try util.ExeInfo.init(arena);
@@ -125,7 +131,6 @@ pub fn main() !u8 {
                 .zison_exe_path = exe_info.exe_path,
                 .m4_exe_path = m4_path,
                 .bison_rel_pkgdatadir = "share/zison",
-                .zison_version = version.zison_version,
             });
         },
         .bison => {
@@ -133,11 +138,21 @@ pub fn main() !u8 {
             @import("zison/runAsBison.zig").runAsBison(args[1..], .{
                 .zison_exe_path = exe_info.exe_path,
                 .m4_exe_path = m4_path,
-                .zison_version = version.zison_version,
             });
         },
         .zm4 => {
             runAsM4.runAsM4(args[1..], opts.zison_exe);
+        },
+        .zlexison => {
+            const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
+            @import("zison/runAsZlexison.zig").runAsZlexison(args[1..], .{
+                .zison_exe_path = exe_info.exe_path,
+                .m4_exe_path = m4_path,
+                .output_file_path = opts.outut_file_path,
+            }) catch |err| switch (err) {
+                ZisonError.InvalidOption => printErrAndUsageExit(err),
+                else => return err,
+            };
         },
     }
 

@@ -48,8 +48,7 @@ pub const YYLTYPE = struct {
         } else if (std.mem.eql(u8, fmt, "se")) {
             try writer.print("L{d}:C{d}", .{ this.last_line, this.last_column });
         } else {
-            std.debug.print("print YYLTYPE with 's'(full L<begin>:C<begin> - L<end>:C<end>) or 'sb'(L<begin>:C<begin>) or 'se'(L<end>:C<end>)", .{});
-            unreachable;
+            @panic("print YYLTYPE with 's'(full L<begin>:C<begin> - L<end>:C<end>) or 'sb'(L<begin>:C<begin>) or 'se'(L<end>:C<end>)");
         }
     }
 };
@@ -242,7 +241,7 @@ pub fn YY_DO_BEFORE_ACTION(yy_cp_: *[*c]u8, yy_bp_: *[*c]u8, yyg: *yyguts_t) voi
     yyg.yy_c_buf_p = yy_cp;
 }
 
-pub const TOK_TYPE = @import("zlexison.zig").TOK_TYPE;
+pub const TOK_TYPE = @import("zlexison.zig").yytoken_kind_t;
 
 pub const YY_NUM_RULES = 13;
 pub const YY_END_OF_BUFFER = 14;

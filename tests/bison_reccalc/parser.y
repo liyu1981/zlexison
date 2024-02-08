@@ -32,6 +32,7 @@
 }
 
 // Include the header in the implementation rather than duplicating it.
+// we do not use this in zig
 // %define api.header.include {"parse.h"}
 
 // Don't share global variables between the scanner and the parser.
@@ -152,26 +153,36 @@ pub fn main() !u8 {
 
     const stdout_writer = std.io.getStdOut().writer();
 
-    var content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
-    defer arena.free(content);
-    _ = &content;
-    try stdout_writer.print("read {d}bytes\n", .{content.len});
+    var line = std.ArrayList(u8).init(arena);
+    defer line.deinit();
+    const line_writer = line.writer();
+    var buf_f_reader = std.io.bufferedReader(f.reader());
+    const f_reader = buf_f_reader.reader();
 
     YYParser.yydebug = true;
-    var res: Result = Result{};
 
-    var scanner = YYLexer{ .allocator = arena };
-    YYLexer.context = YYLexer.Context.init(arena);
-    defer YYLexer.context.deinit();
+    while (f_reader.streamUntilDelimiter(line_writer, '\n', null)) {
+      defer line.clearRetainingCapacity();
 
-    try YYLexer.yylex_init(&scanner);
-    defer YYLexer.yylex_destroy(&scanner);
+      var res: Result = Result{};
+      try stdout_writer.print("read {d}bytes\n", .{line.items.len});
 
-    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
+      var scanner = YYLexer{ .allocator = arena };
+      YYLexer.context = YYLexer.Context.init(arena);
+      defer YYLexer.context.deinit();
 
-    _ = try YYParser.yyparse(arena, &scanner, &res);
+      try YYLexer.yylex_init(&scanner);
+      defer YYLexer.yylex_destroy(&scanner);
 
-    std.debug.print("{any}\n", .{res});
+      _ = try YYLexer.yy_scan_string(line.items, scanner.yyg);
+
+      _ = try YYParser.yyparse(arena, &scanner, &res);
+
+      std.debug.print("{any}\n", .{res});
+    } else |err| switch(err) {
+      error.EndOfStream => {},
+      else => return err,
+    }
 
     return 0;
 }

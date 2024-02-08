@@ -733,7 +733,7 @@ fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
-        std.debug.print("{any}, {any}, {any}\n", .{ token, yyctx.yylval, yyctx.yyloc });
+        std.debug.print("{any}, {any}, {s}\n", .{ token, yyctx.yylval, yyctx.yyloc });
         std.debug.print("\n", .{});
     }
 }

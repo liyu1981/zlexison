@@ -2,6 +2,7 @@ const std = @import("std");
 const zcmd = @import("zcmd");
 const bisonbin = @embedFile("../bison.bin");
 const sharebin = @embedFile("../share.tgz.bin");
+const version = @import("../version.zig");
 
 pub fn runAsBison(
     args: [][:0]const u8,
@@ -9,12 +10,10 @@ pub fn runAsBison(
         zison_exe_path: []const u8,
         m4_exe_path: []const u8,
         bison_rel_pkgdatadir: []const u8 = "share/bison",
-        zison_version: []const u8,
     },
 ) void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    // later there is no going back, so Cool Guys Don't Look At Explosions
-    // defer arena_allocator.deinit();
+    defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
     // std.debug.print("embed bison: {d} bytes.\n", .{bisonbin.len});
@@ -37,7 +36,7 @@ pub fn runAsBison(
     };
     defer envmap.deinit();
 
-    envmap.put("ZISON_VERSION", opts.zison_version) catch @panic("ZISON_VERSION set failed!");
+    envmap.put("ZISON_VERSION", version.zison_version) catch @panic("ZISON_VERSION set failed!");
 
     const bison_share_path = ensureShare(arena, zison_exe_dir.?, opts.bison_rel_pkgdatadir) catch @panic("OOM!");
 

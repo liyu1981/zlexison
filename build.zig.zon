@@ -5,7 +5,7 @@
     .dependencies = .{
         .zcmd = .{
             .url = "../zcmd",
-            .hash = "1220bae2383cacd9a8aec7ad866b6e1d5bc12acfb8902ab5a2e04c63c0fe094c7437",
+            .hash = "1220844dd4f1b16374fd67bea40cb6ee1e7b399a08ae594ae460407f27c341d21891",
         },
         .jstring = .{
             .url = "../jstring",

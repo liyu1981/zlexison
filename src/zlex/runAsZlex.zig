@@ -131,11 +131,14 @@ pub fn runAsZflex(args: [][:0]const u8, m4_path: []const u8) void {
 }
 
 const zlexison_file_tpl =
-    \\pub const YYSTYPE = struct {
-    \\};
-    \\pub const TOK_TYPE = enum(u32) {
+    \\// /* Token kinds.  */
+    \\pub const yytoken_kind_t = enum(u32) {
+    \\    // EOF must be defined with value 0
     \\    TOK_EOF = 0,
-    \\    // first TOK should start from 258, e.g., TOK_NUM = 258,
+    \\    // first TOK must start from 258, e.g., TOK_NUM = 258
+    \\};
+    \\// /* Value type.  */
+    \\pub const YYSTYPE = struct {
     \\};
     \\
 ;
