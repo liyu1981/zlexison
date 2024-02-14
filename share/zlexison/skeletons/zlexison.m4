@@ -334,29 +334,13 @@ $1([yyes_capacity])])])
 # ------------------------
 # Declaration of yyparse (and dependencies) when using the push parser
 # (including in pull mode).
-m4_define([_b4_declare_yyparse_push],
-[[#ifndef YYPUSH_MORE_DEFINED
-# define YYPUSH_MORE_DEFINED
-enum { YYPUSH_MORE = 4 };
-#endif
-
-typedef struct ]b4_prefix[pstate ]b4_prefix[pstate;
-
-]b4_pull_if([[
-int ]b4_prefix[parse (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[);]])[
-int ]b4_prefix[push_parse (]b4_prefix[pstate *ps]b4_pure_if([[,
-                  int pushed_char, ]b4_api_PREFIX[STYPE const *pushed_val]b4_locations_if([[, ]b4_api_PREFIX[LTYPE *pushed_loc]])])b4_user_formals[);
-]b4_pull_if([[int ]b4_prefix[pull_parse (]b4_prefix[pstate *ps]b4_user_formals[);]])[
-]b4_prefix[pstate *]b4_prefix[pstate_new (void);
-void ]b4_prefix[pstate_delete (]b4_prefix[pstate *ps);
-]])
+m4_define([_b4_declare_yyparse_push],[])
 
 
 # _b4_declare_yyparse
 # -------------------
 # When not the push parser.
-m4_define([_b4_declare_yyparse],[]m4_ifdef([b4_start_symbols],
-          [m4_map([_b4_declare_sub_yyparse], m4_defn([b4_start_symbols]))]))
+m4_define([_b4_declare_yyparse],[])
 
 
 # b4_declare_yyparse
@@ -439,9 +423,7 @@ b4_user_pre_prologue[
 ][]dnl
 b4_parse_error_bmatch([simple\|verbose],[[]],[[]])[
 ][
-]b4_locations_if([[][]])[
-]
-b4_push_if([b4_parse_state_variable_macros([b4_macro_undef])])[
-]b4_percent_code_get([[epilogue]])[]dnl
+]b4_locations_if([[][]])
+b4_percent_code_get([[epilogue]])[]dnl
 []dnl
 b4_output_end

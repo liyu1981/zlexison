@@ -558,7 +558,9 @@ fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
             yykind: isize, yyvaluep: *YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *YYLTYPE]])[][)
 void {
-][_ = yylocationp;
+][_ = yylocationp;]
+b4_locations_if([[_ = yyvaluep;]])
+[
     YY_SYMBOL_PRINT(yyctx, yymsg, @@enumFromInt(yykind));
 
   ]b4_symbol_actions([destructor])[
