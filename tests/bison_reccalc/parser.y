@@ -74,7 +74,6 @@
 
 %token <[]const u8> STR "string"
 %printer { try yyo.writer().print("{s}", .{$$}); } <[]const u8>
-%destructor { yyctx.allocator.free($$); } <[]const u8>
 
 // Precedence (from lowest to highest) and associativity.
 %left "+" "-"

@@ -448,10 +448,10 @@ pub const yysymbol_kind_t = enum(i32)
 # See README.
 m4_define([b4_symbol_value],
 [m4_ifval([$3],
-          [($1.$3)],
+          [$1.$3],
           [m4_ifval([$2],
                     [b4_symbol_if([$2], [has_type],
-                                  [($1.b4_symbol([$2], [type]))],
+                                  [$1.b4_symbol([$2], [type])],
                                   [$1])],
                     [$1])])])
 

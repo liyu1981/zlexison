@@ -1,7 +1,3 @@
-// zig fmt failed with:
-// <stdin>:814:2: error: expected type expression, found 'invalid bytes'
-// <stdin>:820:1: note: invalid byte: '#'
-// below is the generated source.
 // /* A Bison parser, made by Zison (v1) through GNU Bison 3.8.2.//  */
 // /* zison is part of zlexison: https://github.com/liyu1981/zlexison//  */
 
@@ -477,53 +473,52 @@ const YYMAXDEPTH = 10000;
 // /* Parser data structure.  */
 pub const yypstate = struct {
     pub const STATE = enum(u8) {
-        NEW = 0,
-        STARTED,
+        INIT = 0,
+        NEW = 1,
         FINISHED,
     };
 
     allocator: std.mem.Allocator,
 
     // /* Number of syntax errors so far.  */
-    yynerrs: usize,
+    yynerrs: usize = 0,
 
-    yystate: yy_state_fast_t,
+    yystate: yy_state_fast_t = 0,
     // /* Number of tokens to shift before error messages enabled.  */
-    yyerrstatus: usize,
+    yyerrstatus: usize = 0,
 
     // /* Refer to the stacks through separate pointers, to allow yyoverflow
     //    to reallocate them elsewhere.  */
 
     // /* Their size.  */
-    yystacksize: usize,
+    yystacksize: usize = YYINITDEPTH,
     yystack_alloc_size: usize = 0,
 
     // /* The state stack: array, bottom, top.  */
     yyssa: [YYINITDEPTH]yy_state_t = undefined,
-    yyss: [*]yy_state_t = undefined, // need init to ;
-    yyssp: [*]yy_state_t = undefined, // need init to ;
+    yyss: [*]yy_state_t = undefined, // need init to  = yyssa;
+    yyssp: [*]yy_state_t = undefined, // need init to  = yyss;
 
     // /* The semantic value stack: array, bottom, top.  */
     yyvsa: [YYINITDEPTH]YYSTYPE = undefined,
-    yyvs: [*]YYSTYPE = undefined, // need init to ;
-    yyvsp: [*]YYSTYPE = undefined, // need init to ;
+    yyvs: [*]YYSTYPE = undefined, // need init to  = yyvsa;
+    yyvsp: [*]YYSTYPE = undefined, // need init to  = yyvs;
 
     // /* The location stack: array, bottom, top.  */
     yylsa: [YYINITDEPTH]YYLTYPE = undefined,
-    yyls: [*]YYLTYPE = undefined, // need init to ;
-    yylsp: [*]YYLTYPE = undefined, // need init to ;
+    yyls: [*]YYLTYPE = undefined, // need init to  = yylsa;
+    yylsp: [*]YYLTYPE = undefined, // need init to  = yyls;
     // /* Whether this instance has not started parsing yet.
     //  * If 2, it corresponds to a finished parsing.  */
     yynew: STATE = .NEW,
 
     pub fn init(allocator: std.mem.Allocator) yypstate {
-        return .{
-            .allocator = allocator,
-            .yynerrs = 0,
-            .yystate = 0,
-            .yyerrstatus = 0,
-            .yystacksize = 0,
-        };
+        var yyps = yypstate{ .allocator = allocator };
+        yyps.yyss = &yyps.yyssa;
+        yyps.yyvs = &yyps.yyvsa;
+        yyps.yyls = &yyps.yylsa;
+        yyps.reset();
+        return yyps;
     }
 
     pub fn deinit(this: *yypstate) void {
@@ -537,7 +532,7 @@ pub const yypstate = struct {
         this.yyssp = &this.yyssa;
         this.yyvsp = &this.yyvsa;
         this.yylsp = &this.yylsa;
-        this.yyssp.* = 0;
+        this.yyssp[0] = 0;
         this.yynew = .NEW;
     }
 };
@@ -726,64 +721,11 @@ fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]u8, yypctx: *yypcontext_t) isiz
 fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
     _ = yylocationp;
     _ = yyvaluep;
+
     YY_SYMBOL_PRINT(yyctx, yymsg, @enumFromInt(yykind));
 
     // YY_USE (yykind);
 }
-
-// #define yynerrs yyps->yynerrs
-// #define yystate yyps->yystate
-// #define yyerrstatus yyps->yyerrstatus
-// #define yyssa yyps->yyssa
-// #define yyss yyps->yyss
-// #define yyssp yyps->yyssp
-// #define yyvsa yyps->yyvsa
-// #define yyvs yyps->yyvs
-// #define yyvsp yyps->yyvsp
-// #define yylsa yyps->yylsa
-// #define yyls yyps->yyls
-// #define yylsp yyps->yylsp
-// #define yystacksize yyps->yystacksize
-
-// /* Initialize the parser data structure.  */
-// fn yypstate_clear(yyps: *yypstate) void {
-//   yyps.yynerrs = 0;
-//   yyps.yystate = 0;
-//   yyps.yyerrstatus = 0;
-
-//   yyps.yyssp = yyss;
-//   yyps.yyvsp = yyvs;
-//   yyps.yylsp = yyls;
-
-// /* Initialize the state stack, in case yypcontext_expected_tokens is
-//   called before the first call to yyparse. */
-//   yyps.yyssp.* = 0;
-//   yyps.yynew = 1;
-// }
-
-// /* Initialize the parser data structure.  */
-// fn yypstate_new() *yypstate {
-//   yypstate *yyps;
-//   yyps = YY_CAST (yypstate *, YYMALLOC (sizeof *yyps));
-//   if (!yyps)
-//     return YY_NULLPTR;
-//   yystacksize = YYINITDEPTH;
-//   yyss = yyssa;
-//   yyvs = yyvsa;
-//   yyls = yylsa;
-//   yypstate_clear (yyps);
-//   return yyps;
-// }
-
-// fn
-// yypstate_delete (yyps: *yypstate) void {
-// /* If the stack was reallocated but the parse did not complete, then the
-//    stack still needs to be freed.  */
-//       if (yyps.yyss != yyps.yyssa) {
-//         YYSTACK_FREE (yyss);
-//       }
-// YYFREE (yyps);
-// }
 
 // collect all yyparse loop variables into one struct so that when we deal with
 // gotos, we will be with easier life
@@ -871,6 +813,7 @@ pub const yyparse_context_t = struct {
     yyps: *yypstate = undefined,
     yypushed_char: isize = undefined,
     yypushed_val: *YYSTYPE = undefined,
+
     yypushed_loc: *YYLTYPE = undefined,
 
     pub fn YYPOPSTACK(this: *yyparse_context_t, N: usize) void {
@@ -880,6 +823,38 @@ pub const yyparse_context_t = struct {
 
     pub fn yyerrok(this: *yyparse_context_t) void {
         this.yyps.yyerrstatus = 0;
+    }
+
+    pub fn copyFromYyps(this: *yyparse_context_t, yyps: *yypstate) void {
+        this.yynerrs = yyps.yynerrs;
+        this.yystate = yyps.yystate;
+        this.yyerrstatus = yyps.yyerrstatus;
+        this.yyssa = yyps.yyssa;
+        this.yyss = yyps.yyss;
+        this.yyssp = yyps.yyssp;
+        this.yyvsa = yyps.yyvsa;
+        this.yyvs = yyps.yyvs;
+        this.yyvsp = yyps.yyvsp;
+        this.yylsa = yyps.yylsa;
+        this.yyls = yyps.yyls;
+        this.yylsp = yyps.yylsp;
+        this.yystacksize = yyps.yystacksize;
+    }
+
+    pub fn copyToYyps(this: *yyparse_context_t, yyps: *yypstate) void {
+        yyps.yynerrs = this.yynerrs;
+        yyps.yystate = this.yystate;
+        yyps.yyerrstatus = this.yyerrstatus;
+        yyps.yyssa = this.yyssa;
+        yyps.yyss = this.yyss;
+        yyps.yyssp = this.yyssp;
+        yyps.yyvsa = this.yyvsa;
+        yyps.yyvs = this.yyvs;
+        yyps.yyvsp = this.yyvsp;
+        yyps.yylsa = this.yylsa;
+        yyps.yyls = this.yyls;
+        yyps.yylsp = this.yylsp;
+        yyps.yystacksize = this.yystacksize;
     }
 };
 
@@ -984,14 +959,14 @@ fn label_yybackup(yyctx: *yyparse_context_t) usize {
 
     // /* YYCHAR is either empty, or end-of-input, or a valid lookahead.  */
     if (yyctx.yychar == @intFromEnum(yytoken_kind_t.YYEMPTY)) {
-        if (yyctx.yyps.yynew == .NEW) {
+        if (yyctx.yyps.yynew == .INIT) {
             if (yydebug) {
                 std.debug.print("Return for a new token:\n", .{});
             }
             yyctx.yyresult = YYPUSH_MORE;
             return LABEL_YYPUSHRETURN;
         }
-        yyctx.yyps.yynew = .NEW;
+        yyctx.yyps.yynew = .INIT;
     }
     return LABEL_YYREAD_PUSHED_TOKEN;
 }
@@ -1101,7 +1076,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 std.debug.print("{d:.10}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr)});
             }
-            // #line 1189 "parser.zig"
+            // #line 1181 "parser.zig"
         },
 
         6 => { // /* line: error '\n'//  */
@@ -1109,50 +1084,55 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 yyctx.yyerrok();
             }
-            // #line 1195 "parser.zig"
+            // #line 1187 "parser.zig"
         },
 
         7 => { // /* expr: expr '+' term//  */
             // #line 44 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1201 "parser.zig"
+            // #line 1193 "parser.zig"
         },
 
         8 => { // /* expr: expr '-' term//  */
             // #line 45 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1207 "parser.zig"
+            // #line 1199 "parser.zig"
         },
 
         10 => { // /* term: term '*' fact//  */
             // #line 50 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1213 "parser.zig"
+            // #line 1205 "parser.zig"
         },
 
         11 => { // /* term: term '/' fact//  */
             // #line 51 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) / (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1219 "parser.zig"
+            // #line 1211 "parser.zig"
         },
 
         14 => { // /* fact: '(' expr ')'//  */
             // #line 57 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.fact();
                 (yyctx.yyval.fact) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr);
             }
-            // #line 1225 "parser.zig"
+            // #line 1217 "parser.zig"
         },
 
-        // #line 1229 "parser.zig"
+        // #line 1221 "parser.zig"
 
         else => {},
     }
@@ -1368,8 +1348,7 @@ fn label_yyinit(yyctx: *yyparse_context_t) usize {
 
     yyctx.yychar = @intFromEnum(yytoken_kind_t.YYEMPTY); // /* Cause a token to be read.  */
 
-    // TODO: fix this
-    // yyctx.yylsp[0] = yyctx.*yypushed_loc;
+    yyctx.yylsp[0] = yyctx.yypushed_loc.*;
 
     return LABEL_YYSETSTATE;
 }
@@ -1383,11 +1362,12 @@ pub fn yypush_parse(allocator: std.mem.Allocator, yyps: *yypstate, yypushed_char
     var yyctx = yyparse_context_t{
         .allocator = allocator,
     };
-    yyctx.yyss = yyctx.yyssa[0..].ptr;
+
+    yyctx.yyss = &yyctx.yyssa;
     yyctx.yyssp = yyctx.yyss;
-    yyctx.yyvs = yyctx.yyvsa[0..].ptr;
+    yyctx.yyvs = &yyctx.yyvsa;
     yyctx.yyvsp = yyctx.yyvs;
-    yyctx.yyls = yyctx.yylsa[0..].ptr;
+    yyctx.yyls = &yyctx.yylsa;
     yyctx.yylsp = yyctx.yyls;
     yyctx.yymsg = yyctx.yymsgbuf[0..];
 
@@ -1396,14 +1376,14 @@ pub fn yypush_parse(allocator: std.mem.Allocator, yyps: *yypstate, yypushed_char
     yyctx.yypushed_val = yypushed_val;
     yyctx.yypushed_loc = yypushed_loc;
 
+    yyctx.copyFromYyps(yyps);
+
     var loop_control: usize = LABEL_YYSETSTATE;
 
     switch (yyps.yynew) {
-        .NEW => {
+        .INIT => {
             yyctx.yyn = yypact[@intCast(yyctx.yystate)];
             loop_control = LABEL_YYREAD_PUSHED_TOKEN;
-            // TODO: goto!
-            // goto yyread_pushed_token;
         },
 
         .FINISHED => {
@@ -1490,6 +1470,9 @@ pub fn yypush_parse(allocator: std.mem.Allocator, yyps: *yypstate, yypushed_char
     if (yyctx.yymsg.ptr != yyctx.yymsgbuf[0..].ptr) {
         yyctx.allocator.free(yyctx.yymsg);
     }
+
+    yyctx.copyToYyps(yyps);
+
     return yyctx.yyresult;
 }
 // #line 60 "parser.y"
