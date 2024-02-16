@@ -10,7 +10,7 @@
 %type  <f64> expr term fact
 
 /* Don't share global variables between the scanner and the parser.  */
-%define api.pure full
+// %define api.pure full
 /* Generate a push parser.  */
 %define api.push-pull push
 
