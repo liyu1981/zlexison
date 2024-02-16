@@ -1,5 +1,6 @@
 parser
 main
+scan
 src/share.tgz.bin
 src/m4.bin
 src/bison.bin

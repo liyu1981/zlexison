@@ -7,9 +7,25 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug pushcalc a.out",
+      "program": "${workspaceFolder}/bison/bison/examples/c/pushcalc/a.out",
+      "args": [],
+      "cwd": "${workspaceFolder}/bison/bison/examples/c/pushcalc"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug bison_parser scan",
+      "program": "${workspaceFolder}/scan",
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug bison_parser parser",
       "program": "${workspaceFolder}/parser",
-      "args": ["tests/bison_reccalc/data.txt"],
+      "args": [],
       "cwd": "${workspaceFolder}"
     },
     {

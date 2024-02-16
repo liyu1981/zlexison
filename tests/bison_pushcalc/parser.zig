@@ -1090,7 +1090,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
         7 => { // /* expr: expr '+' term//  */
             // #line 44 "parser.y"
             {
-                yyctx.yyval = YYSTYPE.expr();
+                // yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
             // #line 1193 "parser.zig"
@@ -1099,7 +1099,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
         8 => { // /* expr: expr '-' term//  */
             // #line 45 "parser.y"
             {
-                yyctx.yyval = YYSTYPE.expr();
+                // yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
             // #line 1199 "parser.zig"
@@ -1108,7 +1108,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
         10 => { // /* term: term '*' fact//  */
             // #line 50 "parser.y"
             {
-                yyctx.yyval = YYSTYPE.term();
+                // yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
             // #line 1205 "parser.zig"
@@ -1117,7 +1117,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
         11 => { // /* term: term '/' fact//  */
             // #line 51 "parser.y"
             {
-                yyctx.yyval = YYSTYPE.term();
+                // yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) / (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
             // #line 1211 "parser.zig"
@@ -1126,7 +1126,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
         14 => { // /* fact: '(' expr ')'//  */
             // #line 57 "parser.y"
             {
-                yyctx.yyval = YYSTYPE.fact();
+                // yyctx.yyval = YYSTYPE.fact();
                 (yyctx.yyval.fact) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr);
             }
             // #line 1217 "parser.zig"
@@ -1505,6 +1505,7 @@ pub fn main() !u8 {
 
     while (f_reader.streamUntilDelimiter(line_writer, '\n', null)) {
         defer line.clearRetainingCapacity();
+        try line.append('\n');
 
         try stdout_writer.print("read {d}bytes\n", .{line.items.len});
 
@@ -1527,14 +1528,10 @@ pub fn main() !u8 {
                 return 1;
             };
             if (tk == YYLexer.YY_TERMINATED) break;
-            switch (tk) {
-                @as(usize, @intFromEnum(YYLexer.TOK_TYPE.YYEOF)) => {
-                    break;
-                },
-                else => |cur_tk| {
-                    _ = try yypush_parse(arena, &yyps, @intCast(cur_tk), &yylval, &yylloc);
-                },
-            }
+            try stdout_writer.print("tk: {any} at loc: {s}\n", .{ tk, yylloc });
+            const result = try yypush_parse(arena, &yyps, @intCast(tk), &yylval, &yylloc);
+            if (result != YYPUSH_MORE)
+                break;
         }
     } else |err| switch (err) {
         error.EndOfStream => {},

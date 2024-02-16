@@ -728,7 +728,7 @@ typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
 [m4_bmatch(b4_percent_define_get([[api.value.type]]),
 [union\|union-directive],
 [b4_percent_define_get_syncline([[api.value.union.name]])dnl
-[pub const ]b4_percent_define_get([[api.value.union.name]])[ = union {
+[pub const ]b4_percent_define_get([[api.value.union.name]])[ = extern union {
 ]b4_user_union_members[
 };]b4_percent_define_get_syncline([[api.value.union.name]])dnl
 ])])])

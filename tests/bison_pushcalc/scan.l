@@ -31,6 +31,8 @@
 
 [ \t]+   {}
 
+\n { return '\n'; }
+
 .        {
     std.io.getStdErr().writer().print(
       "syntax error, invalid character: {c} at line: {d}, column: {d}.\n",

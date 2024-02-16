@@ -87,6 +87,7 @@ pub fn main() !u8 {
 
     while (f_reader.streamUntilDelimiter(line_writer, '\n', null)) {
       defer line.clearRetainingCapacity();
+      try line.append('\n');
 
       try stdout_writer.print("read {d}bytes\n", .{line.items.len});
 
@@ -109,14 +110,10 @@ pub fn main() !u8 {
               return 1;
           };
           if (tk == YYLexer.YY_TERMINATED) break;
-          switch (tk) {
-              @as(usize, @intFromEnum(YYLexer.TOK_TYPE.YYEOF)) => {
-                  break;
-              },
-              else => |cur_tk| {
-                _ = try yypush_parse(arena, &yyps, @intCast(cur_tk), &yylval, &yylloc);
-              },
-          }
+          try stdout_writer.print("tk: {any} at loc: {s}\n", .{ tk, yylloc });
+          const result = try yypush_parse(arena, &yyps, @intCast(tk), &yylval, &yylloc);
+          if (result != YYPUSH_MORE)
+              break;
       }
     } else |err| switch(err) {
       error.EndOfStream => {},
