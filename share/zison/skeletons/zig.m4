@@ -143,7 +143,7 @@ m4_define([b4_accept],
 # --------------------------------
 # See README.
 m4_define([b4_lhs_value],
-[b4_symbol_value(yyctx.yyval, [$1], [$2])])
+[yyctx.yyval = YYSTYPE.b4_symbol([$1], [id])();][b4_symbol_value(yyctx.yyval, [$1], [$2])])
 
 
 # b4_rhs_value(RULE-LENGTH, POS, [SYMBOL-NUM], [TYPE])
@@ -695,12 +695,12 @@ fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 ]])[
 ]b4_yylocation_print_define[
 
-fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
+fn YY_SYMBOL_PRINT(title: []const u8, token: yysymbol_kind_t, yyval_: *YYSTYPE, yyloc_: *YYLTYPE) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
         std.debug.print("{s}, ", .{@@tagName(token)});
-        yy_symbol_value_print(std.io.getStdErr(), @@as(isize, @@intFromEnum(token)), &yyctx.yylval, &yyctx.yyloc) catch {};
-        std.debug.print(", {s}\n", .{yyctx.yyloc});
+        yy_symbol_value_print(std.io.getStdErr(), @@as(isize, @@intFromEnum(token)), yyval_, yyloc_) catch {};
+        std.debug.print(", {s}\n", .{yyloc_.*});
         std.debug.print("\n", .{});
     }
 }
@@ -1417,7 +1417,7 @@ yypull_parse (yypstate *yyps]b4_user_formals[)
 pub const yyparse_context_t = struct {
     allocator: std.mem.Allocator,
 
-    ]// b4_formals_struct(b4_parse_param)[,
+    ]m4_ifset([b4_user_formals], [b4_formals_struct(b4_user_formals)])[,
     ]b4_pure_if([b4_declare_scanner_communication_variables])[
     ]b4_declare_parser_state_variables([init])[
     ]b4_lac_if([[
@@ -1465,7 +1465,7 @@ pub const yyparse_context_t = struct {
       this.yyps.yyerrstatus = 0;
     }
   ]])
-  [
+  []b4_push_if([[
 
   pub fn copyFromYyps(this: *yyparse_context_t, yyps: *yypstate) void {
       this.yynerrs = yyps.yynerrs;
@@ -1501,7 +1501,7 @@ pub const yyparse_context_t = struct {
       yyps.yylsp = this.yylsp;
       ])[
       yyps.yystacksize = this.yystacksize;
-  }
+  }]])[
 };
 
 const LABEL_YYNEWSTATE = 0x0000000000000001;
@@ -1662,7 +1662,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
   else
     {
       yyctx.yytoken = YYTRANSLATE(@@as(usize, @@intCast(yyctx.yychar)));
-      YY_SYMBOL_PRINT(yyctx, "Next token is", yyctx.yytoken);
+      YY_SYMBOL_PRINT("Next token is", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     }
 
   // /* If the proper action on seeing token YYTOKEN is to reduce or to
@@ -1693,7 +1693,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
     }
 
     // /* Shift the lookahead token.  */
-    YY_SYMBOL_PRINT(yyctx, "Shifting", yyctx.yytoken);
+    YY_SYMBOL_PRINT("Shifting", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     yyctx.yystate = yyctx.yyn;
     yyctx.yyvsp += 1;
     yyctx.yyvsp[0] = yyctx.yylval;
@@ -1767,7 +1767,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     //    case of YYERROR or YYBACKUP, subsequent parser actions might lead
     //    to an incorrect destructor call or verbose syntax error message
     //    before the lookahead is translated.  */
-    YY_SYMBOL_PRINT(yyctx, "-> $$ =", @@enumFromInt(yyr1[@@intCast(yyctx.yyn)]));
+    YY_SYMBOL_PRINT("-> $$ =", @@enumFromInt(yyr1[@@intCast(yyctx.yyn)]), &yyctx.yyval, &yyctx.yyloc);
 
     yyctx.YYPOPSTACK (yyctx.yylen);
     yyctx.yylen = 0;
@@ -1806,7 +1806,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
       [custom],
       [[{
         var yypctx
-          = yypcontext_t{]b4_push_if([[.yyps = yyctx.yyps,]])[.yytoken =]b4_lac_if([[yyctx.yyesa, &yyctx.yyes, &yctx.yyes_capacity]])[yyctx.yytoken]b4_locations_if([[, .yylloc = &yyctx.yylloc]])[};]b4_lac_if([[
+          = yypcontext_t{]b4_push_if([[.yyps = yyctx.yyps,]],[[.yyssp = yyctx.yyssp,]])[.yytoken =]b4_lac_if([[yyctx.yyesa, &yyctx.yyes, &yctx.yyes_capacity]])[yyctx.yytoken]b4_locations_if([[, .yylloc = &yyctx.yylloc]])b4_lac_if([[
         if (yyctx.yychar != ]b4_symbol(empty, id)[)
           YY_LAC_ESTABLISH;]])[
         if (yyreport_syntax_error (&yypctx]m4_ifset([b4_parse_param],
@@ -1817,7 +1817,7 @@ fn label_yyerrlab(yyctx: *yyparse_context_t) usize {
 [[      // yyerror (]b4_yyerror_args[YY_("syntax error"));]],
 [[      {
         var yypctx
-          = yypcontext_t{]b4_push_if([[.yyps = yyctx.yyps,]])[.yytoken = ]b4_lac_if([[yyctx.yyesa, &yyctx.yyes, &yyctx.yyes_capacity]])[yyctx.yytoken]b4_locations_if([[, .yylloc = &yyctx.yylloc]])[};
+          = yypcontext_t{]b4_push_if([[.yyps = yyctx.yyps,]], [[.yyssp = yyctx.yyssp,]])[.yytoken = ]b4_lac_if([[yyctx.yyesa, &yyctx.yyes, &yyctx.yyes_capacity]])[yyctx.yytoken]b4_locations_if([[, .yylloc = &yyctx.yylloc]])[};
         var yymsgp: []const u8 = "syntax error";
         var yysyntax_error_status = yysyntax_error (&yyctx.yymsg_alloc, &yyctx.yymsg, &yypctx);]b4_lac_if([[
         if (yyctx.yychar != ]b4_symbol(empty, id)[)
@@ -1936,7 +1936,7 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
   YYLLOC_DEFAULT (&yyctx.yylsp[0], yyctx.yyerror_range[0..].ptr, 2);]])[
 
   // /* Shift the error token.  */
-  YY_SYMBOL_PRINT(yyctx, "Shifting", @@enumFromInt(YY_ACCESSING_SYMBOL(@@intCast(yyctx.yyn))));
+  YY_SYMBOL_PRINT("Shifting", @@enumFromInt(YY_ACCESSING_SYMBOL(@@intCast(yyctx.yyn))), &(yyctx.yyvsp[0]), &(yyctx.yylsp[0]));
 
   yyctx.yystate = yyctx.yyn;
   return LABEL_YYNEWSTATE;

@@ -349,12 +349,12 @@ fn yy_location_print_(yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
     }
 }
 
-fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
+fn YY_SYMBOL_PRINT(title: []const u8, token: yysymbol_kind_t, yyval_: *YYSTYPE, yyloc_: *YYLTYPE) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
         std.debug.print("{s}, ", .{@tagName(token)});
-        yy_symbol_value_print(std.io.getStdErr(), @as(isize, @intFromEnum(token)), &yyctx.yylval, &yyctx.yyloc) catch {};
-        std.debug.print(", {s}\n", .{yyctx.yyloc});
+        yy_symbol_value_print(std.io.getStdErr(), @as(isize, @intFromEnum(token)), yyval_, yyloc_) catch {};
+        std.debug.print(", {s}\n", .{yyloc_.*});
         std.debug.print("\n", .{});
     }
 }
@@ -373,7 +373,7 @@ fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTY
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).NUM)});
             }
-            // #line 472 "parser.zig"
+            // #line 474 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_expr => { // /* expr//  */
@@ -381,7 +381,7 @@ fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTY
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).expr)});
             }
-            // #line 478 "parser.zig"
+            // #line 480 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_term => { // /* term//  */
@@ -389,7 +389,7 @@ fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTY
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).term)});
             }
-            // #line 484 "parser.zig"
+            // #line 486 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_fact => { // /* fact//  */
@@ -397,7 +397,7 @@ fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTY
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).fact)});
             }
-            // #line 490 "parser.zig"
+            // #line 492 "parser.zig"
         },
 
         else => {},
@@ -721,10 +721,9 @@ fn yysyntax_error(yymsg_alloc: *usize, yymsg: *[]u8, yypctx: *yypcontext_t) isiz
 // `-----------------------------------------------*/
 
 fn yydestruct(yyctx: *yyparse_context_t, yymsg: []const u8, yykind: isize, yyvaluep: *YYSTYPE, yylocationp: *YYLTYPE) void {
-    _ = yylocationp;
-    _ = yyvaluep;
+    _ = yyctx;
 
-    YY_SYMBOL_PRINT(yyctx, yymsg, @enumFromInt(yykind));
+    YY_SYMBOL_PRINT(yymsg, @enumFromInt(yykind), yyvaluep, yylocationp);
 
     // YY_USE (yykind);
 }
@@ -1007,7 +1006,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
         return LABEL_YYERRLAB1;
     } else {
         yyctx.yytoken = YYTRANSLATE(@as(usize, @intCast(yyctx.yychar)));
-        YY_SYMBOL_PRINT(yyctx, "Next token is", yyctx.yytoken);
+        YY_SYMBOL_PRINT("Next token is", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     }
 
     // /* If the proper action on seeing token YYTOKEN is to reduce or to
@@ -1032,7 +1031,7 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {
     }
 
     // /* Shift the lookahead token.  */
-    YY_SYMBOL_PRINT(yyctx, "Shifting", yyctx.yytoken);
+    YY_SYMBOL_PRINT("Shifting", yyctx.yytoken, &yyctx.yylval, &yyctx.yylloc);
     yyctx.yystate = yyctx.yyn;
     yyctx.yyvsp += 1;
     yyctx.yyvsp[0] = yyctx.yylval;
@@ -1082,7 +1081,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 std.debug.print("{d:.10}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr)});
             }
-            // #line 1216 "parser.zig"
+            // #line 1218 "parser.zig"
         },
 
         6 => { // /* line: error '\n'//  */
@@ -1090,50 +1089,55 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 yyctx.yyerrok();
             }
-            // #line 1222 "parser.zig"
+            // #line 1224 "parser.zig"
         },
 
         7 => { // /* expr: expr '+' term//  */
             // #line 44 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1228 "parser.zig"
+            // #line 1230 "parser.zig"
         },
 
         8 => { // /* expr: expr '-' term//  */
             // #line 45 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1234 "parser.zig"
+            // #line 1236 "parser.zig"
         },
 
         10 => { // /* term: term '*' fact//  */
             // #line 50 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1240 "parser.zig"
+            // #line 1242 "parser.zig"
         },
 
         11 => { // /* term: term '/' fact//  */
             // #line 51 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) / (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1246 "parser.zig"
+            // #line 1248 "parser.zig"
         },
 
         14 => { // /* fact: '(' expr ')'//  */
             // #line 57 "parser.y"
             {
+                yyctx.yyval = YYSTYPE.fact();
                 (yyctx.yyval.fact) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr);
             }
-            // #line 1252 "parser.zig"
+            // #line 1254 "parser.zig"
         },
 
-        // #line 1256 "parser.zig"
+        // #line 1258 "parser.zig"
 
         else => {},
     }
@@ -1148,7 +1152,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     //    case of YYERROR or YYBACKUP, subsequent parser actions might lead
     //    to an incorrect destructor call or verbose syntax error message
     //    before the lookahead is translated.  */
-    YY_SYMBOL_PRINT(yyctx, "-> $$ =", @enumFromInt(yyr1[@intCast(yyctx.yyn)]));
+    YY_SYMBOL_PRINT("-> $$ =", @enumFromInt(yyr1[@intCast(yyctx.yyn)]), &yyctx.yyval, &yyctx.yyloc);
 
     yyctx.YYPOPSTACK(yyctx.yylen);
     yyctx.yylen = 0;
@@ -1288,7 +1292,7 @@ fn label_yyerrlab1(yyctx: *yyparse_context_t) usize {
     YYLLOC_DEFAULT(&yyctx.yylsp[0], yyctx.yyerror_range[0..].ptr, 2);
 
     // /* Shift the error token.  */
-    YY_SYMBOL_PRINT(yyctx, "Shifting", @enumFromInt(YY_ACCESSING_SYMBOL(@intCast(yyctx.yyn))));
+    YY_SYMBOL_PRINT("Shifting", @enumFromInt(YY_ACCESSING_SYMBOL(@intCast(yyctx.yyn))), &(yyctx.yyvsp[0]), &(yyctx.yylsp[0]));
 
     yyctx.yystate = yyctx.yyn;
     return LABEL_YYNEWSTATE;

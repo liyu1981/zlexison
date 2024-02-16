@@ -23,8 +23,6 @@ m4_pushdef([b4_copyright_years],
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 m4_include(b4_skeletonsdir/[c.m4])
-m4_include(b4_skeletonsdir/[zig-builtin.m4])
-
 
 ## ---------- ##
 ## api.pure.  ##
@@ -36,9 +34,9 @@ b4_percent_define_check_values([[[[api.pure]],
 
 m4_define([b4_pure_flag], [[0]])
 m4_case(b4_percent_define_get([[api.pure]]),
-        [false], [m4_define([b4_pure_flag], [[0]])],
-        [true],  [m4_define([b4_pure_flag], [[1]])],
-        [],      [m4_define([b4_pure_flag], [[1]])],
+        [false], [m4_define([b4_pure_flag], [[2]])],
+        [true],  [m4_define([b4_pure_flag], [[2]])],
+        [],      [m4_define([b4_pure_flag], [[2]])],
         [full],  [m4_define([b4_pure_flag], [[2]])])
 
 m4_define([b4_pure_if],
@@ -398,8 +396,7 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
       [b4_percent_define_default([[api.header.include]],
                                  [["@basename(]b4_spec_header_file[@)"]])])
 
-
-
+b4_percent_define_use([api.location.type])
 
 ## -------------- ##
 ## Output files.  ##

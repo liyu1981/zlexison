@@ -612,6 +612,25 @@ m4_append([b4_union_members],
 m4_expand([m4_format([  %-40s ,%s],
                      m4_expand([b4_symbol([$1], [type_tag]): b4_symbol([$1], [type])]),
                      [b4_symbol_tag_comment([$1])])]))
+m4_define([b4_union_member_default_constructor],
+  m4_expand([m4_format([  pub fn default() YYSTYPE {
+    return YYSTYPE{ .%s = YYSTYPE.defaultValue(%s) };
+  }
+
+  ],
+    m4_expand([b4_symbol([$1], [type_tag])]),
+    m4_expand([b4_symbol([$1], [type])])
+  )]))
+m4_append([b4_union_member_constructors],
+m4_expand([m4_format([  pub fn %s() YYSTYPE {
+  return YYSTYPE{ .%s = YYSTYPE.defaultValue(%s) };
+}
+
+],
+  m4_expand([b4_symbol([$1], [type_tag])]),
+  m4_expand([b4_symbol([$1], [type_tag])]),
+  m4_expand([b4_symbol([$1], [type])])
+)]))
 ])
 
 
@@ -728,8 +747,25 @@ typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
 [m4_bmatch(b4_percent_define_get([[api.value.type]]),
 [union\|union-directive],
 [b4_percent_define_get_syncline([[api.value.union.name]])dnl
-[pub const ]b4_percent_define_get([[api.value.union.name]])[ = extern union {
+[pub const ]b4_percent_define_get([[api.value.union.name]])[ = union(enum) {
 ]b4_user_union_members[
+]b4_union_member_default_constructor[
+]b4_union_member_constructors[
+
+    fn defaultValue(comptime T: type) T {
+        switch (T) {
+            []u8, []const u8, [:0]u8, [:0]const u8 => return "",
+
+            u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, isize, usize, c_char, c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong, c_longdouble, f16, f32, f64, f80, f128 => return 0,
+
+            bool => return false,
+
+            else => {
+                @@compileError("provide default value in zlexison.zig for type:" ++ @@typeName(T));
+            },
+        }
+    }
+
 };]b4_percent_define_get_syncline([[api.value.union.name]])dnl
 ])])])
 
@@ -750,9 +786,11 @@ m4_define([b4_declare_yylstype],
 [b4_value_type_define[]b4_locations_if([
 b4_location_type_define])
 
-b4_pure_if([], [[extern ]b4_api_PREFIX[STYPE ]b4_prefix[lval;
-]b4_locations_if([[extern ]b4_api_PREFIX[LTYPE ]b4_prefix[lloc;]])])[]dnl
+b4_pure_if([], [])[]dnl
 ])
+#b4_pure_if([], [[extern ]b4_api_PREFIX[STYPE ]b4_prefix[lval;
+#]b4_locations_if([[extern ]b4_api_PREFIX[LTYPE ]b4_prefix[lloc;]])])[]dnl
+#])
 
 
 # b4_YYDEBUG_define

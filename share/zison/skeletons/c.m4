@@ -474,8 +474,8 @@ m4_define([b4_formal],
 
 
 m4_define([b4_formals_struct],
-[m4_if([$#], [0], [void],
-       [$#$1], [1], [void],
+[m4_if([$#], [0], [// void],
+       [$#$1], [1], [// void],
                [m4_map_sep([b4_formal_struct], [, ], [$@])])])
 
 m4_define([b4_formal_struct],
@@ -558,10 +558,10 @@ fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
             yykind: isize, yyvaluep: *YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *YYLTYPE]])[][)
 void {
-][_ = yylocationp;]
-b4_locations_if([[_ = yyvaluep;]])
+][_ = yyctx;]
+b4_locations_if([[]])
 [
-    YY_SYMBOL_PRINT(yyctx, yymsg, @@enumFromInt(yykind));
+    YY_SYMBOL_PRINT(yymsg, @@enumFromInt(yykind), yyvaluep, yylocationp);
 
   ]b4_symbol_actions([destructor])[
 }]dnl

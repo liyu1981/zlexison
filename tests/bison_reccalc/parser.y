@@ -162,6 +162,7 @@ pub fn main() !u8 {
 
     while (f_reader.streamUntilDelimiter(line_writer, '\n', null)) {
       defer line.clearRetainingCapacity();
+      try line.append('\n');
 
       var res: Result = Result{};
       try stdout_writer.print("read {d}bytes\n", .{line.items.len});

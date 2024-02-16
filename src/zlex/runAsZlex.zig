@@ -139,6 +139,9 @@ const zlexison_file_tpl =
     \\};
     \\// /* Value type.  */
     \\pub const YYSTYPE = struct {
+    \\    pub fn default() YYSTYPE {
+    \\        return YYSTYPE{};
+    \\    }
     \\};
     \\
 ;
