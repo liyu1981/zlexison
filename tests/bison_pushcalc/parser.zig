@@ -352,7 +352,9 @@ fn yy_location_print_(yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
 fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
-        std.debug.print("{any}, {any}, {s}\n", .{ token, yyctx.yylval, yyctx.yyloc });
+        std.debug.print("{s}, ", .{@tagName(token)});
+        yy_symbol_value_print(std.io.getStdErr(), @as(isize, @intFromEnum(token)), &yyctx.yylval, &yyctx.yyloc) catch {};
+        std.debug.print(", {s}\n", .{yyctx.yyloc});
         std.debug.print("\n", .{});
     }
 }
@@ -835,9 +837,11 @@ pub const yyparse_context_t = struct {
         this.yyvsa = yyps.yyvsa;
         this.yyvs = yyps.yyvs;
         this.yyvsp = yyps.yyvsp;
+
         this.yylsa = yyps.yylsa;
         this.yyls = yyps.yyls;
         this.yylsp = yyps.yylsp;
+
         this.yystacksize = yyps.yystacksize;
     }
 
@@ -851,9 +855,11 @@ pub const yyparse_context_t = struct {
         yyps.yyvsa = this.yyvsa;
         yyps.yyvs = this.yyvs;
         yyps.yyvsp = this.yyvsp;
+
         yyps.yylsa = this.yylsa;
         yyps.yyls = this.yyls;
         yyps.yylsp = this.yylsp;
+
         yyps.yystacksize = this.yystacksize;
     }
 };
@@ -1076,7 +1082,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 std.debug.print("{d:.10}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr)});
             }
-            // #line 1181 "parser.zig"
+            // #line 1216 "parser.zig"
         },
 
         6 => { // /* line: error '\n'//  */
@@ -1084,55 +1090,50 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
             {
                 yyctx.yyerrok();
             }
-            // #line 1187 "parser.zig"
+            // #line 1222 "parser.zig"
         },
 
         7 => { // /* expr: expr '+' term//  */
             // #line 44 "parser.y"
             {
-                // yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1193 "parser.zig"
+            // #line 1228 "parser.zig"
         },
 
         8 => { // /* expr: expr '-' term//  */
             // #line 45 "parser.y"
             {
-                // yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1199 "parser.zig"
+            // #line 1234 "parser.zig"
         },
 
         10 => { // /* term: term '*' fact//  */
             // #line 50 "parser.y"
             {
-                // yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1205 "parser.zig"
+            // #line 1240 "parser.zig"
         },
 
         11 => { // /* term: term '/' fact//  */
             // #line 51 "parser.y"
             {
-                // yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) / (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1211 "parser.zig"
+            // #line 1246 "parser.zig"
         },
 
         14 => { // /* fact: '(' expr ')'//  */
             // #line 57 "parser.y"
             {
-                // yyctx.yyval = YYSTYPE.fact();
                 (yyctx.yyval.fact) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr);
             }
-            // #line 1217 "parser.zig"
+            // #line 1252 "parser.zig"
         },
 
-        // #line 1221 "parser.zig"
+        // #line 1256 "parser.zig"
 
         else => {},
     }

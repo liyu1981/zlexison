@@ -143,7 +143,7 @@ m4_define([b4_accept],
 # --------------------------------
 # See README.
 m4_define([b4_lhs_value],
-[yyctx.yyval = YYSTYPE.b4_symbol([$1], [id])();][b4_symbol_value(yyctx.yyval, [$1], [$2])])
+[b4_symbol_value(yyctx.yyval, [$1], [$2])])
 
 
 # b4_rhs_value(RULE-LENGTH, POS, [SYMBOL-NUM], [TYPE])
@@ -698,7 +698,9 @@ fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 fn YY_SYMBOL_PRINT(yyctx: *yyparse_context_t, title: []const u8, token: yysymbol_kind_t) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
-        std.debug.print("{any}, {any}, {s}\n", .{ token, yyctx.yylval, yyctx.yyloc });
+        std.debug.print("{s}, ", .{@@tagName(token)});
+        yy_symbol_value_print(std.io.getStdErr(), @@as(isize, @@intFromEnum(token)), &yyctx.yylval, &yyctx.yyloc) catch {};
+        std.debug.print(", {s}\n", .{yyctx.yyloc});
         std.debug.print("\n", .{});
     }
 }
