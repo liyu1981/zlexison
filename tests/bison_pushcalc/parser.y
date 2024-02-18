@@ -18,7 +18,7 @@
 %define parse.error detailed
 
 /* Generate the parser description file (calc.output).  */
-%verbose
+// %verbose
 
  /* Enable run-time traces (yydebug).  */
 %define parse.trace

@@ -482,15 +482,10 @@ const yy_state_fast_t = isize;
 
 ]b4_attribute_define[
 
-]b4_parse_assert_if([[// #ifdef NDEBUG
-// # define YY_ASSERT(E) ((void) (0 && (E)))
-// #else
-// # include <assert.h> /* INFRINGES ON USER NAME SPACE */
-// # define YY_ASSERT(E) assert (E)
-// #endif
+]b4_parse_assert_if([[
 const YY_ASSERT = std.debug.assert;
 ]],
-[[// #define YY_ASSERT(E) ((void) (0 && (E)))
+[[
 const YY_ASSERT = std.debug.assert;]])[
 
 ][]dnl

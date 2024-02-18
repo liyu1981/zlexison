@@ -181,18 +181,7 @@ m4_define([b4_rhs_location],
 # Define the return type of the parsing function for SYMBOL-NUM, and
 # declare its parsing function.
 m4_define([_b4_declare_sub_yyparse],
-[[
-// Return type when parsing one ]_b4_symbol($1, tag)[.
-typedef struct
-{]b4_symbol_if([$1], [has_type], [[
-  ]_b4_symbol($1, type)[ yyvalue;]])[
-  int yystatus;
-  int yynerrs;
-} ]b4_prefix[parse_]_b4_symbol($1, id)[_t;
-
-// Parse one ]_b4_symbol($1, tag)[.
-]b4_prefix[parse_]_b4_symbol($1, id)[_t ]b4_prefix[parse_]_b4_symbol($1, id)[ (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[);
-]])
+[[]])
 
 
 # _b4_first_switching_token
@@ -207,19 +196,7 @@ m4_define([_b4_first_switching_token],
 # --------------------------------------------------------------------
 # Define the parsing function for START-SYMBOL-NUM.
 m4_define([_b4_define_sub_yyparse],
-[[
-]b4_prefix[parse_]_b4_symbol($1, id)[_t
-]b4_prefix[parse_]_b4_symbol($1, id)[ (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)
-{
-  ]b4_prefix[parse_]_b4_symbol($1, id)[_t yyres;
-  yy_parse_impl_t yyimpl;
-  yyres.yystatus = yy_parse_impl (]b4_symbol($2, id)[, &yyimpl]m4_ifset([b4_parse_param],
-                           [[, ]b4_args(b4_parse_param)])[);]b4_symbol_if([$1], [has_type], [[
-  yyres.yyvalue = yyimpl.yyvalue.]b4_symbol($1, slot)[;]])[
-  yyres.yynerrs = yyimpl.yynerrs;
-  return yyres;
-}
-]])
+[[]])
 
 
 # b4_declare_scanner_communication_variables
@@ -228,28 +205,7 @@ m4_define([_b4_define_sub_yyparse],
 # pure-parser.
 m4_define([b4_declare_scanner_communication_variables], [[
 ]m4_ifdef([b4_start_symbols], [],
-[[// /* Lookahead token kind.  */
-yychar: isize = @@intFromEnum(yytoken_kind_t.TOK_YYEMPTY), // /* Cause a token to be read.  */
-]])[
-]b4_pure_if([[
-// /* The semantic value of the lookahead symbol.  */
-// /* Default value used for initialization, for pacifying older GCCs
-//    or non-GCC compilers.  */
-// YY_INITIAL_VALUE (static YYSTYPE yyval_default;)
-// YYSTYPE yylval YY_INITIAL_VALUE (= yyval_default);
-yyval_default: YYSTYPE = undefined,
-yylval: YYSTYPE = undefined,
-]b4_locations_if([[
-
-// /* Location data for the lookahead symbol.  */
-yyloc_default: YYLTYPE = YYLTYPE]b4_yyloc_default[,
-yylloc: YYLTYPE = YYLTYPE]b4_yyloc_default[,]])],
-[[// /* The semantic value of the lookahead symbol.  */
-yylval: YYSTYPE,]b4_locations_if([[
-// /* Location data for the lookahead symbol.  */
-yylloc: YYLTYPE,]b4_yyloc_default[]])[
-// /* Number of syntax errors so far.  */
-yynerrs: int ,]])])
+[[]])[]])
 
 
 # b4_declare_parser_state_variables([INIT])
@@ -259,41 +215,7 @@ yynerrs: int ,]])])
 # If INIT is non-null, initialize these variables.
 m4_define([b4_declare_parser_state_variables],
 [b4_pure_if([[
-    // /* Number of syntax errors so far.  */
-    yynerrs: usize]m4_ifval([$1], [ = 0])[,
-]])[
-    yystate: yy_state_fast_t]m4_ifval([$1], [ = 0])[,
-    // /* Number of tokens to shift before error messages enabled.  */
-    yyerrstatus: usize]m4_ifval([$1], [ = 0])[,
-
-    // /* Refer to the stacks through separate pointers, to allow yyoverflow
-    //    to reallocate them elsewhere.  */
-
-    // /* Their size.  */
-    yystacksize: usize]m4_ifval([$1], [ = YYINITDEPTH])[,
-    yystack_alloc_size: usize = 0,
-
-    // /* The state stack: array, bottom, top.  */
-    yyssa: [YYINITDEPTH]yy_state_t = undefined,
-    yyss: [*]yy_state_t = undefined, // need init to ]m4_ifval([$1], [ = yyssa])[;
-    yyssp: [*]yy_state_t = undefined, // need init to ]m4_ifval([$1], [ = yyss])[;
-
-    // /* The semantic value stack: array, bottom, top.  */
-    yyvsa: [YYINITDEPTH]YYSTYPE = undefined,
-    yyvs: [*]YYSTYPE = undefined, // need init to ]m4_ifval([$1], [ = yyvsa])[;
-    yyvsp: [*]YYSTYPE = undefined, // need init to ]m4_ifval([$1], [ = yyvs])[;]b4_locations_if([[
-
-    // /* The location stack: array, bottom, top.  */
-    yylsa: [YYINITDEPTH]YYLTYPE = undefined,
-    yyls: [*]YYLTYPE = undefined, // need init to ]m4_ifval([$1], [ = yylsa])[;
-    yylsp: [*]YYLTYPE = undefined, // need init to ]m4_ifval([$1], [ = yyls])[;]])[]b4_lac_if([[
-
-    yyesa: @{]b4_percent_define_get([[parse.lac.es-capacity-initial]])[@}yy_state_t,
-    yyes: *yy_state_t, // need init to ]m4_ifval([$1], [ = yyesa])[;
-    yyes_capacity: usize = ][]m4_ifval([$1],
-            [m4_do([ = b4_percent_define_get([[parse.lac.es-capacity-initial]]) < YYMAXDEPTH],
-                   [ ? b4_percent_define_get([[parse.lac.es-capacity-initial]])],
-                   [ : YYMAXDEPTH])])[,]])])
+]])[]])
 
 
 m4_define([b4_macro_define],
