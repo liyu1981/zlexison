@@ -62,6 +62,7 @@ pub fn build(b: *std.Build) !void {
     bison_share_bin_step.makeFn = bisonShareBinStepMakeFn;
 
     zison_exe.step.dependOn(bison_bin_step);
+    zison_exe.step.dependOn(bison_share_bin_step);
     zison_exe.step.dependOn(&m4phony.step);
     zison_exe.step.dependOn(&libbison_a.step);
     zison_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
@@ -158,11 +159,7 @@ fn bisonShareBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !voi
         const result = try zcmd.run(.{
             .allocator = allocator,
             .commands = &[_][]const []const u8{
-                &[_][]const u8{
-                    "tar",
-                    "czf",
-                    "src/share.tgz.bin",
-                },
+                &[_][]const u8{ "tar", "czf", "src/share.tgz.bin", "./share" },
             },
             .cwd = g_build.pathFromRoot(""),
         });
@@ -178,6 +175,18 @@ fn bisonShareBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !voi
                     "0644",
                     g_build.pathFromRoot("src/share.tgz.bin"),
                 },
+            },
+            .cwd = g_build.pathFromRoot(""),
+        });
+        result.assertSucceededPanic(.{});
+    }
+
+    {
+        const result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{ "zig", "run", "src/calcHash.zig", "--", "src/share.tgz.bin" },
+                &[_][]const u8{ "tee", "src/share.tgz.bin.hash" },
             },
             .cwd = g_build.pathFromRoot(""),
         });

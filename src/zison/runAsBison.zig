@@ -2,6 +2,7 @@ const std = @import("std");
 const zcmd = @import("zcmd");
 const bisonbin = @embedFile("../bison.bin");
 const sharebin = @embedFile("../share.tgz.bin");
+const sharebin_hash = @embedFile("../share.tgz.bin.hash");
 const version = @import("../version.zig");
 
 pub fn runAsBison(
@@ -101,38 +102,71 @@ fn ensureShare(allocator: std.mem.Allocator, zison_exe_dir: []const u8, bison_re
         break :brk true;
     };
     if (exist) {
-        return pkgdatadir;
+        const genuine = brk: {
+            const hash_dev_f_path = try std.fs.path.join(allocator, &[_][]const u8{ zison_exe_dir, "share/.zlexison.hash.dev" });
+            defer allocator.free(hash_dev_f_path);
+            std.fs.accessAbsolute(hash_dev_f_path, .{}) catch {
+                const hash_f_path = try std.fs.path.join(allocator, &[_][]const u8{ zison_exe_dir, "share/.zlexison.hash" });
+                defer allocator.free(hash_f_path);
+                var hash_f = std.fs.openFileAbsolute(hash_f_path, .{}) catch {
+                    break :brk false;
+                };
+                defer hash_f.close();
+                const content = hash_f.readToEndAlloc(allocator, std.math.maxInt(usize)) catch {
+                    break :brk false;
+                };
+                defer allocator.free(content);
+                break :brk std.mem.eql(u8, content, sharebin_hash);
+            };
+            break :brk true;
+        };
+        if (genuine) {
+            return pkgdatadir;
+        } else {
+            return ensureShareByCreate(allocator, zison_exe_dir, bison_rel_pkgdatadir);
+        }
     } else {
-        const tgz_f_path = try std.fs.path.join(allocator, &[_][]const u8{ zison_exe_dir, "share.tar.gz" });
-        defer allocator.free(tgz_f_path);
-        var tgz_f = try std.fs.createFileAbsolute(tgz_f_path, .{});
-        defer tgz_f.close();
-        try tgz_f.writeAll(sharebin);
-
-        {
-            var result = try zcmd.run(.{
-                .allocator = allocator,
-                .commands = &[_][]const []const u8{
-                    &[_][]const u8{ "tar", "xzf", tgz_f_path },
-                },
-                .cwd = zison_exe_dir,
-            });
-            defer result.deinit();
-            result.assertSucceededPanic(.{ .check_stderr_empty = false });
-        }
-
-        {
-            var result = try zcmd.run(.{
-                .allocator = allocator,
-                .commands = &[_][]const []const u8{
-                    &[_][]const u8{ "rm", tgz_f_path },
-                },
-                .cwd = zison_exe_dir,
-            });
-            defer result.deinit();
-            result.assertSucceededPanic(.{ .check_stderr_empty = false });
-        }
-
-        return pkgdatadir;
+        return ensureShareByCreate(allocator, zison_exe_dir, bison_rel_pkgdatadir);
     }
+}
+
+fn ensureShareByCreate(allocator: std.mem.Allocator, zison_exe_dir: []const u8, bison_rel_pkgdatadir: []const u8) ![]const u8 {
+    const pkgdatadir = try std.fs.path.join(allocator, &[_][]const u8{ zison_exe_dir, bison_rel_pkgdatadir });
+    const tgz_f_path = try std.fs.path.join(allocator, &[_][]const u8{ zison_exe_dir, "share.tar.gz" });
+    defer allocator.free(tgz_f_path);
+    var tgz_f = try std.fs.createFileAbsolute(tgz_f_path, .{});
+    defer tgz_f.close();
+    try tgz_f.writeAll(sharebin);
+
+    {
+        var result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{ "tar", "xzf", tgz_f_path },
+            },
+            .cwd = zison_exe_dir,
+        });
+        defer result.deinit();
+        result.assertSucceededPanic(.{ .check_stderr_empty = false });
+    }
+
+    {
+        var result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{ "rm", tgz_f_path },
+            },
+            .cwd = zison_exe_dir,
+        });
+        defer result.deinit();
+        result.assertSucceededPanic(.{ .check_stderr_empty = false });
+    }
+
+    const hash_f_path = try std.fs.path.join(allocator, &[_][]const u8{ zison_exe_dir, "share/.zlexison.hash" });
+    defer allocator.free(hash_f_path);
+    var hash_f = try std.fs.createFileAbsolute(hash_f_path, .{});
+    defer hash_f.close();
+    try hash_f.writeAll(sharebin_hash);
+
+    return pkgdatadir;
 }

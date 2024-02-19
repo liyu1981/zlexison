@@ -2,6 +2,7 @@ parser
 main
 scan
 src/share.tgz.bin
+src/share.tgz.bin.hash
 src/m4.bin
 src/bison.bin
 src/flex.bin
