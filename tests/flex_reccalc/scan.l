@@ -37,7 +37,7 @@ pub var context: Context = undefined;
 [0-9]+   {
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
-    yylval.TOK_NUM = @intCast(intval);
+    yylval.* = .{ .TOK_NUM = @intCast(intval) };
     return @intFromEnum(TOK_TYPE.TOK_NUM);
   }
 
@@ -63,7 +63,7 @@ pub var context: Context = undefined;
     if (context.nesting == 0) {
         BEGIN(INITIAL, yyg);
         if (context.str.items.len > 0) {
-            yylval.TOK_STR = context.str.items[0..];
+            yylval.* = .{ .TOK_STR = context.str.items[0..] };
             return @intFromEnum(TOK_TYPE.TOK_STR);
         }
     } else {
@@ -98,7 +98,7 @@ pub fn main() !u8 {
     _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    var yylval: YYLexer.YYSTYPE = .{};
+    var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
     _ = &yylval;
     var yylloc: YYLexer.YYLTYPE = .{};
     _ = &yylloc;
