@@ -18,6 +18,7 @@ const YYBISON_VERSION = "3.8.2";
 const YYSKELETON_NAME = "zig.m4";
 
 // /* Pure parsers.  */
+// in zison, no matter set or not set %define api.pure, it will always be "pure"
 const YYPURE = 2;
 
 // /* Push parsers.  */
@@ -68,7 +69,7 @@ pub var yydebug: bool = YYDEBUG == 1;
 
 const YYLexer = @import("scan.zig");
 
-// #line 77 "parser.zig"
+// #line 78 "parser.zig"
 
 // /* Token kinds.  */
 pub const yytoken_kind_t = enum(i32) {
@@ -118,7 +119,6 @@ pub const yy_state_t = isize;
 // /* State numbers in computations.  */
 const yy_state_fast_t = isize;
 
-// #define YY_ASSERT(E) ((void) (0 && (E)))
 const YY_ASSERT = std.debug.assert;
 
 // /* A type that is properly aligned for any stack member.  */
@@ -225,7 +225,7 @@ fn YYTRANSLATE(YYX: anytype) yysymbol_kind_t {
 const yytranslate = [_]isize{ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 9, 10, 7, 5, 2, 6, 2, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3 };
 
 // /* YYRLINE[YYN] -- Source line where rule number YYN was defined.//  */
-const yyrline = [_]isize{ 0, 33, 33, 34, 38, 39, 40, 44, 45, 46, 50, 51, 52, 56, 57 };
+const yyrline = [_]isize{ 0, 35, 35, 36, 40, 41, 42, 46, 47, 48, 52, 53, 54, 58, 59 };
 
 // /** Accessing symbol of state STATE.  */
 inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
@@ -369,35 +369,35 @@ fn yy_symbol_value_print(yyo: std.fs.File, yykind: isize, yyvaluep: *const YYSTY
     // if (yyvaluep == null) return;
     switch (@as(yysymbol_kind_t, @enumFromInt(yykind))) {
         yysymbol_kind_t.YYSYMBOL_NUM => { // /* "number"//  */
-            // #line 27 "parser.y"
+            // #line 29 "parser.y"
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).NUM)});
             }
-            // #line 474 "parser.zig"
+            // #line 475 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_expr => { // /* expr//  */
-            // #line 27 "parser.y"
+            // #line 29 "parser.y"
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).expr)});
             }
-            // #line 480 "parser.zig"
+            // #line 481 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_term => { // /* term//  */
-            // #line 27 "parser.y"
+            // #line 29 "parser.y"
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).term)});
             }
-            // #line 486 "parser.zig"
+            // #line 487 "parser.zig"
         },
 
         yysymbol_kind_t.YYSYMBOL_fact => { // /* fact//  */
-            // #line 27 "parser.y"
+            // #line 29 "parser.y"
             {
                 try yyo.writer().print("{any}", .{((yyvaluep).fact)});
             }
-            // #line 492 "parser.zig"
+            // #line 493 "parser.zig"
         },
 
         else => {},
@@ -741,8 +741,6 @@ pub const yyparse_context_t = struct {
     // /* The semantic value of the lookahead symbol.  */
     // /* Default value used for initialization, for pacifying older GCCs
     //    or non-GCC compilers.  */
-    // YY_INITIAL_VALUE (static YYSTYPE yyval_default;)
-    // YYSTYPE yylval YY_INITIAL_VALUE (= yyval_default);
     yyval_default: YYSTYPE = undefined,
     yylval: YYSTYPE = undefined,
 
@@ -1077,67 +1075,67 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     try yy_reduce_print(yyctx, @intCast(yyctx.yyn));
     switch (yyctx.yyn) {
         5 => { // /* line: expr '\n'//  */
-            // #line 39 "parser.y"
+            // #line 41 "parser.y"
             {
                 std.debug.print("{d:.10}\n", .{(ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr)});
             }
-            // #line 1218 "parser.zig"
+            // #line 1217 "parser.zig"
         },
 
         6 => { // /* line: error '\n'//  */
-            // #line 40 "parser.y"
+            // #line 42 "parser.y"
             {
                 yyctx.yyerrok();
             }
-            // #line 1224 "parser.zig"
+            // #line 1223 "parser.zig"
         },
 
         7 => { // /* expr: expr '+' term//  */
-            // #line 44 "parser.y"
+            // #line 46 "parser.y"
             {
                 yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) + (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1230 "parser.zig"
+            // #line 1229 "parser.zig"
         },
 
         8 => { // /* expr: expr '-' term//  */
-            // #line 45 "parser.y"
+            // #line 47 "parser.y"
             {
                 yyctx.yyval = YYSTYPE.expr();
                 (yyctx.yyval.expr) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).expr) - (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).term);
             }
-            // #line 1236 "parser.zig"
+            // #line 1235 "parser.zig"
         },
 
         10 => { // /* term: term '*' fact//  */
-            // #line 50 "parser.y"
+            // #line 52 "parser.y"
             {
                 yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) * (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1242 "parser.zig"
+            // #line 1241 "parser.zig"
         },
 
         11 => { // /* term: term '/' fact//  */
-            // #line 51 "parser.y"
+            // #line 53 "parser.y"
             {
                 yyctx.yyval = YYSTYPE.term();
                 (yyctx.yyval.term) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -2).term) / (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 0).fact);
             }
-            // #line 1248 "parser.zig"
+            // #line 1247 "parser.zig"
         },
 
         14 => { // /* fact: '(' expr ')'//  */
-            // #line 57 "parser.y"
+            // #line 59 "parser.y"
             {
                 yyctx.yyval = YYSTYPE.fact();
                 (yyctx.yyval.fact) = (ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, -1).expr);
             }
-            // #line 1254 "parser.zig"
+            // #line 1253 "parser.zig"
         },
 
-        // #line 1258 "parser.zig"
+        // #line 1257 "parser.zig"
 
         else => {},
     }
@@ -1480,7 +1478,7 @@ pub fn yypush_parse(allocator: std.mem.Allocator, yyps: *yypstate, yypushed_char
 
     return yyctx.yyresult;
 }
-// #line 60 "parser.y"
+// no yacc// #line 62 "parser.y"
 
 pub fn main() !u8 {
     const args = try std.process.argsAlloc(std.heap.page_allocator);

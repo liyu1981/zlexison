@@ -10,7 +10,9 @@
 %type  <f64> expr term fact
 
 /* Don't share global variables between the scanner and the parser.  */
+// in zison api.pure will always be full, no matter set or not set it
 // %define api.pure full
+
 /* Generate a push parser.  */
 %define api.push-pull push
 

@@ -71,6 +71,7 @@ const YYBISON_VERSION = "]b4_version_string[";
 const YYSKELETON_NAME = ]b4_skeleton[;]m4_ifdef([b4_pure_flag], [[
 
 // /* Pure parsers.  */
+// in zison, no matter set or not set %define api.pure, it will always be "pure"
 const YYPURE = ]b4_pure_flag])[;]m4_ifdef([b4_push_flag], [[
 
 // /* Push parsers.  */

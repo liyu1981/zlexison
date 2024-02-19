@@ -237,8 +237,6 @@ yychar: isize = @@intFromEnum(yytoken_kind_t.]b4_symbol(empty, id)[), // /* Caus
 // /* The semantic value of the lookahead symbol.  */
 // /* Default value used for initialization, for pacifying older GCCs
 //    or non-GCC compilers.  */
-// YY_INITIAL_VALUE (static YYSTYPE yyval_default;)
-// YYSTYPE yylval YY_INITIAL_VALUE (= yyval_default);
 yyval_default: YYSTYPE = undefined,
 yylval: YYSTYPE = undefined,
 ]b4_locations_if([[
@@ -251,7 +249,7 @@ yylval: YYSTYPE,]b4_locations_if([[
 // /* Location data for the lookahead symbol.  */
 yylloc: YYLTYPE,]b4_yyloc_default[]])[
 // /* Number of syntax errors so far.  */
-yynerrs: int ,]])])
+yynerrs: usize ,]])])
 
 
 # b4_declare_parser_state_variables([INIT])
@@ -358,12 +356,12 @@ m4_define([b4_declare_yyparse],
 # Comply with POSIX Yacc.
 # <https://austingroupbugs.net/view.php?id=1388#c5220>
 m4_define([b4_declare_yyerror_and_yylex],
-[b4_posix_if([[#if !defined ]b4_prefix[error && !defined ]b4_api_PREFIX[ERROR_IS_DECLARED
-]b4_function_declare([b4_prefix[error]], void, b4_yyerror_formals)[
-#endif
-#if !defined ]b4_prefix[lex && !defined ]b4_api_PREFIX[LEX_IS_DECLARED
-]b4_function_declare([b4_prefix[lex]], int, b4_yylex_formals)[
-#endif
+[b4_posix_if([[// #if !defined ]b4_prefix[error && !defined ]b4_api_PREFIX[ERROR_IS_DECLARED
+// ]b4_function_declare([b4_prefix[error]], void, b4_yyerror_formals)[
+// #endif
+// #if !defined ]b4_prefix[lex && !defined ]b4_api_PREFIX[LEX_IS_DECLARED
+// ]b4_function_declare([b4_prefix[lex]], int, b4_yylex_formals)[
+// #endif
 ]])dnl
 ])
 
@@ -634,8 +632,9 @@ fn yysymbol_name(yysymbol: usize) [*c]const u8 {
   const yy_sname = [_][]const u8 {
   ]b4_symbol_names[
   };]b4_has_translations_if([[
-  /* YYTRANSLATABLE[SYMBOL-NUM] -- Whether YY_SNAME[SYMBOL-NUM] is
-     internationalizable.  */
+  // /* YYTRANSLATABLE[SYMBOL-NUM] -- Whether YY_SNAME[SYMBOL-NUM] is
+  //    internationalizable.  */
+  // TODO: find a case to test this
   static ]b4_int_type_for([b4_translatable])[ yytranslatable[] =
   {
   ]b4_translatable[
@@ -796,16 +795,17 @@ pub const yypstate = struct {
 // static char yypstate_allocated = 0;]])])[
 ]b4_lac_if([[
 
-/* Given a state stack such that *YYBOTTOM is its bottom, such that
-   *YYTOP is either its top or is YYTOP_EMPTY to indicate an empty
-   stack, and such that *YYCAPACITY is the maximum number of elements it
-   can hold without a reallocation, make sure there is enough room to
-   store YYADD more elements.  If not, allocate a new stack using
-   YYSTACK_ALLOC, copy the existing elements, and adjust *YYBOTTOM,
-   *YYTOP, and *YYCAPACITY to reflect the new capacity and memory
-   location.  If *YYBOTTOM != YYBOTTOM_NO_FREE, then free the old stack
-   using YYSTACK_FREE.  Return 0 if successful or if no reallocation is
-   required.  Return YYENOMEM if memory is exhausted.  */
+// TODO: get LAC done
+// /* Given a state stack such that *YYBOTTOM is its bottom, such that
+//    *YYTOP is either its top or is YYTOP_EMPTY to indicate an empty
+//    stack, and such that *YYCAPACITY is the maximum number of elements it
+//    can hold without a reallocation, make sure there is enough room to
+//    store YYADD more elements.  If not, allocate a new stack using
+//    YYSTACK_ALLOC, copy the existing elements, and adjust *YYBOTTOM,
+//    *YYTOP, and *YYCAPACITY to reflect the new capacity and memory
+//    location.  If *YYBOTTOM != YYBOTTOM_NO_FREE, then free the old stack
+//    using YYSTACK_FREE.  Return 0 if successful or if no reallocation is
+//    required.  Return YYENOMEM if memory is exhausted.  */
 static int
 yy_lac_stack_realloc (YYPTRDIFF_T *yycapacity, YYPTRDIFF_T yyadd,
 #if ]b4_api_PREFIX[DEBUG
@@ -1144,27 +1144,18 @@ fn yypcontext_expected_tokens (yypctx: *yypcontext_t,
 
 ]b4_parse_error_bmatch(
          [custom],
-[[/* The kind of the lookahead of this context.  */
-static yysymbol_kind_t
-yypcontext_token (const yypcontext_t *yyctx) YY_ATTRIBUTE_UNUSED;
+[[// /* The kind of the lookahead of this context.  */
 
-static yysymbol_kind_t
-yypcontext_token (const yypcontext_t *yyctx)
-{
-  return yyctx->yytoken;
+fn yypcontext_token(yypctx: *yypcontext_t) yysymbol_kind_t {
+  return yypctx.yytoken;
 }
 
-]b4_locations_if([[/* The location of the lookahead of this context.  */
-static YYLTYPE *
-yypcontext_location (const yypcontext_t *yyctx) YY_ATTRIBUTE_UNUSED;
-
-static YYLTYPE *
-yypcontext_location (const yypcontext_t *yyctx)
-{
-  return yyctx->yylloc;
+]b4_locations_if([[// /* The location of the lookahead of this context.  */
+fn yypcontext_location(yypctx: *yypcontext_t) *YYLTYPE {
+  return yypctx.yylloc;
 }]])[
 
-/* User defined function to report a syntax error.  */
+// /* User defined function to report a syntax error.  */
 static int
 yyreport_syntax_error (const yypcontext_t *yyctx]b4_user_formals[);]],
          [detailed\|verbose],
