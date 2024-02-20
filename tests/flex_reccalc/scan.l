@@ -37,7 +37,7 @@ pub var context: Context = undefined;
 [0-9]+   {
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
-    yylval.* = .{ .TOK_NUM = @intCast(intval) };
+    yylval_.* = .{ .TOK_NUM = @intCast(intval) };
     return @intFromEnum(TOK_TYPE.TOK_NUM);
   }
 
@@ -63,7 +63,7 @@ pub var context: Context = undefined;
     if (context.nesting == 0) {
         BEGIN(INITIAL, yyg);
         if (context.str.items.len > 0) {
-            yylval.* = .{ .TOK_STR = context.str.items[0..] };
+            yylval_.* = .{ .TOK_STR = context.str.items[0..] };
             return @intFromEnum(TOK_TYPE.TOK_STR);
         }
     } else {
@@ -76,57 +76,3 @@ pub var context: Context = undefined;
 <<EOF>>  { return @intFromEnum(TOK_TYPE.TOK_EOF); }
 
 %%
-
-pub fn main() !u8 {
-    const args = try std.process.argsAlloc(std.heap.page_allocator);
-    defer std.heap.page_allocator.free(args);
-    const allocator = std.heap.page_allocator;
-
-    const stdout_writer = std.io.getStdOut().writer();
-
-    var f: std.fs.File = brk: {
-      if (args.len > 1) {
-        break :brk try std.fs.cwd().openFile(args[1], .{});
-      } else {
-        break :brk std.io.getStdIn();
-      }
-    };
-    defer f.close();
-
-    var content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
-    defer allocator.free(content);
-    _ = &content;
-    try stdout_writer.print("read {d}bytes\n", .{content.len});
-
-    var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    _ = &yylval;
-    var yylloc: YYLexer.YYLTYPE = .{};
-    _ = &yylloc;
-
-    var lexer = YYLexer{ .allocator = std.heap.page_allocator };
-    YYLexer.context = YYLexer.Context.init(allocator);
-    defer YYLexer.context.deinit();
-
-    try YYLexer.yylex_init(&lexer);
-    defer YYLexer.yylex_destroy(&lexer);
-
-    _ = try YYLexer.yy_scan_string(content, lexer.yyg);
-
-    while (true) {
-        const tk = lexer.yylex(&yylval, &yylloc) catch |err| {
-            std.debug.print("{any}\n", .{err});
-            return 1;
-        };
-        if (tk == YYLexer.YY_TERMINATED) break;
-        switch (@as(TOK_TYPE, @enumFromInt(tk))) {
-            .TOK_EOF => {
-                break;
-            },
-            else => |cur_tk| {
-                try stdout_writer.print("tk: {any} at loc: {s}\n", .{ cur_tk, yylloc });
-            },
-        }
-    }
-
-    return 0;
-}

@@ -6,7 +6,7 @@ const runAsM4 = @import("runAsM4.zig");
 const version = @import("version.zig");
 
 const usage =
-    \\ usage: zlex -o <output_file_path> -z <zlexison_file_path> <input_file_path>
+    \\ usage: zlex -o <output_file_path> -z <zlexison_file_path> -m <yes/no> <input_file_path>
     \\        zlex flex <all_flex_options>
     \\        zlex --version
     \\
@@ -25,7 +25,8 @@ const ZlexOptions = struct {
     input_file_path: []const u8,
     output_file_path: []const u8,
     zlexison_file_path: ?[]const u8,
-    zlex_exe: []const u8 = undefined,
+    zlex_exe: []const u8,
+    need_main: bool,
 };
 
 const ZlexError = error{
@@ -40,6 +41,7 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         .output_file_path = "",
         .zlexison_file_path = null,
         .zlex_exe = args[0],
+        .need_main = true,
     };
     const args1 = args[1..];
     var i: usize = 0;
@@ -75,6 +77,22 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         if (std.mem.eql(u8, arg, "-z")) {
             if (i + 1 < args1.len) {
                 r.zlexison_file_path = args1[i + 1];
+                i += 2;
+                continue;
+            } else {
+                return ZlexError.InvalidOption;
+            }
+        }
+
+        if (std.mem.eql(u8, arg, "-m")) {
+            if (i + 1 < args1.len) {
+                if (std.mem.eql(u8, args1[i + 1], "yes")) {
+                    r.need_main = true;
+                } else if (std.mem.eql(u8, args1[i + 1], "no")) {
+                    r.need_main = false;
+                } else {
+                    return ZlexError.InvalidOption;
+                }
                 i += 2;
                 continue;
             } else {
@@ -131,6 +149,7 @@ pub fn main() !u8 {
                 .output_file_path = opts.output_file_path,
                 .zlexison_file_path = opts.zlexison_file_path,
                 .zlex_exe = opts.zlex_exe,
+                .need_main = opts.need_main,
             }) catch |err| {
                 printErrAndUsageExit(err);
             };
