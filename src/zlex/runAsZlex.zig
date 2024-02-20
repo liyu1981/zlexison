@@ -7,7 +7,7 @@ pub fn runAsZlex(opts: struct {
     output_file_path: []const u8,
     zlexison_file_path: ?[]const u8,
     zlex_exe: []const u8,
-    need_main: bool,
+    need_main_fn: bool,
 }) !void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena_allocator.deinit();
@@ -48,7 +48,7 @@ pub fn runAsZlex(opts: struct {
                     opts.zlex_exe,
                     "zflex",
                     "-t",
-                    if (opts.need_main) "--main" else "--nomain",
+                    if (opts.need_main_fn) "--main" else "--nomain",
                     opts.input_file_path,
                 },
             },

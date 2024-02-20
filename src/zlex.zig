@@ -26,7 +26,7 @@ const ZlexOptions = struct {
     output_file_path: []const u8,
     zlexison_file_path: ?[]const u8,
     zlex_exe: []const u8,
-    need_main: bool,
+    need_main_fn: bool,
 };
 
 const ZlexError = error{
@@ -41,7 +41,7 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         .output_file_path = "",
         .zlexison_file_path = null,
         .zlex_exe = args[0],
-        .need_main = true,
+        .need_main_fn = true,
     };
     const args1 = args[1..];
     var i: usize = 0;
@@ -87,9 +87,9 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         if (std.mem.eql(u8, arg, "-m")) {
             if (i + 1 < args1.len) {
                 if (std.mem.eql(u8, args1[i + 1], "yes")) {
-                    r.need_main = true;
+                    r.need_main_fn = true;
                 } else if (std.mem.eql(u8, args1[i + 1], "no")) {
-                    r.need_main = false;
+                    r.need_main_fn = false;
                 } else {
                     return ZlexError.InvalidOption;
                 }
@@ -149,7 +149,7 @@ pub fn main() !u8 {
                 .output_file_path = opts.output_file_path,
                 .zlexison_file_path = opts.zlexison_file_path,
                 .zlex_exe = opts.zlex_exe,
-                .need_main = opts.need_main,
+                .need_main_fn = opts.need_main_fn,
             }) catch |err| {
                 printErrAndUsageExit(err);
             };

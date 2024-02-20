@@ -6,7 +6,7 @@ const runAsM4 = @import("runAsM4.zig");
 const version = @import("version.zig");
 
 const usage =
-    \\ usage: zison -o <output_file_path> <input_file_path>
+    \\ usage: zison -o <output_file_path> -m <yes|no> <input_file_path>
     \\        zison zlexison -o <output_file_path> <input_file_path>
     \\        zison bison <all_bison_options>
     \\        zison --version
@@ -26,6 +26,7 @@ const ZisonOptions = struct {
     runMode: ZisonRunMode,
     input_file_path: []const u8,
     outut_file_path: []const u8,
+    need_main_fn: bool,
     zison_exe: []const u8 = undefined,
 };
 
@@ -38,6 +39,7 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
         .runMode = .zison,
         .input_file_path = "",
         .outut_file_path = "",
+        .need_main_fn = true,
         .zison_exe = args[0],
     };
     const args1 = args[1..];
@@ -69,6 +71,22 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
         if (std.mem.eql(u8, arg, "-o")) {
             if (i + 1 < args1.len) {
                 r.outut_file_path = args1[i + 1];
+                i += 2;
+                continue;
+            } else {
+                return ZisonError.InvalidOption;
+            }
+        }
+
+        if (std.mem.eql(u8, arg, "-m")) {
+            if (i + 1 < args1.len) {
+                if (std.mem.eql(u8, args1[i + 1], "yes")) {
+                    r.need_main_fn = true;
+                } else if (std.mem.eql(u8, args1[i + 1], "no")) {
+                    r.need_main_fn = false;
+                } else {
+                    return ZisonError.InvalidOption;
+                }
                 i += 2;
                 continue;
             } else {
@@ -123,6 +141,7 @@ pub fn main() !u8 {
                 .input_file_path = opts.input_file_path,
                 .output_file_path = opts.outut_file_path,
                 .zison_exe = opts.zison_exe,
+                .need_main_fn = opts.need_main_fn,
             });
         },
         .zbison => {

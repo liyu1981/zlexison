@@ -6,6 +6,7 @@ pub fn runAsZison(opts: struct {
     input_file_path: []const u8,
     output_file_path: []const u8,
     zison_exe: []const u8,
+    need_main_fn: bool,
 }) !void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena_allocator.deinit();
@@ -14,6 +15,13 @@ pub fn runAsZison(opts: struct {
     const arena = arena_allocator.allocator();
 
     {
+        var envmap = try std.process.getEnvMap(arena);
+        defer envmap.deinit();
+
+        if (opts.need_main_fn) {
+            try envmap.put("ZISON_NEED_MAIN", "1");
+        }
+
         // zbison in default enabled
         //   --locations
         const result = try zcmd.run(.{
@@ -28,6 +36,7 @@ pub fn runAsZison(opts: struct {
                     opts.input_file_path,
                 },
             },
+            .env_map = &envmap,
         });
         result.assertSucceeded(.{
             .print_cmd_term = false,

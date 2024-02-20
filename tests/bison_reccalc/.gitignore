@@ -1,3 +1,7 @@
 parser.output
 parser.tab.c
 parser
+scan
+parser.zig
+scan.zig
+zlexison.zig

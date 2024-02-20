@@ -399,6 +399,63 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
                                  [["@basename(]b4_spec_header_file[@)"]])])
 
 
+## -------------- ##
+## main fn        ##
+## -------------- ##
+m4_define([b4_main_fn], m4_ifdef([z4_need_main], [[
+pub fn main() !u8 {
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+    defer std.heap.page_allocator.free(args);
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
+
+    var f: std.fs.File = brk: {
+        if (args.len > 1) {
+            break :brk try std.fs.cwd().openFile(args[[1]], .{});
+        } else {
+            break :brk std.io.getStdIn();
+        }
+    };
+    defer f.close();
+
+    const stdout_writer = std.io.getStdOut().writer();
+
+    var line = std.ArrayList(u8).init(arena);
+    defer line.deinit();
+    const line_writer = line.writer();
+    var buf_f_reader = std.io.bufferedReader(f.reader());
+    const f_reader = buf_f_reader.reader();
+
+    YYParser.yydebug = true;
+
+    while (f_reader.streamUntilDelimiter(line_writer, '\n', null)) {
+      defer line.clearRetainingCapacity();
+      try line.append('\n');
+
+      var res: Result = Result{};
+      try stdout_writer.print("read {d}bytes\n", .{line.items.len});
+
+      var scanner = YYLexer{ .allocator = arena };
+      YYLexer.context = YYLexer.Context.init(arena);
+      defer YYLexer.context.deinit();
+
+      try YYLexer.yylex_init(&scanner);
+      defer YYLexer.yylex_destroy(&scanner);
+
+      _ = try YYLexer.yy_scan_string(line.items, scanner.yyg);
+
+      _ = try YYParser.yyparse(arena, &scanner, &res);
+
+      std.debug.print("{any}\n", .{res});
+    } else |err| switch(err) {
+      error.EndOfStream => {},
+      else => return err,
+    }
+
+    return 0;
+}
+]], []))
 
 
 ## -------------- ##
@@ -2165,5 +2222,6 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
     return yyctx.yyresult;
 }
 ]b4_percent_code_get([[epilogue]])[]dnl
+b4_main_fn[]dnl
 b4_epilogue[]dnl
 b4_output_end
