@@ -3,3 +3,4 @@ scan
 parser
 zlexison.zig
 parser.tab.c
+parser.zig
