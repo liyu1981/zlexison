@@ -1563,6 +1563,17 @@ const LABEL_YYERRORLAB = 0x0000000000001000;
 const LABEL_YYRETURNLAB = 0x0000000000002000;
 const LABEL_YYINIT = 0x0000000000004000;
 
+// alias for using in rules,
+//   in bison do: YYABORT;
+//   in zison do: return YYABORT;
+const YYACCEPT = LABEL_YYACCEPTLAB;
+//   in bison do: YYERROR;
+//   in zison do: return YYERROR;
+const YYERROR = LABEL_YYERRORLAB;
+//   in bison do: YYNOMEM;
+//   in zison do: return YYNOMEM;
+const YYNOMEM = LABEL_YYEXHAUSTEDLAB;
+
 // /*------------------------------------------------------------.
 // | yynewstate -- push a new state, which is found in yystate.  |
 // `------------------------------------------------------------*/
@@ -2092,7 +2103,7 @@ yyparse (]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)
 
 static int
 yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [, b4_formals(b4_parse_param)])[)]],
-[[pub fn yyparse (allocator: std.mem.Allocator,]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)]])])[ !usize {
+[[pub fn yyparse (allocator: std.mem.Allocator,]m4_ifset([b4_parse_param], [b4_formals(b4_parse_param)], [void])[)]])])[ anyerror!usize {
   // replace all local variables with yyps, so later when access should use yyps
   var yyctx = yyparse_context_t{
     .allocator = allocator,

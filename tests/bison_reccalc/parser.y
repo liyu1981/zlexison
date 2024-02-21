@@ -126,9 +126,23 @@ exp:
 | "-" exp %prec UNARY  { $$ = -$2; }
 | STR
   {
-    const int_value = try std.fmt.parseInt(c_int, $1, 10);
-    yyctx.allocator.free($1);
-    $$ = int_value;
+    defer yyctx.allocator.free($1);
+    const input_with_newline = try std.fmt.allocPrint(yyctx.allocator, "{s}\n", .{$1});
+    defer yyctx.allocator.free(input_with_newline);
+    var res: Result = Result{};
+    var new_scanner = YYLexer{ .allocator = yyctx.allocator };
+    YYLexer.context = YYLexer.Context.init(yyctx.allocator);
+    defer YYLexer.context.deinit();
+    try YYLexer.yylex_init(&new_scanner);
+    defer YYLexer.yylex_destroy(&new_scanner);
+    _ = try YYLexer.yy_scan_string(input_with_newline, new_scanner.yyg);
+    _ = try YYParser.yyparse(yyctx.allocator, &new_scanner, &res);
+    if (res.nerrs > 0) {
+      yyctx.res.nerrs += res.nerrs;
+      return YYERROR;
+    } else {
+      $$ = res.value;
+    }
   }
 ;
 
