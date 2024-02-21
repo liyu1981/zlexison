@@ -4,12 +4,12 @@
 
     .dependencies = .{
         .zcmd = .{
-            .url = "../zcmd",
+            .url = "https://github.com/liyu1981/zcmd.zig/archive/refs/heads/main.tar.gz",
             .hash = "1220e8ee3817ef4f253e824e6ba96b473ec00b4be1e4d3d7c1fa5c29e2c540ae6015",
         },
         .jstring = .{
-            .url = "../jstring",
-            .hash = "1220d84017a5251b59b7d060738dcd6418bf304eeacbe683b006138cf60e7f853fdd",
+            .url = "https://github.com/liyu1981/jstring.zig/archive/refs/heads/main.tar.gz",
+            .hash = "1220e9892f21f5af7ce74a8c171f409208107d1ed2661ba78443624dcfd956cf1ee0",
         },
         .flex = .{
             .path = "./flex",
