@@ -1,6 +1,6 @@
 [submodule "bison/bison"]
 	path = bison/bison
-	url = https://github.com/akimd/bison.git
+	url = https://github.com/liyu1981/zlexison-bison.git
 [submodule "flex/flex"]
 	path = flex/flex
-	url = https://github.com/westes/flex
+	url = https://github.com/liyu1981/zlexison-flex.git
