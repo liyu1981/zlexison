@@ -71,7 +71,7 @@ pub fn build(b: *std.Build) void {
     const zbison_pre_build_step = b.step("zbison_pre_build", "bootstrap, configure and pre-build zbison");
     zbison_pre_build_step.makeFn = zbisonPreBuild;
 
-    _ = b.addModule("bison_data", .{ .source_file = .{ .path = b.pathFromRoot("bison/data") } });
+    _ = b.addModule("bison_data", .{ .root_source_file = .{ .path = b.pathFromRoot("bison/data") } });
 
     const bison_as_lib = b.addStaticLibrary(.{
         .name = "bison_as_lib",

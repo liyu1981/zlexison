@@ -12,7 +12,7 @@ const common_flags = [_][]const u8{
 const c_flags = [_][]const u8{} ++ common_flags;
 
 var g_build: *std.Build = undefined;
-var target: std.zig.CrossTarget = undefined;
+var target: std.Build.ResolvedTarget = undefined;
 
 pub fn build(b: *std.Build) void {
     g_build = b;
@@ -40,7 +40,7 @@ fn m4PreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
     defer aa.deinit();
     const arena = aa.allocator();
 
-    switch (target.getOs().tag) {
+    switch (target.result.os.tag) {
         .macos => {
             const sys_m4_path = brk: {
                 if (findHomebrewM4(arena)) |p| {
@@ -102,12 +102,12 @@ fn copyM4AsBin(allocator: std.mem.Allocator, sys_m4_path: []const u8) !void {
             &[_][]const u8{ "cp", sys_m4_path, dest_path },
         },
     });
-    try result.assertSucceeded(.{});
+    try result.assertSucceeded(.{ .check_stdout_not_empty = false });
     result = try zcmd.run(.{
         .allocator = allocator,
         .commands = &[_][]const []const u8{
             &[_][]const u8{ "chmod", "0644", dest_path },
         },
     });
-    try result.assertSucceeded(.{});
+    try result.assertSucceeded(.{ .check_stdout_not_empty = false });
 }

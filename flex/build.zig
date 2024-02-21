@@ -75,7 +75,7 @@ pub fn build(b: *std.Build) void {
     const zflex_pre_build_step = b.step("zflex_pre_build", "bootstrap, configure and pre-build zflex");
     zflex_pre_build_step.makeFn = zflexPreBuild;
 
-    _ = b.addModule("flex", .{ .source_file = .{ .path = b.pathFromRoot("flex/src") } });
+    _ = b.addModule("flex", .{ .root_source_file = .{ .path = b.pathFromRoot("flex/src") } });
 
     const flex_as_lib = b.addStaticLibrary(.{
         .name = "flex_as_lib",

@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const zcmd_dep = b.dependency("zcmd", .{});
-    var jstring_dep = b.dependency("jstring", .{});
+    const jstring_dep = b.dependency("jstring", .{});
 
     const m4_dep = b.dependency("m4", .{});
     const m4phony = m4_dep.artifact("m4_as_lib_phony");
@@ -38,8 +38,8 @@ pub fn build(b: *std.Build) !void {
     zlex_exe.step.dependOn(flex_bin_step);
     zlex_exe.step.dependOn(&m4phony.step);
     zlex_exe.step.dependOn(&libflex_a.step);
-    zlex_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
-    zlex_exe.addModule("jstring", jstring_dep.module("jstring"));
+    zlex_exe.root_module.addImport("zcmd", zcmd_dep.module("zcmd"));
+    zlex_exe.root_module.addImport("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
     zlex_exe.addObjectFile(libflex_a.getEmittedBin());
 
@@ -65,8 +65,8 @@ pub fn build(b: *std.Build) !void {
     zison_exe.step.dependOn(bison_share_bin_step);
     zison_exe.step.dependOn(&m4phony.step);
     zison_exe.step.dependOn(&libbison_a.step);
-    zison_exe.addModule("zcmd", zcmd_dep.module("zcmd"));
-    zison_exe.addModule("jstring", jstring_dep.module("jstring"));
+    zison_exe.root_module.addImport("zcmd", zcmd_dep.module("zcmd"));
+    zison_exe.root_module.addImport("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zison_exe, jstring_dep);
 
     b.installArtifact(zison_exe);

@@ -5,11 +5,11 @@
     .dependencies = .{
         .zcmd = .{
             .url = "../zcmd",
-            .hash = "1220844dd4f1b16374fd67bea40cb6ee1e7b399a08ae594ae460407f27c341d21891",
+            .hash = "1220e8ee3817ef4f253e824e6ba96b473ec00b4be1e4d3d7c1fa5c29e2c540ae6015",
         },
         .jstring = .{
             .url = "../jstring",
-            .hash = "1220cf150691d7269a57e031cfcafc4b879100d87bddea156341ed5059712c6fee61",
+            .hash = "1220d84017a5251b59b7d060738dcd6418bf304eeacbe683b006138cf60e7f853fdd",
         },
         .flex = .{
             .path = "./flex",
