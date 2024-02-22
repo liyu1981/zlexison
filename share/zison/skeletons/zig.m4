@@ -370,10 +370,11 @@ m4_define([b4_declare_yyerror_and_yylex],
 # ----------------------
 # Declarations that might either go into the header (if --header)
 # or into the implementation file.
+# ]b4_percent_code_get([[requires]])[
 m4_define([b4_shared_declarations],
 [b4_cpp_guard_open([b4_spec_mapped_header_file])[
 ]b4_declare_yydebug[
-]b4_percent_code_get([[requires]])[
+]m4_define([b4_percent_code_bison_qualifiers(requires)])[
 ]b4_token_enums_defines[
 ]b4_declare_yylstype[
 ]b4_declare_yyerror_and_yylex[
@@ -679,15 +680,16 @@ inline fn YY_ACCESSING_SYMBOL(index: usize) isize {
 ]b4_parse_error_bmatch([simple\|verbose],
 [[// /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
 //    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
-const yytname = [_]u8 {
+const YY_NULLPTR = "";
+
+const yytname = [_][]const u8 {
   ]b4_tname[
 };
 
-fn yysymbol_name(yysymbol: usize) [*c]const u8 {
+fn yysymbol_name(yysymbol: usize) []const u8 {
     return yytname[yysymbol];
 }]],
 [[fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
-  const YY_NULLPTR = "";
   const yy_sname = [_][]const u8 {
   ]b4_symbol_names[
   };]b4_has_translations_if([[
@@ -1504,12 +1506,20 @@ pub const yyparse_context_t = struct {
         this.yyvsp -= N;
         this.yyssp -= N;
     }
+
+    pub fn yyclearin(this: *yyparse_context_t) void {
+      this.yychar = yytoken_kind_t.]b4_symbol(empty, id)[;
+    }
   ]
   b4_push_if([[
     pub fn yyerrok(this: *yyparse_context_t) void {
       this.yyps.yyerrstatus = 0;
     }
-  ]])
+  ]], [
+    pub fn yyerrok(this: *yyparse_context_t) void {
+      this.yyerrstatus = 0;
+    }
+  ])
   []b4_push_if([[
 
   pub fn copyFromYyps(this: *yyparse_context_t, yyps: *yypstate) void {
@@ -2110,9 +2120,9 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
   var yyctx = yyparse_context_t{
     .allocator = allocator,
   };
-]m4_ifset([b4_parse_param], [[
-  yyctx.scanner = scanner;
-  yyctx.res = res;
+]m4_ifset([b4_parse_param], [b4_formals_copy(b4_parse_param);[
+  // yyctx.scanner = scanner;
+  // yyctx.res = res;
 ]], [])
 [
   yyctx.yyss = &yyctx.yyssa;
@@ -2121,8 +2131,9 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
   yyctx.yyvsp = yyctx.yyvs;
   yyctx.yyls = &yyctx.yylsa;
   yyctx.yylsp = yyctx.yyls;
+]b4_parse_error_bmatch([detailed\|verbose],[
   yyctx.yymsg = yyctx.yymsgbuf[0..];
-]
+])
   b4_push_if([[
     yyctx.yyps = yyps;
     yyctx.yypushed_char = yypushed_char;

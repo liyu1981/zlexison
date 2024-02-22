@@ -483,6 +483,15 @@ m4_define([b4_formal_struct],
 [$1 = undefined])
 
 
+m4_define([b4_formals_copy],
+[m4_if([$#], [0], [// void],
+       [$#$1], [1], [// void],
+               [m4_map_sep([b4_formal_copy], [; ], [$@])])])
+
+m4_define([b4_formal_copy],
+  [yyctx.][m4_bregexp($1, [\([^:]+\)], [\1])][ = ][m4_bregexp($1, [\([^:]+\)], [\1])])
+
+
 # b4_function_declare(NAME, RETURN-VALUE, [DECL1, NAME1], ...)
 # ------------------------------------------------------------
 # Declare the function NAME.
@@ -512,6 +521,20 @@ m4_define([b4_args],
 [m4_map_sep([b4_arg], [, ], [$@])])
 
 m4_define([b4_arg],
+[$2])
+
+
+m4_define([b4_args_p1],
+[m4_map_sep([b4_arg_p1], [, ], [$@])])
+
+m4_define([b4_arg_p1],
+[$1 $2 $3])
+
+
+m4_define([b4_args_p2],
+[m4_map_sep([b4_arg_p2], [, ], [$@])])
+
+m4_define([b4_arg_p2],
 [$2])
 
 
@@ -600,7 +623,10 @@ fn yy_symbol_print (yyo: std.fs.File,
 [[, yylocationp: *const YYLTYPE]])[][) !void {
   try yyo.writer().print("{s} {s} (", .{
       if (yykind < YYNTOKENS) "token" else "nterm",
-      yysymbol_name(@@enumFromInt(yykind)),
+      ]b4_parse_error_bmatch([simple\|verbose],
+        [yysymbol_name(@@intCast(yykind)),],
+        [yysymbol_name(@@enumFromInt(yykind)),])
+      [
   });
 ]b4_locations_if([  try yy_location_print_(yyo, yylocationp);
   try yyo.writer().print(": ", .{});
@@ -768,7 +794,7 @@ m4_define([b4_location_type_define],
 ]b4_percent_define_ifdef([[api.location.type]],
 [[const YYLTYPE =]b4_percent_define_get([[api.location.type]])[;
 ]],
-[[const YYLTYPE =]b4_percent_define_get([[api.location.type]])[;
+[[const YYLTYPE = YYLexer.YYLTYPE;
 ]])])
 
 
