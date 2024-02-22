@@ -404,6 +404,8 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
 ## -------------- ##
 m4_define([b4_main_fn], m4_ifdef([z4_need_main], [[
 pub fn main() !u8 {
+    @compileError("Please copy this function to your parser.y and adapt to your need!");
+
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.heap.page_allocator.free(args);
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);

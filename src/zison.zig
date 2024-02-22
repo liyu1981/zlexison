@@ -7,6 +7,7 @@ const version = @import("version.zig");
 
 const usage =
     \\ usage: zison -o <output_file_path> -m <yes|no> <input_file_path>
+    \\        zison init -t <zlex/zison/zlexison> -o <output_file_path>
     \\        zison zlexison -o <output_file_path> <input_file_path>
     \\        zison bison <all_bison_options>
     \\        zison --version
@@ -14,6 +15,7 @@ const usage =
 ;
 
 const ZisonRunMode = enum {
+    init,
     zison,
     zlexison,
     zbison,
@@ -25,7 +27,7 @@ const ZisonRunMode = enum {
 const ZisonOptions = struct {
     runMode: ZisonRunMode,
     input_file_path: []const u8,
-    outut_file_path: []const u8,
+    output_file_path: []const u8,
     need_main_fn: bool,
     zison_exe: []const u8 = undefined,
 };
@@ -38,13 +40,18 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
     var r: ZisonOptions = .{
         .runMode = .zison,
         .input_file_path = "",
-        .outut_file_path = "",
-        .need_main_fn = true,
+        .output_file_path = "",
+        .need_main_fn = false,
         .zison_exe = args[0],
     };
     const args1 = args[1..];
     var i: usize = 0;
     if (args1.len == 0) return ZisonError.InvalidOption;
+
+    if (std.mem.eql(u8, args1[0], "init")) {
+        r.runMode = .init;
+        return r;
+    }
 
     if (std.mem.eql(u8, args1[0], "bison")) {
         r.runMode = .bison;
@@ -70,7 +77,7 @@ fn parseArgs(args: [][:0]u8) !ZisonOptions {
         const arg = args1[i];
         if (std.mem.eql(u8, arg, "-o")) {
             if (i + 1 < args1.len) {
-                r.outut_file_path = args1[i + 1];
+                r.output_file_path = args1[i + 1];
                 i += 2;
                 continue;
             } else {
@@ -133,13 +140,23 @@ pub fn main() !u8 {
     defer exe_info.deinit();
 
     switch (opts.runMode) {
+        .init => {
+            @import("runAsInit.zig").runAsInit(args[1..], opts.zison_exe) catch |err| switch (err) {
+                error.InvalidOption => {
+                    printErrAndUsageExit(err);
+                },
+                else => {
+                    return err;
+                },
+            };
+        },
         .version => {
             try printVersion();
         },
         .zison => {
             try @import("zison/runAsZison.zig").runAsZison(.{
                 .input_file_path = opts.input_file_path,
-                .output_file_path = opts.outut_file_path,
+                .output_file_path = opts.output_file_path,
                 .zison_exe = opts.zison_exe,
                 .need_main_fn = opts.need_main_fn,
             });
@@ -167,7 +184,7 @@ pub fn main() !u8 {
             @import("zison/runAsZlexison.zig").runAsZlexison(args[1..], .{
                 .zison_exe_path = exe_info.exe_path,
                 .m4_exe_path = m4_path,
-                .output_file_path = opts.outut_file_path,
+                .output_file_path = opts.output_file_path,
             }) catch |err| switch (err) {
                 ZisonError.InvalidOption => printErrAndUsageExit(err),
                 else => return err,

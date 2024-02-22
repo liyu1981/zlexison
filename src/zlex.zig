@@ -7,12 +7,15 @@ const version = @import("version.zig");
 
 const usage =
     \\ usage: zlex -o <output_file_path> -z <zlexison_file_path> -m <yes/no> <input_file_path>
+    \\        zlex init -t <zlex/zison/zlexison> -o <output_file_path>
+    \\        zlex zlexison -o <output_file_path>
     \\        zlex flex <all_flex_options>
     \\        zlex --version
     \\
 ;
 
 const ZlexRunMode = enum {
+    init,
     zlex,
     zflex,
     flex,
@@ -41,11 +44,16 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
         .output_file_path = "",
         .zlexison_file_path = null,
         .zlex_exe = args[0],
-        .need_main_fn = true,
+        .need_main_fn = false,
     };
     const args1 = args[1..];
     var i: usize = 0;
     if (args1.len == 0) return ZlexError.InvalidOption;
+
+    if (std.mem.eql(u8, args1[0], "init")) {
+        r.runMode = .init;
+        return r;
+    }
 
     if (std.mem.eql(u8, args1[0], "flex")) {
         r.runMode = .flex;
@@ -140,6 +148,16 @@ pub fn main() !u8 {
     defer exe_info.deinit();
 
     switch (opts.runMode) {
+        .init => {
+            @import("runAsInit.zig").runAsInit(args[1..], opts.zlex_exe) catch |err| switch (err) {
+                error.InvalidOption => {
+                    printErrAndUsageExit(err);
+                },
+                else => {
+                    return err;
+                },
+            };
+        },
         .version => {
             try printVersion();
         },

@@ -319,6 +319,8 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
                                  [["@basename(]b4_spec_header_file[@)"]])])
 
 b4_percent_define_use([api.location.type])
+b4_percent_define_use([parser.trace])
+b4_percent_defnie_use([api.header.include]);
 
 ## -------------- ##
 ## Output files.  ##
@@ -326,23 +328,12 @@ b4_percent_define_use([api.location.type])
 
 b4_output_begin([b4_parser_file_name])[
 ]b4_identification[
-]b4_percent_code_get([[top]])[]dnl
-b4_user_pre_prologue[
-]b4_cast_define[
-]b4_null_define[
-]b4_header_include_if([[#include ]b4_percent_define_get([[api.header.include]])],
-                      [m4_ifval(m4_quote(b4_spec_header_file),
-[])b4_shared_declarations])[
-][
-
+const std = @@import("std");
+]b4_percent_code_get([[top]])[
+]b4_shared_declarations[
 ]b4_user_post_prologue[
 ]b4_percent_code_get[
-][
 ]b4_attribute_define[
-][]dnl
-b4_parse_error_bmatch([simple\|verbose],[[]],[[]])[
-][
-]b4_locations_if([[][]])
-b4_percent_code_get([[epilogue]])[]dnl
-[]dnl
-b4_output_end
+]b4_parse_error_bmatch([simple\|verbose],[[]],[[]])[
+]b4_percent_code_get([[epilogue]])[
+]b4_output_end
