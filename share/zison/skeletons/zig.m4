@@ -1822,6 +1822,9 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
 ]b4_user_actions[
       else => {},
     }]])[
+
+    yyreduce_check_union_type(yyr1[@@intCast(yyctx.yyn)], yyctx);
+
     // /* User semantic actions sometimes alter yychar, and that requires
     //    that yytoken be updated with the new translation.  We take the
     //    approach of translating immediately before every use of yytoken.
@@ -1855,6 +1858,12 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     }
 
     return LABEL_YYNEWSTATE;
+}
+
+fn yyreduce_check_union_type(yykind: isize, yyctx: *yyparse_context_t) void {
+    if (yydebug) {
+      ]b4_reducer_symbol_checkers[
+    }
 }
 
 // /*--------------------------------------.

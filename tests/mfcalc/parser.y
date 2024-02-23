@@ -101,7 +101,7 @@ exp:
 | exp '*' exp        { $$ = $1 * $3;                    }
 | exp '/' exp        { $$ = $1 / $3;                    }
 | '-' exp  %prec NEG { $$ = -$2;                        }
-| exp '^' exp        { $$ = std.math.pow(f64, $1, $3);               }
+| exp '^' exp        { $$ = std.math.pow(f64, $1, $3);  }
 | '(' exp ')'        { $$ = $2;                         }
 ;
 
@@ -134,6 +134,8 @@ pub fn main() !u8 {
 
     try YYLexer.yylex_init(&scanner);
     defer YYLexer.yylex_destroy(&scanner);
+
+    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
 
     _ = try YYParser.yyparse(arena, &scanner);
 

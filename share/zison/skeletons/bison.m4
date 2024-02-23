@@ -514,6 +514,24 @@ b4_dollar_popdef[]dnl
 ])])
 
 
+m4_define([b4_symbol_checker],
+[b4_symbol_if([$1], [has_$2],
+[b4_dollar_pushdef([(yyvaluep)],
+                   [$1],
+                   [],
+                   [(*yylocationp)])dnl
+]$3[_b4_symbol_case([$1])[]dnl
+                if (!std.mem.eql(u8, @@tagName(std.meta.activeTag(yyctx.yylval)), "]b4_symbol([$1], [id])[")) {
+                    std.debug.print("Wanted tag {s}, but active tag of yyctx.yylval is ${s}\n", .{ "]b4_symbol([$1], [id])[", @@tagName(std.meta.activeTag(yyctx.yylval)) });
+                    std.debug.print("Most likely caused by forgetting assign to $$. Please look into label_yyreduce fn switch with case: {d}.\n", .{yyctx.yyn});
+                    @@panic("union type check failed!");
+                }
+        },
+
+b4_dollar_popdef[]dnl
+])])
+
+
 # b4_symbol_destructor(SYMBOL-NUM)
 # b4_symbol_printer(SYMBOL-NUM)
 # --------------------------------
@@ -523,6 +541,8 @@ m4_define([b4_symbol_tok_destructor],    [b4_symbol_action([$1], [destructor], [
 m4_define([b4_symbol_printer],    [b4_symbol_action([$1], [printer])])
 m4_define([b4_symbol_sym_printer],    [b4_symbol_action([$1], [printer], [yysymbol_kind_t.])])
 m4_define([b4_symbol_tok_printer],    [b4_symbol_action([$1], [printer], [yytoken_kind_t.])])
+
+m4_define([b4_symbol_sym_checker], [b4_symbol_checker([$1], [printer], [yysymbol_kind_t.])])
 
 
 # b4_symbol_actions(ACTION, [KIND = yykind])
@@ -542,6 +562,21 @@ m4_defn([b4_actions_])[]dnl
 [b4_use(m4_default([$2], [yykind]));])dnl
 m4_popdef([b4_actions_])dnl
 ])
+
+
+m4_define([b4_reducer_symbol_checkers],
+[m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_sym_checker])]))dnl
+m4_ifval(m4_defn([b4_actions_]),
+[switch (@@as(yysymbol_kind_t, @@enumFromInt(m4_default([$2], [yykind]))))
+    {
+m4_defn([b4_actions_])[]dnl
+      else => {},
+    }dnl
+],
+[b4_use(m4_default([$2], [yykind]));])dnl
+m4_popdef([b4_actions_])dnl
+])
+
 
 # _b4_symbol_case(SYMBOL-NUM)
 # ---------------------------
