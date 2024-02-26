@@ -521,8 +521,8 @@ m4_define([b4_symbol_checker],
                    [],
                    [(*yylocationp)])dnl
 ]$3[_b4_symbol_case([$1])[]dnl
-                if (!std.mem.eql(u8, @@tagName(std.meta.activeTag(yyctx.yylval)), "]b4_symbol([$1], [id])[")) {
-                    std.debug.print("Wanted tag {s}, but active tag of yyctx.yylval is ${s}\n", .{ "]b4_symbol([$1], [id])[", @@tagName(std.meta.activeTag(yyctx.yylval)) });
+                if (!std.mem.eql(u8, @@tagName(std.meta.activeTag(yyctx.yyval)), "]b4_symbol([$1], [id])[")) {
+                    std.debug.print("Wanted tag {s}, but active tag of yyctx.yyval is ${s}\n", .{ "]b4_symbol([$1], [id])[", @@tagName(std.meta.activeTag(yyctx.yylval)) });
                     std.debug.print("Most likely caused by forgetting assign to $$. Please look into label_yyreduce fn switch with case: {d}.\n", .{yyctx.yyn});
                     @@panic("union type check failed!");
                 }

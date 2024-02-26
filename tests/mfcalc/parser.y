@@ -7,7 +7,7 @@ pub const Symrec = struct {
 
     pub const VALUE = union(TYPE) {
         VAR: f64,
-        FUN: *const fn(f64) f64,
+        FUN: *allowzero const fn(f64) f64,
     };
 
     allocator: std.mem.Allocator,
@@ -21,16 +21,35 @@ pub const Symrec = struct {
         sr.* = Symrec{
             .allocator = allocator,
             .type = .VAR,
+            .name = "",
+            .value = .{ .VAR = 0 },
         };
         return sr;
     }
 
-    pub fn putsym(this: *Symrec, name: []const u8, sym_type: Symrec.TYPE) *Symrec {
-        var new_sr = this.allocator.create(Symrec);
+    pub fn deinit(this: *Symrec) void {
+        defer this.allocator.destroy(this);
+        if (this.next) |n| {
+            n.deinit();
+        }
+    }
+
+    pub fn putsym(this: *Symrec, name: []const u8, sym_type: Symrec.TYPE) !*Symrec {
+        var new_sr = try this.allocator.create(Symrec);
         new_sr.* = Symrec{
           .allocator = this.allocator,
           .name = name,
           .type = sym_type,
+          .value = brk: {
+             switch (sym_type) {
+               .VAR => {
+                 break :brk VALUE{ .VAR = 0 };
+               },
+               .FUN => {
+                 break :brk VALUE{ .FUN = @ptrFromInt(0) };
+               },
+            }
+          },
         };
         new_sr.next = this;
         return new_sr;
@@ -47,11 +66,49 @@ pub const Symrec = struct {
         return null;
     }
 };
+
+pub var sym_table: *Symrec = undefined;
+
+fn atan(n: f64) f64 {
+    return std.math.atan(n);
+}
+
+fn cos(n: f64) f64 {
+    return std.math.cos(n);
+}
+
+fn exp(n: f64) f64 {
+    return std.math.exp(n);
+}
+
+fn ln(n: f64) f64 {
+    return std.math.log(f64, std.math.log2e, n);
+}
+
+fn sin(n: f64) f64 {
+    return std.math.sin(n);
+}
+
+fn sqrt(n: f64) f64 {
+    return std.math.sqrt(n);
+}
+
+pub fn initSymTable(arena: std.mem.Allocator) !void {
+    sym_table = try Symrec.init(arena);
+    const fn_names = [_][]const u8{ "atan", "cos", "exp", "ln", "sin", "sqrt" };
+    const fns = [_]*const fn (f64) f64{ atan, cos, exp, ln, sin, sqrt };
+    for (fn_names, fns) |name, func| {
+        sym_table = try sym_table.putsym(name, .FUN);
+        sym_table.value.FUN = func;
+    }
+}
+
 }
 
 %{
 const YYLexer = @import("scan.zig");
-const Symrec = @import("zlexison.zig").Symrec;
+const zlexison = @import("zlexison.zig");
+const Symrec = zlexison.Symrec;
 %}
 
 %define api.value.type union /* Generate YYSTYPE from these types: */
@@ -125,9 +182,10 @@ pub fn main() !u8 {
     };
     defer f.close();
 
-    var content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
+    try zlexison.initSymTable(arena);
+
+    const content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
     defer arena.free(content);
-    _ = &content;
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var scanner = YYLexer{ .allocator = arena };

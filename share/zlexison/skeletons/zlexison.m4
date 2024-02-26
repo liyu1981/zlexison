@@ -329,6 +329,26 @@ b4_percent_defnie_use([api.header.include]);
 b4_output_begin([b4_parser_file_name])[
 ]b4_identification[
 const std = @@import("std");
+
+/// a comptime checking function to remind what type can use in YYSTYPE and what can not
+fn ExternUnionType(comptime T: type) type {
+    switch (@@typeInfo(T)) {
+        .Bool, .Int, .Float => return T,
+
+        .Pointer => |pinfo| {
+            if (pinfo.size == .Slice) {
+                @@compileError("slice is not supported, use pointer to slice instead");
+            }
+            return T;
+        },
+
+        .Array, .Struct, .Enum, .Union => return *T,
+
+        .ComptimeInt, .ComptimeFloat, .Type, .Void, .NoReturn, .Undefined, .Null, .ErrorSet, .Fn, .Opaque, .Frame, .AnyFrame, .Vector, .EnumLiteral, .Optional, .ErrorUnion => {
+            @@compileError("not supported type:" ++ @@typeName(T));
+        },
+    }
+}
 ]b4_percent_code_get([[top]])[
 ]b4_shared_declarations[
 ]b4_user_post_prologue[

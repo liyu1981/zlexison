@@ -610,7 +610,7 @@ m4_define([b4_symbol_type_register],
                          [yykind_[]b4_symbol([$1], [number])])])dnl
 m4_append([b4_union_members],
 m4_expand([m4_format([  %-40s ,%s],
-                     m4_expand([b4_symbol([$1], [type_tag]): b4_symbol([$1], [type])]),
+                     m4_expand([b4_symbol([$1], [type_tag]): [ExternUnionType[(]]b4_symbol([$1], [type])[)]]),
                      [b4_symbol_tag_comment([$1])])]))
 m4_define([b4_union_member_default_constructor],
   m4_expand([m4_format([  pub fn default() YYSTYPE {
@@ -738,16 +738,16 @@ m4_define([b4_value_type_define],
 // /* Value type.  */
 m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 [code],
-[[#if ! defined ]b4_api_PREFIX[STYPE && ! defined ]b4_api_PREFIX[STYPE_IS_DECLARED
-typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
-# define ]b4_api_PREFIX[STYPE_IS_TRIVIAL 1
-# define ]b4_api_PREFIX[STYPE_IS_DECLARED 1
-#endif
+[[// #if ! defined ]b4_api_PREFIX[STYPE && ! defined ]b4_api_PREFIX[STYPE_IS_DECLARED
+// typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
+// # define ]b4_api_PREFIX[STYPE_IS_TRIVIAL 1
+// # define ]b4_api_PREFIX[STYPE_IS_DECLARED 1
+// #endif
 ]],
 [m4_bmatch(b4_percent_define_get([[api.value.type]]),
 [union\|union-directive],
 [b4_percent_define_get_syncline([[api.value.union.name]])dnl
-[pub const ]b4_percent_define_get([[api.value.union.name]])[ = union(enum) {
+[pub const ]b4_percent_define_get([[api.value.union.name]])[ = extern union {
 ]b4_user_union_members[
 ]b4_union_member_default_constructor[
 ]b4_union_member_constructors[

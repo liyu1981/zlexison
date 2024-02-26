@@ -143,14 +143,14 @@ m4_define([b4_accept],
 # --------------------------------
 # See README.
 m4_define([b4_lhs_value],
-[yyctx.yyval = YYSTYPE.b4_symbol([$1], [id])();][b4_symbol_value(yyctx.yyval, [$1], [$2])])
+[b4_symbol_value(yyctx.yyval, [$1], [$2])])
 
 
 # b4_rhs_value(RULE-LENGTH, POS, [SYMBOL-NUM], [TYPE])
 # ----------------------------------------------------
 # See README.
 m4_define([b4_rhs_value],
-[b4_symbol_value([ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, b4_subtract([$2], [$1]))], [$3], [$4])])
+[b4_symbol_value([ptrWithOffset(YYSTYPE, yyctx.yyvsp, b4_subtract([$2], [$1]))], [$3], [$4])])
 
 
 ## ----------- ##
@@ -495,19 +495,11 @@ inline fn ptrLessThanEql(comptime T: type, p1: [*]T, p2: [*]T) bool {
     return @@as([*c]T, @@ptrCast(p1)) <= @@as([*c]T, @@ptrCast(p2));
 }
 
-inline fn ptrWithOffset(comptime T: type, p: [*]T, offset: isize) [*]T {
-    return @@as(
+inline fn ptrWithOffset(comptime T: type, p: [*]T, offset: isize) *T {
+    return &(@@as(
         [*]T,
         @@ptrFromInt(@@as(usize, @@intCast(@@as(isize, @@intCast(@@intFromPtr(p))) + offset * @@sizeOf(T)))),
-    );
-}
-
-inline fn ptrRhsWithOffset(comptime T: type, p: [*]T, offset: isize) T {
-    return ptrWithOffset(T, p, offset)[0];
-}
-
-inline fn ptrLhsWithOffset(comptime T: type, p: [*]T, offset: isize) *T {
-    return &(ptrWithOffset(T, p, offset)[0]);
+    )[0]);
 }
 
 ]b4_percent_code_get([[top]])[]dnl
@@ -753,9 +745,7 @@ fn YYBACKUP(yyctx: *yyparse_context_t, token: u8, value: c_int) usize {
 fn YY_SYMBOL_PRINT(title: []const u8, token: yysymbol_kind_t, yyval_: *YYSTYPE, yyloc_: *YYLTYPE) void {
     if (yydebug) {
         std.debug.print("{s}: ", .{title});
-        std.debug.print("{s}, ", .{@@tagName(token)});
-        yy_symbol_value_print(std.io.getStdErr(), @@as(isize, @@intFromEnum(token)), yyval_, yyloc_) catch {};
-        std.debug.print(", {s}\n", .{yyloc_.*});
+        yy_symbol_print(std.io.getStdErr(), @@as(isize, @@intFromEnum(token)), yyval_, yyloc_) catch {};
         std.debug.print("\n", .{});
     }
 }
@@ -793,9 +783,9 @@ fn yy_reduce_print(yyctx: *yyparse_context_t,][yyrule: usize][) !void {
     for (0..yynrhs) |yyi| {
             std.debug.print("   ${d} = ", .{ yyi + 1 });
         try yy_symbol_print (std.io.getStdErr(),
-                          @@intCast(YY_ACCESSING_SYMBOL (@@intCast(ptrRhsWithOffset(isize, yyctx.yyssp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs)))),
-                          ptrLhsWithOffset(YYSTYPE, yyctx.yyvsp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs)]b4_locations_if([,
-                          ]ptrLhsWithOffset(YYLTYPE, yyctx.yylsp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs))[][,);
+                          @@intCast(YY_ACCESSING_SYMBOL (@@intCast(ptrWithOffset(isize, yyctx.yyssp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs).*))),
+                          ptrWithOffset(YYSTYPE, yyctx.yyvsp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs)]b4_locations_if([,
+                          ]ptrWithOffset(YYLTYPE, yyctx.yylsp, @@as(isize, @@intCast(yyi)) + 1 - iyynrhs))[][,);
             std.debug.print("\n", .{});
     }
    }
@@ -1658,7 +1648,7 @@ fn label_yysetstate(yyctx: *yyparse_context_t) !usize {
 // /*-----------.
 // | yybackup.  |
 // `-----------*/
-fn label_yybackup(yyctx: *yyparse_context_t) usize {
+fn label_yybackup(yyctx: *yyparse_context_t) !usize {
   // /* Do appropriate processing given the current state.  Read a
   //    lookahead token if we need one and don't already have one.  */
 
@@ -1687,24 +1677,33 @@ fn label_yybackup(yyctx: *yyparse_context_t) usize {
       //    it before jumping to yyread_pushed_token.  */
       yyctx.yychar = yyctx.yypushed_char;
       yyctx.yylval = yyctx.yypushed_val;]b4_locations_if([[
-      yyctx.yylloc = yyctx.yypushed_loc;]])])[]])
+      yyctx.yylloc = yyctx.yypushed_loc;]])])[]],
+      [
+        if (yydebug) {
+          std.debug.print("Reading a token\n", .{});
+        }
+        yyctx.yychar = @@intCast(try yyctx.scanner.]b4_yylex[);
+      ])
   }
+  // This label is confusing as in pull mode there is no yyread_pushed_token label defined in original bison. But to
+  // unify the generated code in zig (as there is no goto), let us keep this name, and just treat as the next middle
+  // step of yybackup.
   return LABEL_YYREAD_PUSHED_TOKEN;
 }
 
 fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
-  if (yydebug) {
-    std.debug.print("Reading a token\n", .{});
-  }
-  ]b4_push_if([b4_pure_if([[
-  yyctx.yychar = yyctx.yypushed_char;
-  // if (yyctx.yypushed_val) {
+  ]b4_push_if([
+    if (yydebug) {
+      std.debug.print("Reading a token\n", .{});
+    }
+    b4_pure_if([[
+    yyctx.yychar = yyctx.yypushed_char;
     yyctx.yylval = yyctx.yypushed_val.*;
-  // }]b4_locations_if([[
-  // if (yyctx.yypushed_loc) {
+    }]b4_locations_if([[
     yyctx.yylloc = yyctx.yypushed_loc.*;
-  // }]])])], [[
-  yyctx.yychar = @@intCast(try yyctx.scanner.]b4_yylex[);]])[
+    ]])[
+    yyctx.yychar = @@intCast(try yyctx.scanner.]b4_yylex[);
+    ]])], [[]])[
 
   if (yyctx.yychar <= @@as(isize, @@intFromEnum(yytoken_kind_t.]b4_symbol(eof, [id])[)))
     {
@@ -1800,7 +1799,7 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
   //    users should not rely upon it.  Assigning to YYVAL
   //    unconditionally makes the parser a bit smaller, and it avoids a
   //    GCC warning that YYVAL may be used uninitialized.  */
-    yyctx.yyval = ptrRhsWithOffset(YYSTYPE, yyctx.yyvsp, 1 - @@as(isize, @@intCast(yyctx.yylen)));
+    yyctx.yyval = ptrWithOffset(YYSTYPE, yyctx.yyvsp, 1 - @@as(isize, @@intCast(yyctx.yylen))).*;
 ]b4_locations_if(
 [[// /* Default location. */
   YYLLOC_DEFAULT (&yyctx.yyloc, (yyctx.yylsp - yyctx.yylen), yyctx.yylen);
@@ -1822,8 +1821,6 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
 ]b4_user_actions[
       else => {},
     }]])[
-
-    yyreduce_check_union_type(yyr1[@@intCast(yyctx.yyn)], yyctx);
 
     // /* User semantic actions sometimes alter yychar, and that requires
     //    that yytoken be updated with the new translation.  We take the
@@ -1858,12 +1855,6 @@ fn label_yyreduce(yyctx: *yyparse_context_t) !usize {
     }
 
     return LABEL_YYNEWSTATE;
-}
-
-fn yyreduce_check_union_type(yykind: isize, yyctx: *yyparse_context_t) void {
-    if (yydebug) {
-      ]b4_reducer_symbol_checkers[
-    }
 }
 
 // /*--------------------------------------.
@@ -2197,7 +2188,7 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
       },
 
       LABEL_YYBACKUP => {
-        loop_control = label_yybackup(&yyctx);
+        loop_control = try label_yybackup(&yyctx);
       },
 
       LABEL_YYDEFAULT => {

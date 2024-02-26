@@ -1,5 +1,6 @@
 %{
-const Symrec = @import("zlexison.zig").Symrec;
+const zlexison = @import("zlexison.zig");
+const Symrec = zlexison.Symrec;
 %}
 
 %%
@@ -17,11 +18,24 @@ const Symrec = @import("zlexison.zig").Symrec;
   }
 
 [a-zA-Z][a-zA-Z0-9]* {
-    var s = try Symrec.init(yyg.lexer_.allocator);
-    s.type = .VAR;
-    s.name = yyget_text(yyg);
-    yyset_lval(YYSTYPE{ .VAR = s }, yyg);
-    return @intFromEnum(TOK_TYPE.VAR);
+    const t = yyget_text(yyg);
+    if (zlexison.sym_table.getsym(t)) |s| {
+        switch(s.type) {
+            .VAR => {
+                yyset_lval(YYSTYPE{ .VAR = s }, yyg);
+                return @intFromEnum(TOK_TYPE.VAR);
+            },
+            .FUN => {
+                yyset_lval(YYSTYPE{ .FUN = s }, yyg);
+                return @intFromEnum(TOK_TYPE.FUN);
+            },
+        }
+    } else {
+        const s = try zlexison.sym_table.putsym(t, .VAR);
+        yyset_lval(YYSTYPE{ .VAR = s }, yyg);
+        zlexison.sym_table = s;
+        return @intFromEnum(TOK_TYPE.VAR);
+    }
   }
 
 [ \t]+   {}
@@ -59,6 +73,8 @@ pub fn main() !u8 {
     _ = &yylval;
     var yylloc: YYLexer.YYLTYPE = .{};
     _ = &yylloc;
+
+    try zlexison.initSymTable(allocator);
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };
 
