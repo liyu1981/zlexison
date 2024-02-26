@@ -763,8 +763,8 @@ m4_pushdef([b4_start], m4_car(m4_shift(b4_occurrence)))dnl
 m4_pushdef([b4_end], m4_shift2(b4_occurrence))dnl
 m4_ifndef($3[(]m4_quote(b4_user_name)[)],
           [b4_complain_at([b4_start], [b4_end],
-                          [[%s '%s' is not used]],
-                          [$1], [b4_user_name])])[]dnl
+                          [[%s '%s' is not used, after checking %s(%s)]],
+                          [$1], [b4_user_name], $3, m4_quote(b4_user_name))])[]dnl
 m4_popdef([b4_occurrence])dnl
 m4_popdef([b4_user_name])dnl
 m4_popdef([b4_start])dnl

@@ -4,17 +4,6 @@
 // Emitted in the header file, before the definition of YYSTYPE.
 %code requires
 {
-  // need to build with: ../../zig-out/bin/zison zbison --locations --no-lines -o parser.zig parser.y
-  const YYLexer = @import("scan.zig");
-
-  pub const Result = struct {
-    // Whether to print the intermediate results.
-    verbose: bool = true,
-    // Value of the last computation.
-    value: c_int = -1,
-    // Number of errors.
-    nerrs: usize = 0,
-  };
 }
 
 // Emitted in the header file, after the definition of YYSTYPE.
@@ -29,6 +18,17 @@
 
 %code
 {
+  // need to build with: ../../zig-out/bin/zison zbison --locations --no-lines -o parser.zig parser.y
+  const YYLexer = @import("scan.zig");
+
+  pub const Result = struct {
+    // Whether to print the intermediate results.
+    verbose: bool = true,
+    // Value of the last computation.
+    value: c_int = -1,
+    // Number of errors.
+    nerrs: usize = 0,
+  };
 }
 
 // Include the header in the implementation rather than duplicating it.
@@ -54,7 +54,7 @@
 %define api.location.type {YYLexer.YYLTYPE}
 
 // Generate the parser description file (parse.output).
-%verbose
+// %verbose
 
 // Scanner and error count are exchanged between main, yyparse and yylex.
 %param {scanner: *YYLexer}{res: *Result}
@@ -72,8 +72,8 @@
 %type <c_int> exp
 %printer { try yyo.writer().print("{d}", .{$$}); } <c_int>
 
-%token <[]const u8> STR "string"
-%printer { try yyo.writer().print("{s}", .{$$}); } <[]const u8>
+%token <*[]const u8> STR "string"
+%printer { try yyo.writer().print("{s}", .{$$.*}); } <*[]const u8>
 
 // Precedence (from lowest to highest) and associativity.
 %left "+" "-"
@@ -126,8 +126,8 @@ exp:
 | "-" exp %prec UNARY  { $$ = -$2; }
 | STR
   {
-    defer yyctx.allocator.free($1);
-    const input_with_newline = try std.fmt.allocPrint(yyctx.allocator, "{s}\n", .{$1});
+    defer yyctx.allocator.free($1.*);
+    const input_with_newline = try std.fmt.allocPrint(yyctx.allocator, "{s}\n", .{$1.*});
     defer yyctx.allocator.free(input_with_newline);
     var res: Result = Result{};
     var new_scanner = YYLexer{ .allocator = yyctx.allocator };
@@ -147,3 +147,56 @@ exp:
 ;
 
 %%
+
+pub fn main() !u8 {
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+    defer std.heap.page_allocator.free(args);
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
+
+    var f: std.fs.File = brk: {
+        if (args.len > 1) {
+            break :brk try std.fs.cwd().openFile(args[1], .{});
+        } else {
+            break :brk std.io.getStdIn();
+        }
+    };
+    defer f.close();
+
+    const stdout_writer = std.io.getStdOut().writer();
+
+    var line = std.ArrayList(u8).init(arena);
+    defer line.deinit();
+    const line_writer = line.writer();
+    var buf_f_reader = std.io.bufferedReader(f.reader());
+    const f_reader = buf_f_reader.reader();
+
+    YYParser.yydebug = true;
+
+    while (f_reader.streamUntilDelimiter(line_writer, '\n', null)) {
+        defer line.clearRetainingCapacity();
+        try line.append('\n');
+
+        var res: Result = Result{};
+        try stdout_writer.print("read {d}bytes\n", .{line.items.len});
+
+        var scanner = YYLexer{ .allocator = arena };
+        YYLexer.context = YYLexer.Context.init(arena);
+        defer YYLexer.context.deinit();
+
+        try YYLexer.yylex_init(&scanner);
+        defer YYLexer.yylex_destroy(&scanner);
+
+        _ = try YYLexer.yy_scan_string(line.items, scanner.yyg);
+
+        _ = try YYParser.yyparse(arena, &scanner, &res);
+
+        std.debug.print("{any}\n", .{res});
+    } else |err| switch (err) {
+        error.EndOfStream => {},
+        else => return err,
+    }
+
+    return 0;
+}

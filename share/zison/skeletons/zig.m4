@@ -681,7 +681,10 @@ const yytname = [_][]const u8 {
 fn yysymbol_name(yysymbol: usize) []const u8 {
     return yytname[yysymbol];
 }]],
-[[fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
+[[
+  const YY_NULLPTR = "";
+
+  fn yysymbol_name(yysymbol: yysymbol_kind_t) []const u8 {
   const yy_sname = [_][]const u8 {
   ]b4_symbol_names[
   };]b4_has_translations_if([[
@@ -2120,10 +2123,7 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
   var yyctx = yyparse_context_t{
     .allocator = allocator,
   };
-]m4_ifset([b4_parse_param], [b4_formals_copy(b4_parse_param);[
-  // yyctx.scanner = scanner;
-  // yyctx.res = res;
-]], [])
+]m4_ifset([b4_parse_param], [b4_formals_copy(b4_parse_param);], [])
 [
   yyctx.yyss = &yyctx.yyssa;
   yyctx.yyssp = yyctx.yyss;
@@ -2132,7 +2132,7 @@ yy_parse_impl (int yychar, yy_parse_impl_t *yyimpl]m4_ifset([b4_parse_param], [,
   yyctx.yyls = &yyctx.yylsa;
   yyctx.yylsp = yyctx.yyls;
 ]b4_parse_error_bmatch([detailed\|verbose],[
-  yyctx.yymsg = yyctx.yymsgbuf[0..];
+  yyctx.yymsg = yyctx.yymsgbuf[[0..]];
 ])
   b4_push_if([[
     yyctx.yyps = yyps;

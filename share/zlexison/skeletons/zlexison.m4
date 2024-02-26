@@ -298,7 +298,6 @@ m4_define([b4_shared_declarations],
 ]b4_declare_yylstype[
 ]b4_declare_yyerror_and_yylex[
 ]b4_declare_yyparse[
-]b4_percent_code_get([[provides]])[
 ]b4_cpp_guard_close([b4_spec_mapped_header_file])[]dnl
 ])
 
@@ -320,7 +319,11 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
 
 b4_percent_define_use([api.location.type])
 b4_percent_define_use([parser.trace])
-b4_percent_defnie_use([api.header.include]);
+b4_percent_defnie_use([api.header.include])
+m4_pushdef([b4_percent_code_bison_qualifiers(top)], [0])
+m4_pushdef([b4_percent_code_bison_qualifiers(provides)], [0])
+m4_pushdef([b4_percent_code_bison_qualifiers(epilogue)], [0])
+
 
 ## -------------- ##
 ## Output files.  ##
@@ -349,11 +352,8 @@ fn ExternUnionType(comptime T: type) type {
         },
     }
 }
-]b4_percent_code_get([[top]])[
 ]b4_shared_declarations[
 ]b4_user_post_prologue[
-]b4_percent_code_get[
 ]b4_attribute_define[
 ]b4_parse_error_bmatch([simple\|verbose],[[]],[[]])[
-]b4_percent_code_get([[epilogue]])[
 ]b4_output_end
