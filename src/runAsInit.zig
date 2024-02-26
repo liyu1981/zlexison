@@ -79,7 +79,7 @@ const zlexison_file_tpl =
     \\    // first TOK must start from 258, e.g., TOK_NUM = 258
     \\};
     \\// /* Value type.  */
-    \\pub const YYSTYPE = struct {
+    \\pub const YYSTYPE = extern union {
     \\    pub fn default() YYSTYPE {
     \\        return YYSTYPE{};
     \\    }

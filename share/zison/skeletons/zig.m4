@@ -1702,11 +1702,9 @@ fn label_yyread_pushed_token(yyctx: *yyparse_context_t) !usize {[
     b4_pure_if([[
     yyctx.yychar = yyctx.yypushed_char;
     yyctx.yylval = yyctx.yypushed_val.*;
-    }]b4_locations_if([[
+    ]b4_locations_if([[
     yyctx.yylloc = yyctx.yypushed_loc.*;
-    ]])[
-    yyctx.yychar = @@intCast(try yyctx.scanner.]b4_yylex[);
-    ]])], [[]])[
+    ]])])], [[]])[
 
   if (yyctx.yychar <= @@as(isize, @@intFromEnum(yytoken_kind_t.]b4_symbol(eof, [id])[)))
     {

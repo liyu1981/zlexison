@@ -1,4 +1,4 @@
-%code requires {
+%code top {
   const YYLexer = @import("scan.zig");
 }
 
