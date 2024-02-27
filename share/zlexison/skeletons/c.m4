@@ -752,7 +752,7 @@ m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 ]b4_union_member_default_constructor[
 ]b4_union_member_constructors[
 
-    fn defaultValue(comptime T: type) T {
+    fn defaultValue(comptime T: type) ExternUnionType(T) {
         switch (T) {
             []u8, []const u8, [:0]u8, [:0]const u8 => return "",
 

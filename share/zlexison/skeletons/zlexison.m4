@@ -345,7 +345,7 @@ fn ExternUnionType(comptime T: type) type {
             return T;
         },
 
-        .Array, .Struct, .Enum, .Union => return *T,
+        .Array, .Struct, .Enum, .Union => return *allowzero T,
 
         .ComptimeInt, .ComptimeFloat, .Type, .Void, .NoReturn, .Undefined, .Null, .ErrorSet, .Fn, .Opaque, .Frame, .AnyFrame, .Vector, .EnumLiteral, .Optional, .ErrorUnion => {
             @@compileError("not supported type:" ++ @@typeName(T));

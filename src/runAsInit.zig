@@ -1,4 +1,7 @@
 const std = @import("std");
+const tpl_zlexison = @embedFile("initTpls/tplZlexison.zig");
+const tpl_lexer = @embedFile("initTpls/tplLexer.l");
+const tpl_parser = @embedFile("initTpls/tplParser.y");
 
 const RunMode = enum {
     zlex,
@@ -61,45 +64,45 @@ pub fn runAsInit(args: [][:0]const u8, exe_path: []const u8) !void {
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const arena = aa.allocator();
+    _ = arena;
 
     switch (opts.runMode) {
-        .zlex => {},
-        .zison => {},
+        .zlex => {
+            try writeInitLexerFile(opts.output_file_path);
+        },
+        .zison => {
+            try writeInitParserFile(opts.output_file_path);
+        },
         .zlexison => {
-            try writeInitZlexisonFile(arena, opts.output_file_path);
+            try writeInitZlexisonFile(opts.output_file_path);
         },
     }
 }
 
-const zlexison_file_tpl =
-    \\// /* Token kinds.  */
-    \\pub const yytoken_kind_t = enum(u32) {
-    \\    // EOF must be defined with value 0
-    \\    TOK_EOF = 0,
-    \\    // first TOK must start from 258, e.g., TOK_NUM = 258
-    \\};
-    \\// /* Value type.  */
-    \\pub const YYSTYPE = extern union {
-    \\    pub fn default() YYSTYPE {
-    \\        return YYSTYPE{};
-    \\    }
-    \\};
-    \\
-;
+pub inline fn writeInitLexerFile(maybe_lexer_file_path: ?[]const u8) !void {
+    try writeInitFile(maybe_lexer_file_path, tpl_lexer);
+}
 
-pub fn writeInitZlexisonFile(allocator: std.mem.Allocator, maybe_zlexison_file_path: ?[]const u8) !void {
-    _ = allocator;
+pub inline fn writeInitParserFile(maybe_parser_file_path: ?[]const u8) !void {
+    try writeInitFile(maybe_parser_file_path, tpl_parser);
+}
+
+pub inline fn writeInitZlexisonFile(maybe_zlexison_file_path: ?[]const u8) !void {
+    try writeInitFile(maybe_zlexison_file_path, tpl_zlexison);
+}
+
+fn writeInitFile(maybe_output_file_path: ?[]const u8, init_content: []const u8) !void {
     var outf = brk: {
-        if (maybe_zlexison_file_path) |zfp| {
-            std.fs.cwd().access(zfp, .{}) catch {
-                break :brk try std.fs.cwd().createFile(maybe_zlexison_file_path.?, .{});
+        if (maybe_output_file_path) |ofp| {
+            std.fs.cwd().access(ofp, .{}) catch {
+                break :brk try std.fs.cwd().createFile(maybe_output_file_path.?, .{});
             };
-            std.debug.print("found existing zlexison.zig in {s}. exit!", .{maybe_zlexison_file_path.?});
+            std.debug.print("found existing file {s}. exit!", .{maybe_output_file_path.?});
             std.os.exit(1);
         } else {
             break :brk std.io.getStdOut();
         }
     };
     defer outf.close();
-    try outf.writeAll(zlexison_file_tpl);
+    try outf.writeAll(init_content);
 }
