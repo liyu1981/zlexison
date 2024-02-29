@@ -18,8 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-b4_glr_if(             [m4_define([b4_used_skeleton], [b4_skeletonsdir/[glr.c]])])
-b4_nondeterministic_if([m4_define([b4_used_skeleton], [b4_skeletonsdir/[glr.c]])])
+b4_glr_if(             [m4_define([b4_used_skeleton], [b4_skeletonsdir/[zig-glr.m4]])])
+b4_nondeterministic_if([m4_define([b4_used_skeleton], [b4_skeletonsdir/[zig-glr.m4]])])
 
 m4_define_default([b4_used_skeleton], [b4_skeletonsdir/[zig.m4]])
 m4_define_default([b4_skeleton], ["b4_basename(b4_used_skeleton)"])

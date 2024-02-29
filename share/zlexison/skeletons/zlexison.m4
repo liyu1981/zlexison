@@ -317,6 +317,8 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
       [b4_percent_define_default([[api.header.include]],
                                  [["@basename(]b4_spec_header_file[@)"]])])
 
+## superss unused variables
+
 b4_percent_define_use([api.location.type])
 b4_percent_define_use([parser.trace])
 b4_percent_defnie_use([api.header.include])

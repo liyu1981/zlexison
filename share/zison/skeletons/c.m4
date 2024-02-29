@@ -75,10 +75,10 @@ const YYSKELETON_NAME = ]b4_skeleton[;]m4_ifdef([b4_pure_flag], [[
 const YYPURE = ]b4_pure_flag])[;]m4_ifdef([b4_push_flag], [[
 
 // /* Push parsers.  */
-const YYPUSH = ]b4_push_flag])[;]m4_ifdef([b4_pull_flag], [[
+const YYPUSH = ]b4_push_flag[;]])m4_ifdef([b4_pull_flag], [[
 
 // /* Pull parsers.  */
-const YYPULL = ]b4_pull_flag])[;
+const YYPULL = ]b4_pull_flag[;]])[
 ]])
 
 
@@ -133,10 +133,29 @@ m4_define([b4_yylex],
 m4_define([b4_user_args],
 [m4_ifset([b4_parse_param], [, b4_user_args_no_comma])])
 
+
+m4_define([b4_zig_user_args],
+[m4_ifset([b4_parse_param], [, b4_zig_user_args_no_comma([])])])
+
+
+m4_define([b4_zig_user_args_yyctx],
+[m4_ifset([b4_parse_param], [, b4_zig_user_args_no_comma_yyctx([$1])])])
+
+
+
 # b4_user_args_no_comma
 # ---------------------
 m4_define([b4_user_args_no_comma],
 [m4_ifset([b4_parse_param], [b4_args(b4_parse_param)])])
+
+
+m4_define([b4_zig_user_args_no_comma],
+[m4_ifset([b4_parse_param], [b4_zig_args(b4_parse_param)])])
+
+
+m4_define([b4_zig_user_args_no_comma_yyctx],
+[m4_ifset([b4_parse_param], [b4_zig_args_yyctx([$1], b4_parse_param)])])
+
 
 
 # b4_user_formals
@@ -520,9 +539,23 @@ m4_define([b4_function_call],
 m4_define([b4_args],
 [m4_map_sep([b4_arg], [, ], [$@])])
 
+
+m4_define([b4_zig_args],
+[m4_map_sep([b4_zig_arg], [, ], [$@])])
+
+
+m4_define([b4_zig_args_yyctx],
+[m4_map_sep([b4_zig_arg_yyctx], [, ], [$@])])
+
+
 m4_define([b4_arg],
 [$2])
 
+m4_define([b4_zig_arg],
+[m4_bregexp($1, [\([^:]+\)], [\1])])
+
+m4_define([b4_zig_arg_yyctx],
+[yyctx.][m4_bregexp($1, [\([^:]+\)], [\1])])
 
 m4_define([b4_args_p1],
 [m4_map_sep([b4_arg_p1], [, ], [$@])])
@@ -582,7 +615,7 @@ fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
             yykind: isize, yyvaluep: *YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *YYLTYPE]])[][)
 void {
-][_ = yyctx;]
+][{ _ = &yyctx; }]
 b4_locations_if([[]])
 [
     YY_SYMBOL_PRINT(yymsg, @@enumFromInt(yykind), yyvaluep, yylocationp);
@@ -887,4 +920,4 @@ fn yy_location_print_ (yyo: std.fs.File, yylocp: *const YYLTYPE) !void {
 # ----------------
 # Expand to a possible default value for yylloc.
 m4_define([b4_yyloc_default],
-[[{ .first_line = 1, .first_column = 1, .last_line = 1, .last_column = 1, }]])
+[[{ .first_line = 0, .first_column = 0, .last_line = 0, .last_column = 0, }]])

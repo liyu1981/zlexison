@@ -98,6 +98,12 @@
   };
 }
 
+%code top {
+  const YYLexer = @import("scan.zig");
+  const zlexison = @import("zlexison.zig");
+  const Node = zlexison.Node;
+}
+
 %define api.value.type union
 
 %expect-rr 1
@@ -113,40 +119,41 @@
 
 %type <Node> stmt expr decl declarator TYPENAME ID
 %destructor { $$.free(yyctx.allocator); } <Node>
-%printer { const s = try $$.toString(yyctx.allocator);
-  defer yyctx.allocator.free(s);
+%printer { const s = try $$.toString(std.heap.page_allocator);
+  defer std.heap.page_allocator.free(s);
   yyo.writer().print("{s}", .{s}); } <Node>
+
+%param {scanner: *YYLexer}
 
 %%
 
 prog : %empty
      | prog stmt   {
-                     YYLOCATION_PRINT (stdout, &@2);
-                     fputs (": ", stdout);
-                     node_print (stdout, $2);
-                     putc ('\n', stdout);
-                     fflush (stdout);
-                     free_node ($2);
+                     const stdout_writer = std.io.getStdOut().writer();
+                     try stdout_writer.print("{s}", .{&@2});
+                     try stdout_writer.print(": ", .{});
+                     try stdout_writer.print("{s}", .{$2});
+                     try stdout_writer.print("\n", .{});
+                     $2.deinit(yyctx.allocator);
                    }
      ;
 
-stmt : expr ';'  %merge <stmt_merge>     { $$ = $1; }
-     | decl      %merge <stmt_merge>
-     | error ';'        { $$ = new_nterm ("<error>", NULL, NULL, NULL); }
+stmt : expr ';'  %merge <stmtMerge>     { $$ = $1; }
+     | decl      %merge <stmtMerge>
+     | error ';'        { $$ = try Node.newNterm(yyctx.allocator, "<error>", null, null, null); }
      ;
 
 expr : ID
      | TYPENAME '(' expr ')'
-                        { $$ = new_nterm ("<cast>(%s, %s)", $3, $1, NULL); }
-     | expr '+' expr    { $$ = new_nterm ("+(%s, %s)", $1, $3, NULL); }
-     | expr '=' expr    { $$ = new_nterm ("=(%s, %s)", $1, $3, NULL); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<cast>(%s, %s)", $3, $1, null); }
+     | expr '+' expr    { $$ = try Node.newNterm(yyctx.allocator, "+(%s, %s)", $1, $3, null); }
+     | expr '=' expr    { $$ = try Node.newNterm(yyctx.allocator, "=(%s, %s)", $1, $3, null); }
      ;
 
 decl : TYPENAME declarator ';'
-                        { $$ = new_nterm ("<declare>(%s, %s)", $1, $2, NULL); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<declare>(%s, %s)", $1, $2, null); }
      | TYPENAME declarator '=' expr ';'
-                        { $$ = new_nterm ("<init-declare>(%s, %s, %s)", $1,
-                                          $2, $4); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<init-declare>(%s, %s, %s)", $1, $2, $4); }
      ;
 
 declarator
@@ -156,120 +163,42 @@ declarator
 
 %%
 
-yytoken_kind_t
-yylex (YYSTYPE *lval, YYLTYPE *lloc)
-{
-  static int lineNum = 1;
-  static int colNum = 0;
+fn stmtMerge(yyctx: *yyparse_context_t, x0: *YYSTYPE, x1: *YYSTYPE) !*Node {
+    return try Node.newNterm(yyctx.allocator, "<OR>(%s, %s)", x0.stmt, x1.stmt, null);
+}
 
-  while (1)
-    {
-      int c;
-      assert (!feof (input));
-      c = getc (input);
-      switch (c)
-        {
-        case EOF:
-          return 0;
-        case '\t':
-          colNum = (colNum + 7) & ~7;
-          break;
-        case ' ': case '\f':
-          colNum += 1;
-          break;
-        case '\n':
-          lineNum += 1;
-          colNum = 0;
-          break;
-        default:
-          {
-            yytoken_kind_t tok;
-            lloc->first_line = lloc->last_line = lineNum;
-            lloc->first_column = colNum;
-            if (isalpha (c))
-              {
-                char buffer[256];
-                unsigned i = 0;
+pub fn main() !u8 {
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+    defer std.heap.page_allocator.free(args);
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
 
-                do
-                  {
-                    buffer[i++] = (char) c;
-                    colNum += 1;
-                    assert (i != sizeof buffer - 1);
-                    c = getc (input);
-                  }
-                while (isalnum (c) || c == '_');
+    const stdout_writer = std.io.getStdOut().writer();
 
-                ungetc (c, input);
-                buffer[i++] = 0;
-                if (isupper ((unsigned char) buffer[0]))
-                  {
-                    tok = TYPENAME;
-                    lval->TYPENAME = new_term (strcpy (malloc (i), buffer));
-                  }
-                else
-                  {
-                    tok = ID;
-                    lval->ID = new_term (strcpy (malloc (i), buffer));
-                  }
-              }
-            else
-              {
-                colNum += 1;
-                tok = c;
-              }
-            lloc->last_column = colNum;
-            return tok;
-          }
+    var f: std.fs.File = brk: {
+        if (args.len > 1) {
+            break :brk try std.fs.cwd().openFile(args[1], .{});
+        } else {
+            break :brk std.io.getStdIn();
         }
-    }
-}
+    };
+    defer f.close();
 
-static Node *
-stmt_merge (YYSTYPE x0, YYSTYPE x1)
-{
-  return new_nterm ("<OR>(%s, %s)", x0.stmt, x1.stmt, NULL);
-}
+    try zlexison.initSymTable(arena);
 
-static int
-process (const char *file)
-{
-  int is_stdin = !file || strcmp (file, "-") == 0;
-  if (is_stdin)
-    input = stdin;
-  else
-    input = fopen (file, "r");
-  assert (input);
-  int status = yyparse ();
-  if (!is_stdin)
-    fclose (input);
-  return status;
-}
+    const content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
+    defer arena.free(content);
+    try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-int
-main (int argc, char **argv)
-{
-  if (getenv ("YYDEBUG"))
-    yydebug = 1;
+    var scanner = YYLexer{ .allocator = arena };
 
-  int ran = 0;
-  for (int i = 1; i < argc; ++i)
-    // Enable parse traces on option -p.
-    if (strcmp (argv[i], "-p") == 0)
-      yydebug = 1;
-    else
-      {
-        int status = process (argv[i]);
-        ran = 1;
-        if (!status)
-          return status;
-      }
+    try YYLexer.yylex_init(&scanner);
+    defer YYLexer.yylex_destroy(&scanner);
 
-  if (!ran)
-    {
-      int status = process (NULL);
-      if (!status)
-        return status;
-    }
-  return 0;
+    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
+
+    _ = try YYParser.yyparse(arena, &scanner);
+
+    return 0;
 }

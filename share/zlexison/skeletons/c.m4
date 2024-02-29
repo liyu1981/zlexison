@@ -760,6 +760,10 @@ m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 
             bool => return false,
 
+            // provide custom type default value here
+            // pay attention that ExternUnionType(T) will genearally => *allowzero T for non-primitive types
+            // e.g., Node => return @ptrFromInt(0),
+
             else => {
                 @@compileError("provide default value in zlexison.zig for type:" ++ @@typeName(T));
             },
