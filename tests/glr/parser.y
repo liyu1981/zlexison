@@ -145,15 +145,15 @@ stmt : expr ';'  %merge <stmtMerge>     { $$ = $1; }
 
 expr : ID
      | TYPENAME '(' expr ')'
-                        { $$ = try Node.newNterm(yyctx.allocator, "<cast>(%s, %s)", $3, $1, null); }
-     | expr '+' expr    { $$ = try Node.newNterm(yyctx.allocator, "+(%s, %s)", $1, $3, null); }
-     | expr '=' expr    { $$ = try Node.newNterm(yyctx.allocator, "=(%s, %s)", $1, $3, null); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<cast>({s}, {s})", $3, $1, null); }
+     | expr '+' expr    { $$ = try Node.newNterm(yyctx.allocator, "+({s}, {s})", $1, $3, null); }
+     | expr '=' expr    { $$ = try Node.newNterm(yyctx.allocator, "=({s}, {s})", $1, $3, null); }
      ;
 
 decl : TYPENAME declarator ';'
-                        { $$ = try Node.newNterm(yyctx.allocator, "<declare>(%s, %s)", $1, $2, null); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<declare>({s}, {s})", $1, $2, null); }
      | TYPENAME declarator '=' expr ';'
-                        { $$ = try Node.newNterm(yyctx.allocator, "<init-declare>(%s, %s, %s)", $1, $2, $4); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<init-declare>({s}, {s}, {s})", $1, $2, $4); }
      ;
 
 declarator

@@ -5,7 +5,7 @@
 
 %%
 
-[[:alpha:]][[:alnum:][_]]+    {
+[[:alpha:]]([[:alnum:][_]])*    {
     const t = yyget_text(yyg);
     if (std.ascii.isUpper(t[0])) {
       yyset_lval(YYSTYPE{.TYPENAME = try Node.newTerm(yyg.lexer_.allocator, t)}, yyg);
