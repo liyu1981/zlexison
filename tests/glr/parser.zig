@@ -81,6 +81,8 @@ const YYDEBUG = 1;
 
 pub var yydebug: bool = YYDEBUG == 1;
 
+var yytoken_kind_t_value_buf: [32]u8 = undefined;
+
 // /* Token kinds. eq isize */
 pub const yytoken_kind_t = struct {
     pub const YYEMPTY = -2;
@@ -98,7 +100,11 @@ pub const yytoken_kind_t = struct {
             257 => return "YYUNDEF",
             258 => return "TYPENAME",
             259 => return "ID",
-            else => unreachable,
+            else => {
+                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "c({any})", .{v}) catch {
+                    return "";
+                };
+            },
         }
     }
 };
@@ -716,7 +722,7 @@ fn yyuserAction(yyctx: *yyparse_context_t, yyrule: usize, yyrhslen: usize, yyvsp
     // /* Default location. */
     {
         var yyvsp_locs: [YYMAXRHS + YYMAXLEFT + 1]YYLTYPE = undefined;
-        yyGLRStackItem2Locs(yyvsp, yyrhslen, &yyvsp_locs);
+        yyGLRStackItem2Locs(movePtr(yyvsp, -@as(isize, @intCast(yyrhslen))), yyrhslen, &yyvsp_locs);
         YYLLOC_DEFAULT(yylocp, &yyvsp_locs, yyrhslen);
     }
     yystackp.yyerror_range[1].yystate.yyloc = yylocp.*;
@@ -1133,8 +1139,9 @@ fn yyexpandGLRStack(allocator: std.mem.Allocator, yystackp: *yyGLRStack) !void {
     }
     allocator.free(yystackp.yyitems);
     yystackp.yyitems = yynewItems;
-    yystackp.yynextFree = yynewItems + yysize;
-    yystackp.yyspaceLeft = yynewSize - yysize;
+    yystackp.yynextFree = movePtr(yynewItems, yysize);
+    yystackp.yyspaceLeft = @intCast(yynewSize - yysize);
+    yystackp.yyitems_arr_next = @intCast(yysize);
 }
 
 fn yyfreeGLRStack(allocator: std.mem.Allocator, yystackp: *yyGLRStack) void {
@@ -1272,15 +1279,16 @@ inline fn yy_reduce_print(yynormal: bool, yyvsp: *allowzero yyGLRStackItem, yyk:
 //  *  and *YYLOCP to the computed location (if any).  Return value is as
 //  *  for userAction.  */
 inline fn yydoAction(yyctx: *yyparse_context_t, yystackp: *yyGLRStack, yyk: isize, yyrule: usize, yyvalp: *YYSTYPE, yylocp: *YYLTYPE) !usize {
-    const yynrhs: usize = @intCast(yyrhsLength(yyrule));
+    const yynrhs = yyrhsLength(yyrule);
     if (@intFromPtr(yystackp.yysplitPoint) == 0) {
         // /* Standard special case: single stack.  */
         const yyrhs: *allowzero yyGLRStackItem = @ptrCast(valueWithOffset(yystackp.yytops.yystates, yyk));
         YY_ASSERT(yyk == 0);
-        yystackp.yynextFree = movePtr(yystackp.yynextFree, -@as(isize, @intCast(yynrhs)));
-        yystackp.yyspaceLeft += yynrhs;
+        yystackp.yynextFree = movePtr(yystackp.yynextFree, -yynrhs);
+        yystackp.yyspaceLeft = @intCast(@as(isize, @intCast(yystackp.yyspaceLeft)) + yynrhs);
+        yystackp.yyitems_arr_next = @intCast(@as(isize, @intCast(yystackp.yyitems_arr_next)) - yynrhs);
         yystackp.yytops.yystates[0] = &(movePtr(yystackp.yynextFree, -1).yystate);
-        return yyuserAction(yyctx, yyrule, yynrhs, yyrhs, yystackp, yyk, yyvalp, yylocp);
+        return yyuserAction(yyctx, yyrule, @intCast(yynrhs), yyrhs, yystackp, yyk, yyvalp, yylocp);
     } else {
         var yyrhsStates: [YYMAXRHS + YYMAXLEFT + 1]yyGLRState = undefined;
         _ = &yyrhsStates;
@@ -1303,7 +1311,7 @@ inline fn yydoAction(yyctx: *yyparse_context_t, yystackp: *yyGLRStack, yyk: isiz
         }
         yyupdateSplit(yystackp, @ptrCast(yys));
         yystackp.yytops.yystates[@intCast(yyk)] = yys;
-        return yyuserAction(yyctx, yyrule, yynrhs, yyrhsVsp[YYMAXRHS + YYMAXLEFT - 1], yystackp, yyk, yyvalp, yylocp);
+        return yyuserAction(yyctx, yyrule, @intCast(yynrhs), yyrhsVsp[YYMAXRHS + YYMAXLEFT - 1], yystackp, yyk, yyvalp, yylocp);
     }
 }
 
@@ -1323,7 +1331,7 @@ inline fn yyglrReduce(yyctx: *yyparse_context_t, yystackp: *yyGLRStack, yyk: isi
 
     if (yyforceEval or @intFromPtr(yystackp.yysplitPoint) == 0) {
         var yyval: YYSTYPE = undefined;
-        var yyloc: YYLTYPE = undefined;
+        var yyloc: YYLTYPE = yyloc_default;
 
         const yyflag = try yydoAction(yyctx, yystackp, yyk, yyrule, &yyval, &yyloc);
         if (yyflag == YYRESULTTAG.yyerr and @intFromPtr(yystackp.yysplitPoint) != 0) {
@@ -1788,6 +1796,7 @@ fn yycompressStack(yystackp: *yyGLRStack) void {
         yystackp.yytops.yystates[0] = &(yystackp.yynextFree.yystate);
         yystackp.yynextFree = movePtr(yystackp.yynextFree, 1);
         yystackp.yyspaceLeft -= 1;
+        yystackp.yyitems_arr_next += 1;
     }
 }
 
@@ -2087,6 +2096,7 @@ fn yyrecoverSyntaxError(yyctx: *yyparse_context_t, yystackp: *yyGLRStack, scanne
         yystackp.yytops.yystates[0] = yys.yypred;
         yystackp.yynextFree = movePtr(yystackp.yynextFree, -1);
         yystackp.yyspaceLeft += 1;
+        yystackp.yyitems_arr_next -|= 1;
     }
     if (@intFromPtr(yystackp.yytops.yystates[0]) == 0) {
         _ = yyFail(yystackp, &yystackp.yyloc, scanner, YY_NULLPTR);
@@ -2404,8 +2414,12 @@ pub fn yyparse(allocator: std.mem.Allocator, scanner: *YYLexer) !isize {
                         if (@intFromPtr(yys.yypred) != 0) {
                             yystates[yyk] = yys.yypred;
                         }
-                        yyctx.yystackp.yynextFree = movePtr(yyctx.yystackp.yynextFree, -1);
+                        yyctx.yystackp.yyitems_arr_next -|= 1;
+                        if (yyctx.yystackp.yyitems_arr_next == 0) {
+                            break;
+                        }
                         yyctx.yystackp.yyspaceLeft += 1;
+                        yyctx.yystackp.yynextFree = movePtr(yyctx.yystackp.yynextFree, -1);
                     }
                     break;
                 }
@@ -2518,7 +2532,7 @@ pub fn main() !u8 {
     try YYLexer.yylex_init(&scanner);
     defer YYLexer.yylex_destroy(&scanner);
 
-    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
+    _ = try YYLexer.yy_scan_string(std.mem.trim(u8, content, &std.ascii.whitespace), scanner.yyg);
 
     _ = try YYParser.yyparse(arena, &scanner);
 

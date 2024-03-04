@@ -72,7 +72,7 @@ pub const Node = struct {
     }
 
     pub fn free(this: *allowzero Node, allocator: std.mem.Allocator) void {
-        this.parents -= 1;
+        this.parents -|= 1;
         if (this.parents > 0) {
             return;
         }
