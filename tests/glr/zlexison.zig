@@ -24,8 +24,8 @@ fn ExternUnionType(comptime T: type) type {
 
 pub const Node = struct {
     pub const Nterm = struct {
-        form: []const u8,
-        children: [3]*Node,
+        format: []const u8,
+        children: [3]?*Node,
     };
     pub const Term = struct {
         text: []const u8,
@@ -38,14 +38,14 @@ pub const Node = struct {
         term: *Term,
     },
 
-    pub fn newNterm(allocator: std.mem.Allocator, form: []const u8, n1: ?*Node, n2: ?*Node, n3: ?*Node) !*Node {
+    pub fn newNterm(allocator: std.mem.Allocator, fmt: []const u8, n1: ?*Node, n2: ?*Node, n3: ?*Node) !*Node {
         var parents: usize = 0;
         if (n1 != null) parents += 1;
         if (n2 != null) parents += 1;
         if (n3 != null) parents += 1;
         const new_nterm = try allocator.create(Nterm);
         new_nterm.* = .{
-            .form = form,
+            .format = fmt,
             .children = .{ n1, n2, n3 },
         };
         const new_node = try allocator.create(Node);
@@ -71,16 +71,17 @@ pub const Node = struct {
         return new_node;
     }
 
-    pub fn free(this: *Node, allocator: std.mem.Allocator) void {
-        this.parents -= 1;
+    pub fn free(this: *allowzero Node, allocator: std.mem.Allocator) void {
+        this.parents -|= 1;
         if (this.parents > 0) {
             return;
         }
         if (this.isNterm) {
-            this.content.nterm.children[0].free(allocator);
-            this.content.nterm.children[1].free(allocator);
-            this.content.nterm.children[2].free(allocator);
-            allocator.free(this.content.nterm.form);
+            for (0..3) |i| {
+                if (this.content.nterm.children[i]) |c| {
+                    c.free(allocator);
+                }
+            }
             allocator.destroy(this.content.nterm);
         } else {
             allocator.free(this.content.term.text);
@@ -89,22 +90,60 @@ pub const Node = struct {
         allocator.destroy(this);
     }
 
-    pub fn toString(this: *const Node, allocator: std.mem.Allocator) ![]const u8 {
+    pub fn toString(this: *allowzero const Node, allocator: std.mem.Allocator) ![]const u8 {
         var buf = std.ArrayList(u8).init(allocator);
         defer buf.deinit();
         var buf_writer = buf.writer();
         if (this.isNterm) {
-            const cs1 = try this.content.nterm.children[0].toString(allocator);
-            defer allocator.free(cs1);
-            const cs2 = try this.content.nterm.children[1].toString(allocator);
-            defer allocator.free(cs2);
-            const cs3 = try this.content.nterm.children[2].toString(allocator);
-            defer allocator.free(cs3);
-            try buf_writer.print("{s}{s}{s}", .{ cs1, cs2, cs3 });
+            var child_strs: [3][]const u8 = undefined;
+            var child_strs_count: usize = 0;
+            defer {
+                for (0..child_strs_count) |i| {
+                    allocator.free(child_strs[i]);
+                }
+            }
+
+            for (0..3) |i| {
+                if (this.content.nterm.children[i]) |c| {
+                    const s = try c.toString(allocator);
+                    if (s.len > 0) {
+                        child_strs[child_strs_count] = s;
+                        child_strs_count += 1;
+                    }
+                }
+            }
+
+            switch (child_strs_count) {
+                0 => return this.content.nterm.format,
+                1 => {
+                    try buf_writer.print("{s}({s})", .{ this.content.nterm.format, child_strs[0] });
+                    return buf.toOwnedSlice();
+                },
+                2 => {
+                    try buf_writer.print("{s}({s}, {s})", .{ this.content.nterm.format, child_strs[0], child_strs[1] });
+                    return buf.toOwnedSlice();
+                },
+                3 => {
+                    try buf_writer.print("{s}({s}, {s}, {s})", .{ this.content.nterm.format, child_strs[0], child_strs[1], child_strs[2] });
+                    return buf.toOwnedSlice();
+                },
+                else => unreachable,
+            }
         } else {
-            try buf_writer.print("{s}", this.content.term.text);
+            try buf_writer.print("{s}", .{this.content.term.text});
         }
         return buf.toOwnedSlice();
+    }
+
+    pub fn format(this: Node, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) @TypeOf(writer).Error!void {
+        _ = options;
+        if (std.mem.eql(u8, fmt, "s")) {
+            const s = try this.toString(std.heap.page_allocator);
+            defer std.heap.page_allocator.free(s);
+            try writer.print("{s}", .{s});
+        } else {
+            @panic("print YYLTYPE with 's'(full L<begin>:C<begin> - L<end>:C<end>) or 'sb'(L<begin>:C<begin>) or 'se'(L<end>:C<end>)");
+        }
     }
 };
 

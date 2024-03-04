@@ -1,0 +1,17 @@
+z + q;
+
+T x;
+
+T x = y;
+
+x = y;
+
+T (x) + y;
+
+T (x);
+
+T (y) = z + q;
+
+T (y y) = z + q;
+
+z + q;
