@@ -121,11 +121,21 @@ b4_locations_if([, [b4_api_PREFIX[LTYPE *yyllocp], [&yyctx.yylloc]]])])dnl
 ])
 
 
+m4_define([b4_yylex_formals_yystackp],
+[b4_pure_if([[[b4_api_PREFIX[STYPE *yylvalp]], [[&yystackp.yyval]]][]dnl
+b4_locations_if([, [b4_api_PREFIX[LTYPE *yyllocp], [&yystackp.yyloc]]])])dnl
+])
+
+
 # b4_yylex
 # --------
 # Call yylex.
 m4_define([b4_yylex],
 [b4_function_call([yylex], [int], b4_yylex_formals)])
+
+
+m4_define([b4_yylex_yystackp],
+[b4_function_call([yylex], [int], b4_yylex_formals_yystackp)])
 
 
 # b4_user_args
@@ -392,10 +402,19 @@ m4_define([b4_token_defines],
 m4_define([b4_token_enum],
 [b4_token_visible_if([$1],
     [m4_format([    %-30s %s],
-               m4_format([[%s = %s%s%s]],
+               m4_format([[pub const %s = %s%s%s]],
                          b4_symbol([$1], [id]),
                          b4_symbol([$1], b4_api_token_raw_if([[number]], [[code]])),
-                         m4_if([$1], b4_last_enum_token, [], [[,]])),
+                         m4_if([$1], b4_last_enum_token, [;], [[;]])),
+               [b4_symbol_tag_comment([$1])])])])
+
+
+m4_define([b4_token_enum_value2name],
+[b4_token_visible_if([$1],
+    [m4_format([    %-30s %s],
+               m4_format([[%s => return "%s",]],
+                         b4_symbol([$1], b4_api_token_raw_if([[number]], [[code]])),
+                         b4_symbol([$1], [id])),
                [b4_symbol_tag_comment([$1])])])])
 
 
@@ -403,11 +422,26 @@ m4_define([b4_token_enum],
 # --------------
 # The definition of the token kinds.
 m4_define([b4_token_enums],
-[b4_any_token_visible_if([[// /* Token kinds.  */
-pub const ]b4_api_prefix[token_kind_t = enum(i32) {
-    ]b4_symbol(empty, [id])[ = -2,
+[b4_any_token_visible_if([[
+var yytoken_kind_t_value_buf: [32]u8 = undefined;
+
+// /* Token kinds.  */
+pub const ]b4_api_prefix[token_kind_t = struct {
+    pub const ]b4_symbol(empty, [id])[ = -2;
 ]b4_symbol_foreach([b4_token_enum])dnl
-[  };
+[
+    pub fn value2name(v: isize) []const u8 {
+        switch (v) {
+            -2 => return "]b4_symbol(empty, [id])[",
+            ]b4_symbol_foreach([b4_token_enum_value2name])[
+            else => {
+                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "char=({any})", .{v}) catch {
+                    return "";
+                };
+            },
+        }
+    }
+  };
 ]])])
 
 
@@ -437,10 +471,10 @@ m4_define([b4_symbol_translate],
 # Output the definition of this symbol as an enum.
 m4_define([b4_symbol_enum],
 [m4_format([  %-40s %s],
-           m4_format([[%s = %s%s%s]],
+           m4_format([[pub const %s = %s%s%s]],
                      b4_symbol([$1], [kind_base]),
                      [$1],
-                     m4_if([$1], b4_last_symbol, [], [[,]])),
+                     m4_if([$1], b4_last_symbol, [;], [[;]])),
            [b4_symbol_tag_comment([$1])])])
 
 
@@ -451,9 +485,8 @@ m4_define([b4_symbol_enum],
 # to use a signed type, which matters for yytoken.
 m4_define([b4_declare_symbol_enum],
 [[// /* Symbol kind.  */
-pub const yysymbol_kind_t = enum(i32)
-{
-  ]b4_symbol(empty, [kind_base])[ = -2,
+pub const yysymbol_kind_t = struct {
+  pub const ]b4_symbol(empty, [kind_base])[ = -2;
 ]b4_symbol_foreach([b4_symbol_enum])dnl
 [};]])])
 
@@ -612,13 +645,13 @@ m4_define_default([b4_yydestruct_define],
 // `-----------------------------------------------*/
 
 fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
-            yykind: isize, yyvaluep: *YYSTYPE]b4_locations_if(dnl
-[[, yylocationp: *YYLTYPE]])[][)
-void {
-][{ _ = &yyctx; }]
+            yykind: isize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
+[[, yylocationp: *const YYLTYPE]])[][)
+!void {
+][{ _ = &yyctx; _ = &yylocationp; }]
 b4_locations_if([[]])
 [
-    YY_SYMBOL_PRINT(yymsg, @@enumFromInt(yykind), yyvaluep, yylocationp);
+    try YY_SYMBOL_PRINT(yymsg, yykind, yyvaluep, yylocationp);
 
   ]b4_symbol_actions([destructor])[
 }]dnl
@@ -654,11 +687,11 @@ fn yy_symbol_value_print (
 fn yy_symbol_print (yyo: std.fs.File,
                   yykind: isize, yyvaluep: *const YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *const YYLTYPE]])[][) !void {
-  try yyo.writer().print("{s} {s} (", .{
+  try yyo.writer().print(" {s} {s} (", .{
       if (yykind < YYNTOKENS) "token" else "nterm",
       ]b4_parse_error_bmatch([simple\|verbose],
-        [yysymbol_name(@@intCast(yykind)),],
-        [yysymbol_name(@@enumFromInt(yykind)),])
+        [yysymbol_name(yykind),],
+        [yysymbol_name(yykind),])
       [
   });
 ]b4_locations_if([  try yy_location_print_(yyo, yylocationp);

@@ -30,7 +30,7 @@ const YY_ASSERT = std.debug.assert;
 
 /// utils for pointer operations.
 // inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
-//      return (@intFromPtr(p2) - @intFromPtr(p1)) / @sizeOf(T);
+//     return (@intFromPtr(p2) - @intFromPtr(p1)) / @sizeOf(T);
 // }
 
 inline fn ptrEq(p1: anytype, p2: anytype) bool {
@@ -83,7 +83,7 @@ pub var yydebug: bool = YYDEBUG == 1;
 
 var yytoken_kind_t_value_buf: [32]u8 = undefined;
 
-// /* Token kinds. eq isize */
+// /* Token kinds.  */
 pub const yytoken_kind_t = struct {
     pub const YYEMPTY = -2;
     pub const YYEOF = 0; // /* "end of file"//  */
@@ -95,13 +95,14 @@ pub const yytoken_kind_t = struct {
     pub fn value2name(v: isize) []const u8 {
         switch (v) {
             -2 => return "YYEMPTY",
-            0 => return "YYEOF",
-            256 => return "YYerror",
-            257 => return "YYUNDEF",
-            258 => return "TYPENAME",
-            259 => return "ID",
+            0 => return "YYEOF", // /* "end of file"//  */
+            256 => return "YYerror", // /* error//  */
+            257 => return "YYUNDEF", // /* "invalid token"//  */
+            258 => return "TYPENAME", // /* "typename"//  */
+            259 => return "ID", // /* "identifier"//  */
+
             else => {
-                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "c({any})", .{v}) catch {
+                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "char=({any})", .{v}) catch {
                     return "";
                 };
             },
@@ -115,7 +116,7 @@ pub const YYSTYPE = YYLexer.YYSTYPE;
 // /* Location type.  */
 const YYLTYPE = YYLexer.YYLTYPE;
 
-// /* Symbol kind. eq isize */
+// /* Symbol kind.  */
 pub const yysymbol_kind_t = struct {
     pub const YYSYMBOL_YYEMPTY = -2;
     pub const YYSYMBOL_YYEOF = 0; // /* "end of file"//  */
@@ -276,7 +277,7 @@ inline fn YYRHSLOC(Rhs: anytype, K: anytype) YYLTYPE {
 
 const YYENOMEM = -2;
 
-// YYRESULTTAG, eq isize
+// YYRESULTTAG
 const YYRESULTTAG = struct {
     pub const yyok = 0;
     pub const yyaccept = 1;
@@ -284,13 +285,6 @@ const YYRESULTTAG = struct {
     pub const yyerr = 3;
     pub const yynomem = 4;
 };
-
-// inline fn YYCHK(YYE: usize) usize {
-//     if (YYE != YYRESULTTAG.yyok) {
-//         return YYE;
-//     }
-//     return YYRESULTTAG.yyok;
-// }
 
 // /* YYINITDEPTH -- initial size of the parser's stacks.  */
 const YYINITDEPTH = 200;
@@ -411,7 +405,6 @@ const yyGLRStack = struct {
     yyitems_arr: []yyGLRStackItem = undefined,
     yyitems_arr_next: usize = 0,
 
-    // yyexception_buffer: YYJMP_BUF,
     yyitems: [*]allowzero yyGLRStackItem = @ptrFromInt(0),
     yynextFree: *allowzero yyGLRStackItem = @ptrFromInt(0),
     yyspaceLeft: usize = 0,
@@ -629,7 +622,6 @@ inline fn yygetToken(yycharp: *isize, yystackp: *yyGLRStack, scanner: *YYLexer) 
             std.debug.print("Reading a token\n", .{});
         }
         yycharp.* = @intCast(try scanner.yylex(&yystackp.yyval, &yystackp.yyloc));
-        // yycharp.* = scanner.yylex (&yyctx.yylval, &yyctx.yylloc);
     }
     if (yycharp.* <= yytoken_kind_t.YYEOF) {
         yycharp.* = yytoken_kind_t.YYEOF;
@@ -684,15 +676,6 @@ inline fn yyclearin(yychar_: *u8) void {
     yychar_.* = yytoken_kind_t.YYEMPTY;
     yyclearin(yychar_.*);
 }
-
-// # define YYFILL(N) yyfill (yyvsp, &yylow, (N), yynormal)
-// inline fn YYFILL(N: usize) usize {
-//   return yyfill(yyvsp, yylow_, N, yynormal);
-// }
-
-// # define YYBACKUP(Token, Value)                                              \
-//   return yyerror (yylocp, YYLexer, YY_("syntax error: cannot back up")),     \
-//          yyerrok, yyerr
 
 fn yyGLRStackItem2Locs(yyvsp: *allowzero yyGLRStackItem, N: usize, yyvsp_locs: []YYLTYPE) void {
     if (N == 0) {
@@ -944,7 +927,7 @@ inline fn yydefaultAction(yystate: usize) usize {
 
 inline fn yytable_value_is_error(yyn: anytype) bool {
     {
-        _ = yyn;
+        _ = &yyn;
     }
     return false;
 }
@@ -970,7 +953,7 @@ inline fn yygetLRActions(yystate: usize, yytoken: isize, yyconflicts: *[]const i
         yyconflicts.* = @constCast(yyconfl[@as(usize, @intCast(yyconflp[@intCast(yyindex)]))..]);
         return yytable[@intCast(yyindex)];
     } else {
-        yyconflicts.* = yyconfl + yyconflp[yyindex];
+        yyconflicts.* = yyconfl + yyconflp[@intCast(yyindex)];
         return 0;
     }
 }
@@ -1228,9 +1211,9 @@ inline fn yyglrShift(yystackp: *yyGLRStack, yyk: isize, yylrState: usize, yyposn
 // /** Shift stack #YYK of *YYSTACKP, to a new state corresponding to LR
 //  *  state YYLRSTATE, at input position YYPOSN, with the (unresolved)
 //  *  semantic value of YYRHS under the action for YYRULE.  */
-inline fn yyglrShiftDefer(yystackp: *yyGLRStack, yyk: isize, yylrState: usize, yyposn: isize, yyrhs: ?*yyGLRState, yyrule: usize) !void {
+inline fn yyglrShiftDefer(yystackp: *yyGLRStack, yyk: isize, yylrState: usize, yyposn: isize, yyrhs: *allowzero yyGLRState, yyrule: usize) !void {
     var yynewState = yynewGLRStackItem(yystackp, true).yystate;
-    // YY_ASSERT(yynewState.yyisState);
+    YY_ASSERT(yynewState.yystate.yyisState);
     yynewState.yylrState = yylrState;
     yynewState.yyposn = yyposn;
     yynewState.yyresolved = false;
@@ -1280,6 +1263,7 @@ inline fn yy_reduce_print(yynormal: bool, yyvsp: *allowzero yyGLRStackItem, yyk:
 //  *  for userAction.  */
 inline fn yydoAction(yyctx: *yyparse_context_t, yystackp: *yyGLRStack, yyk: isize, yyrule: usize, yyvalp: *YYSTYPE, yylocp: *YYLTYPE) !usize {
     const yynrhs = yyrhsLength(yyrule);
+
     if (@intFromPtr(yystackp.yysplitPoint) == 0) {
         // /* Standard special case: single stack.  */
         const yyrhs: *allowzero yyGLRStackItem = @ptrCast(valueWithOffset(yystackp.yytops.yystates, yyk));
@@ -1398,7 +1382,7 @@ fn yysplitStack(allocator: std.mem.Allocator, yystackp: *yyGLRStack, yyk: isize)
         yystackp.yytops.yycapacity *= 2;
 
         {
-            const yynewStates: []?*yyGLRState = try allocator.realloc(yystackp.yytops.yystates_arr, yystackp.yytops.yycapacity);
+            const yynewStates = try allocator.realloc(yystackp.yytops.yystates_arr, yystackp.yytops.yycapacity);
             yystackp.yytops.yystates_arr = yynewStates;
         }
 
@@ -1502,9 +1486,6 @@ fn yypreference(y0: *allowzero yySemanticOption, y1: *allowzero yySemanticOption
     }
     return 0;
 }
-
-// static YYRESULTTAG
-// yyresolveValue (yyGLRState* yys, yyGLRStack* yystackp, scanner: *YYLexer);
 
 // /** Resolve the previous YYN states starting at and including state YYS
 //  *  on *YYSTACKP. If result != yyok, some states may have been left
@@ -1901,7 +1882,7 @@ fn yypcontext_expected_tokens(yystackp: *yyGLRStack, yyarg: []isize, yyargn: isi
         while (yyx < yyxend) : (yyx += 1) {
             if (yycheck[@intCast(yyx + yyn)] == yyx and yyx != yysymbol_kind_t.YYSYMBOL_YYerror and !yytable_value_is_error(yytable[@intCast(yyx + yyn)])) {
                 // if (!yyarg) {
-                //    yycount += 1;
+                //   yycount += 1;
                 // } else
                 if (yycount == yyargn) {
                     return 0;
@@ -1913,7 +1894,6 @@ fn yypcontext_expected_tokens(yystackp: *yyGLRStack, yyarg: []isize, yyargn: isi
         }
     }
     if (yycount == 0 and 0 < yyargn) {
-        // if (yyarg and yycount == 0 and 0 < yyargn) {
         yyarg[0] = yysymbol_kind_t.YYSYMBOL_YYEMPTY;
     }
     return @intCast(yycount);
@@ -2206,7 +2186,7 @@ fn label_yyparse_impl(yyctx: *yyparse_context_t) !usize {
                 }
             } else {
                 const yytoken = try yygetToken(&yyctx.yystackp.yyrawchar, yyctx.yystackp, yyctx.scanner);
-                var yyconflicts: []const isize = undefined;
+                var yyconflicts: []isize = undefined;
                 const yyaction = yygetLRActions(yystate, yytoken, &yyconflicts);
                 if (yyconflicts[0] > 0) {
                     // /* Enter nondeterministic mode.  */

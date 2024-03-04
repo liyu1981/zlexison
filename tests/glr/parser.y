@@ -121,7 +121,7 @@
 %destructor { $$.free(yyctx.allocator); } <Node>
 %printer { const s = try $$.toString(std.heap.page_allocator);
   defer std.heap.page_allocator.free(s);
-  yyo.writer().print("{s}", .{s}); } <Node>
+  try yyo.writer().print("{s}", .{s}); } <Node>
 
 %param {scanner: *YYLexer}
 
@@ -134,7 +134,7 @@ prog : %empty
                      try stdout_writer.print(": ", .{});
                      try stdout_writer.print("{s}", .{$2});
                      try stdout_writer.print("\n", .{});
-                     $2.deinit(yyctx.allocator);
+                     $2.free(yyctx.allocator);
                    }
      ;
 
@@ -145,15 +145,15 @@ stmt : expr ';'  %merge <stmtMerge>     { $$ = $1; }
 
 expr : ID
      | TYPENAME '(' expr ')'
-                        { $$ = try Node.newNterm(yyctx.allocator, "<cast>({s}, {s})", $3, $1, null); }
-     | expr '+' expr    { $$ = try Node.newNterm(yyctx.allocator, "+({s}, {s})", $1, $3, null); }
-     | expr '=' expr    { $$ = try Node.newNterm(yyctx.allocator, "=({s}, {s})", $1, $3, null); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<cast>", $3, $1, null); }
+     | expr '+' expr    { $$ = try Node.newNterm(yyctx.allocator, "+", $1, $3, null); }
+     | expr '=' expr    { $$ = try Node.newNterm(yyctx.allocator, "=", $1, $3, null); }
      ;
 
 decl : TYPENAME declarator ';'
-                        { $$ = try Node.newNterm(yyctx.allocator, "<declare>({s}, {s})", $1, $2, null); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<declare>", $1, $2, null); }
      | TYPENAME declarator '=' expr ';'
-                        { $$ = try Node.newNterm(yyctx.allocator, "<init-declare>({s}, {s}, {s})", $1, $2, $4); }
+                        { $$ = try Node.newNterm(yyctx.allocator, "<init-declare>", $1, $2, $4); }
      ;
 
 declarator
@@ -164,7 +164,7 @@ declarator
 %%
 
 fn stmtMerge(yyctx: *yyparse_context_t, x0: *YYSTYPE, x1: *YYSTYPE) !*Node {
-    return try Node.newNterm(yyctx.allocator, "<OR>(%s, %s)", x0.stmt, x1.stmt, null);
+    return try Node.newNterm(yyctx.allocator, "<OR>", x0.stmt, x1.stmt, null);
 }
 
 pub fn main() !u8 {
@@ -185,8 +185,6 @@ pub fn main() !u8 {
     };
     defer f.close();
 
-    try zlexison.initSymTable(arena);
-
     const content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
     defer arena.free(content);
     try stdout_writer.print("read {d}bytes\n", .{content.len});
@@ -196,7 +194,7 @@ pub fn main() !u8 {
     try YYLexer.yylex_init(&scanner);
     defer YYLexer.yylex_destroy(&scanner);
 
-    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
+    _ = try YYLexer.yy_scan_string(std.mem.trim(u8, content, &std.ascii.whitespace), scanner.yyg);
 
     _ = try YYParser.yyparse(arena, &scanner);
 

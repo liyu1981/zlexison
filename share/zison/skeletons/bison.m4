@@ -553,7 +553,7 @@ m4_define([b4_symbol_sym_checker], [b4_symbol_checker([$1], [printer], [yysymbol
 m4_define([b4_symbol_actions],
 [m4_pushdef([b4_actions_], m4_expand([b4_symbol_foreach([b4_symbol_sym_$1])]))dnl
 m4_ifval(m4_defn([b4_actions_]),
-[switch (@@as(yysymbol_kind_t, @@enumFromInt(m4_default([$2], [yykind]))))
+[switch (m4_default([$2], [yykind]))
     {
 m4_defn([b4_actions_])[]dnl
       else => {},
