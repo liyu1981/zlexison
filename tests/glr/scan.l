@@ -9,10 +9,10 @@
     const t = yyget_text(yyg);
     if (std.ascii.isUpper(t[0])) {
       yyset_lval(YYSTYPE{.TYPENAME = try Node.newTerm(yyg.lexer_.allocator, t)}, yyg);
-      return @intFromEnum(TOK_TYPE.TYPENAME);
+      return TOK_TYPE.TYPENAME;
     } else {
       yyset_lval(YYSTYPE{.ID = try Node.newTerm(yyg.lexer_.allocator, t)}, yyg);
-      return @intFromEnum(TOK_TYPE.ID);
+      return TOK_TYPE.ID;
     }
   }
 
@@ -23,7 +23,7 @@
     return t[0];
   }
 
-<<EOF>>  { return @intFromEnum(TOK_TYPE.YYEOF); }
+<<EOF>>  { return TOK_TYPE.YYEOF; }
 
 %%
 
@@ -68,7 +68,7 @@ pub fn main() !u8 {
         };
         if (tk == YYLexer.YY_TERMINATED) break;
         switch (tk) {
-            @as(usize, @intFromEnum(TOK_TYPE.YYEOF)) => {
+            TOK_TYPE.YYEOF => {
                 break;
             },
             else => |cur_tk| {

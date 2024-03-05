@@ -351,10 +351,19 @@ m4_define([b4_token_defines],
 m4_define([b4_token_enum],
 [b4_token_visible_if([$1],
     [m4_format([    %-30s %s],
-               m4_format([[%s = %s%s%s]],
+               m4_format([[pub const %s = %s%s%s]],
                          b4_symbol([$1], [id]),
                          b4_symbol([$1], b4_api_token_raw_if([[number]], [[code]])),
-                         m4_if([$1], b4_last_enum_token, [], [[,]])),
+                         m4_if([$1], b4_last_enum_token, [;], [[;]])),
+               [b4_symbol_tag_comment([$1])])])])
+
+
+m4_define([b4_token_enum_value2name],
+[b4_token_visible_if([$1],
+    [m4_format([    %-30s %s],
+               m4_format([[%s => return "%s",]],
+                         b4_symbol([$1], b4_api_token_raw_if([[number]], [[code]])),
+                         b4_symbol([$1], [id])),
                [b4_symbol_tag_comment([$1])])])])
 
 
@@ -362,11 +371,26 @@ m4_define([b4_token_enum],
 # --------------
 # The definition of the token kinds.
 m4_define([b4_token_enums],
-[b4_any_token_visible_if([[// /* Token kinds.  */
-pub const ]b4_api_prefix[token_kind_t = enum(i32) {
-    ]b4_symbol(empty, [id])[ = -2,
+[b4_any_token_visible_if([[
+var yytoken_kind_t_value_buf: [32]u8 = undefined;
+
+// /* Token kinds.  */
+pub const ]b4_api_prefix[token_kind_t = struct {
+    pub const ]b4_symbol(empty, [id])[ = -2;
 ]b4_symbol_foreach([b4_token_enum])dnl
-[  };
+[
+    pub fn value2name(v: isize) []const u8 {
+        switch (v) {
+            -2 => return "]b4_symbol(empty, [id])[",
+            ]b4_symbol_foreach([b4_token_enum_value2name])[
+            else => {
+                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "char=({any})", .{v}) catch {
+                    return "";
+                };
+            },
+        }
+    }
+  };
 ]])])
 
 
@@ -760,9 +784,14 @@ m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 
             bool => return false,
 
-            // provide custom type default value here
+            // provide custom type default value here in parser.y with code block %code YYSTYPE_defaultValue
             // pay attention that ExternUnionType(T) will genearally => *allowzero T for non-primitive types
-            // e.g., Node => return @ptrFromInt(0),
+            // e.g.,
+            // %code YYSTYPE_defaultValue {
+            //    Node => return @@ptrFromInt(0),
+            // }
+
+            ]b4_percent_code_get([[YYSTYPE_defaultValue]])[
 
             else => {
                 @@compileError("provide default value in zlexison.zig for type:" ++ @@typeName(T));

@@ -24,6 +24,11 @@ m4_pushdef([b4_copyright_years],
 
 m4_include(b4_skeletonsdir/[c.m4])
 
+
+# redefine b4_api_prefix so it has no effect even used in .y
+m4_define(b4_api_prefix, [])
+
+
 ## ---------- ##
 ## api.pure.  ##
 ## ---------- ##
@@ -317,14 +322,15 @@ m4_if(b4_spec_header_file, [y.tab.h], [],
       [b4_percent_define_default([[api.header.include]],
                                  [["@basename(]b4_spec_header_file[@)"]])])
 
-## superss unused variables
+# superss unused variables
 
 b4_percent_define_use([api.location.type])
 b4_percent_define_use([parser.trace])
-b4_percent_defnie_use([api.header.include])
+b4_percent_define_use([api.header.include])
 m4_pushdef([b4_percent_code_bison_qualifiers(top)], [0])
 m4_pushdef([b4_percent_code_bison_qualifiers(provides)], [0])
 m4_pushdef([b4_percent_code_bison_qualifiers(epilogue)], [0])
+m4_pushdef([b4_percent_code_bison_qualifiers(YYSTYPE_defaultValue)], [0])
 
 
 ## -------------- ##

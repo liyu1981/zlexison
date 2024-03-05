@@ -24,6 +24,10 @@ m4_if(b4_skeleton, ["zig-glr.m4"],
       [m4_include(b4_skeletonsdir/[c.m4])])
 
 
+# redefine b4_api_prefix so it has no effect even used in .y
+m4_define(b4_api_prefix, [])
+
+
 ## ---------------- ##
 ## Default values.  ##
 ## ---------------- ##
@@ -188,11 +192,24 @@ m4_define([b4_call_merger],
 m4_if(b4_skeleton, ["zig-glr.m4"],
 [m4_define([b4_shared_declarations],
 [b4_declare_yydebug[
-]b4_token_enums[
+pub const yytoken_kind_t = zlexison.yytoken_kind_t;
+
 ]b4_declare_yylstype[
 ]b4_percent_code_get([[provides]])[]dnl
 ])
 ])
+
+
+# superss unused variables
+
+#b4_percent_define_use([api.location.type])
+#b4_percent_define_use([parser.trace])
+#b4_percent_define_use([api.header.include])
+#m4_pushdef([b4_percent_code_bison_qualifiers(top)], [0])
+#m4_pushdef([b4_percent_code_bison_qualifiers(provides)], [0])
+#m4_pushdef([b4_percent_code_bison_qualifiers(epilogue)], [0])
+m4_pushdef([b4_percent_code_bison_qualifiers(YYSTYPE_defaultValue)], [0])
+
 
 ## -------------- ##
 ## Output files.  ##
@@ -219,27 +236,16 @@ m4_pushdef([b4_percent_code_bison_qualifiers(requires)], [0])
 # The header file.  #
 # ----------------- #
 
-# glr.cc produces its own header.
-b4_glr_cc_if([],
-[b4_header_if(
-[b4_output_begin([b4_spec_header_file])
-b4_copyright([Skeleton interface for Bison GLR parsers in C],
-             [2002-2015, 2018-2021])[
-]b4_cpp_guard_open([b4_spec_mapped_header_file])[
-]b4_shared_declarations[
-]b4_cpp_guard_close([b4_spec_mapped_header_file])[
-]b4_output_end[
-]])])
-
+# cc header file output removed as we do not need it in zig
 
 # ------------------------- #
 # The implementation file.  #
 # ------------------------- #
 
 b4_output_begin([b4_parser_file_name])
-b4_copyright([Skeleton implementation for Bison GLR parsers in C],
+b4_copyright([Skeleton implementation for Bison GLR parsers in zig],
              [2002-2015, 2018-2021])[
-// /* C GLR parser skeleton written by Paul Hilfinger.  */
+// /* adapted from C GLR parser skeleton written by Paul Hilfinger.  */
 
 ]b4_disclaimer[
 ]b4_identification[
@@ -249,6 +255,7 @@ const std = @@import("std");
 const Self = @@This();
 const YYParser = @@This();
 const YY_ASSERT = std.debug.assert;
+const zlexison = @@import("zlexison.zig");
 
 /// utils for pointer operations.
 // inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
@@ -288,7 +295,6 @@ inline fn movePtr(p: anytype, offset: isize) @@TypeOf(p) {
     const PType = @@typeInfo(@@TypeOf(p)).Pointer.child;
     return @@ptrFromInt(@@as(usize, @@intCast((@@as(isize, @@intCast(@@intFromPtr(p))) + offset * @@sizeOf(PType)))));
 }
-
 ]b4_percent_code_get([[top]])[
 ]b4_user_pre_prologue[
 ]b4_cast_define[
@@ -419,10 +425,10 @@ inline fn YYRHSLOC(Rhs: anytype, K: anytype) YYLTYPE {
 // #define yylval (yystackp->yyval)
 // #define yylloc (yystackp->yyloc)
 m4_if(b4_prefix[], [yy], [],
-[#define b4_prefix[]nerrs yynerrs
-#define b4_prefix[]char yychar
-#define b4_prefix[]lval yylval
-#define b4_prefix[]lloc yylloc])],
+[// #define b4_prefix[]nerrs yynerrs
+// #define b4_prefix[]char yychar
+// #define b4_prefix[]lval yylval
+// #define b4_prefix[]lloc yylloc])],
 [YYSTYPE yylval;]b4_locations_if([[
 YYLTYPE yylloc;]])[
 
@@ -1242,7 +1248,7 @@ inline fn yyglrShift (yystackp: *yyGLRStack, yyk: isize, yylrState: usize, yypos
 //  *  semantic value of YYRHS under the action for YYRULE.  */
 inline fn yyglrShiftDefer (yystackp: *yyGLRStack, yyk: isize, yylrState: usize, yyposn: isize, yyrhs: *allowzero yyGLRState, yyrule: usize) !void {
   var yynewState = yynewGLRStackItem (yystackp, true).yystate;
-  YY_ASSERT (yynewState.yystate.yyisState);
+  YY_ASSERT (yynewState.yyisState);
   yynewState.yylrState = yylrState;
   yynewState.yyposn = yyposn;
   yynewState.yyresolved = false;
