@@ -107,7 +107,6 @@ pub fn initSymTable(arena: std.mem.Allocator) !void {
 
 %{
 const YYLexer = @import("scan.zig");
-const zlexison = @import("zlexison.zig");
 const Symrec = zlexison.Symrec;
 %}
 

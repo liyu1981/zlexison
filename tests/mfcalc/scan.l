@@ -1,5 +1,4 @@
 %{
-const zlexison = @import("zlexison.zig");
 const Symrec = zlexison.Symrec;
 %}
 
@@ -8,13 +7,13 @@ const Symrec = zlexison.Symrec;
 \.[0-9]+ {
     const fval = try std.fmt.parseFloat(f64, yyget_text(yyg));
     yyset_lval(YYSTYPE{ .NUM = fval }, yyg);
-    return @intFromEnum(TOK_TYPE.NUM);
+    return TOK_TYPE.NUM;
   }
 
 [0-9]+(\.[0-9]+)* {
     const fval = try std.fmt.parseFloat(f64, yyget_text(yyg));
     yyset_lval(YYSTYPE{ .NUM = fval }, yyg);
-    return @intFromEnum(TOK_TYPE.NUM);
+    return TOK_TYPE.NUM;
   }
 
 [a-zA-Z][a-zA-Z0-9]* {
@@ -23,18 +22,18 @@ const Symrec = zlexison.Symrec;
         switch(s.type) {
             .VAR => {
                 yyset_lval(YYSTYPE{ .VAR = s }, yyg);
-                return @intFromEnum(TOK_TYPE.VAR);
+                return TOK_TYPE.VAR;
             },
             .FUN => {
                 yyset_lval(YYSTYPE{ .FUN = s }, yyg);
-                return @intFromEnum(TOK_TYPE.FUN);
+                return TOK_TYPE.FUN;
             },
         }
     } else {
         const s = try zlexison.sym_table.putsym(t, .VAR);
         yyset_lval(YYSTYPE{ .VAR = s }, yyg);
         zlexison.sym_table = s;
-        return @intFromEnum(TOK_TYPE.VAR);
+        return TOK_TYPE.VAR;
     }
   }
 
@@ -44,7 +43,7 @@ const Symrec = zlexison.Symrec;
 
 .        { return yyget_text(yyg)[0]; }
 
-<<EOF>>  { return @intFromEnum(TOK_TYPE.YYEOF); }
+<<EOF>>  { return TOK_TYPE.YYEOF; }
 
 %%
 
@@ -90,7 +89,7 @@ pub fn main() !u8 {
         };
         if (tk == YYLexer.YY_TERMINATED) break;
         switch (tk) {
-            @as(usize, @intFromEnum(TOK_TYPE.YYEOF)) => {
+            TOK_TYPE.YYEOF => {
                 break;
             },
             else => |cur_tk| {

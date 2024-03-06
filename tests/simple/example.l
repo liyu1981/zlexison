@@ -27,9 +27,9 @@ pub fn main() !u8 {
     const content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
     defer allocator.free(content);
 
-    var yylval_param: YYLexer.YYSTYPE = .{};
+    var yylval_param: YYSTYPE = YYSTYPE.default();
     _ = &yylval_param;
-    var yylloc_param: YYLexer.YYLTYPE = .{};
+    var yylloc_param: YYLTYPE = .{};
     _ = &yylval_param;
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };

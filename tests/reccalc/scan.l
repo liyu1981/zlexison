@@ -23,10 +23,10 @@ pub var context: Context = undefined;
 
 %%
 
-"+"      { return @intFromEnum(TOK_TYPE.TOK_PLUS); }
-"-"      { return @intFromEnum(TOK_TYPE.TOK_MINUS); }
-"*"      { return @intFromEnum(TOK_TYPE.TOK_STAR); }
-"/"      { return @intFromEnum(TOK_TYPE.TOK_SLASH); }
+"+"      { return TOK_TYPE.TOK_PLUS; }
+"-"      { return TOK_TYPE.TOK_MINUS; }
+"*"      { return TOK_TYPE.TOK_STAR; }
+"/"      { return TOK_TYPE.TOK_SLASH; }
 
 "("      {
     context.nesting += 1;
@@ -38,12 +38,12 @@ pub var context: Context = undefined;
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
     yyset_lval(YYSTYPE{.TOK_NUM = @intCast(intval)}, yyg);
-    return @intFromEnum(TOK_TYPE.TOK_NUM);
+    return TOK_TYPE.TOK_NUM;
   }
 
 [ \t]+   {}
 
-"\n"     { return @intFromEnum(TOK_TYPE.TOK_EOL); }
+"\n"     { return TOK_TYPE.TOK_EOL; }
 
 .        {
     std.io.getStdErr().writer().print(
@@ -64,7 +64,7 @@ pub var context: Context = undefined;
         BEGIN(INITIAL, yyg);
         if (context.str.items.len > 0) {
             yyset_lval(YYSTYPE{.TOK_STR = &context.str.items}, yyg);
-            return @intFromEnum(TOK_TYPE.TOK_STR);
+            return TOK_TYPE.TOK_STR;
         }
     } else {
         try context.str.appendSlice(yyget_text(yyg));
@@ -73,7 +73,7 @@ pub var context: Context = undefined;
 
 <SC_STRING>[^()]+  { try context.str.appendSlice(yyget_text(yyg)); }
 
-<<EOF>>  { return @intFromEnum(TOK_TYPE.TOK_EOF); }
+<<EOF>>  { return TOK_TYPE.TOK_EOF; }
 
 %%
 
@@ -118,8 +118,8 @@ pub fn main() !u8 {
             return 1;
         };
         if (tk == YYLexer.YY_TERMINATED) break;
-        switch (@as(TOK_TYPE, @enumFromInt(tk))) {
-            .TOK_EOF => {
+        switch (tk) {
+            TOK_TYPE.TOK_EOF => {
                 break;
             },
             else => |cur_tk| {

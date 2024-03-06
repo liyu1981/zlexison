@@ -12,21 +12,21 @@
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
     yylval_.* = .{ .NUM = @as(f64, @floatFromInt(intval)) };
-    return @intFromEnum(TOK_TYPE.NUM);
+    return TOK_TYPE.NUM;
   }
 
 \.[0-9]+ {
     // Scan an float like .123
     const floatval = try std.fmt.parseFloat(f64, yyget_text(yyg));
     yylval_.* = .{ .NUM = floatval };
-    return @intFromEnum(TOK_TYPE.NUM);
+    return TOK_TYPE.NUM;
   }
 
 [0-9]+\.[0-9]+ {
     // Scan an float like 1.23
     const floatval = try std.fmt.parseFloat(f64, yyget_text(yyg));
     yylval_.* = .{ .NUM = floatval };
-    return @intFromEnum(TOK_TYPE.NUM);
+    return TOK_TYPE.NUM;
   }
 
 [ \t]+   {}
@@ -41,7 +41,7 @@
     return error.SyntaxError;
   }
 
-<<EOF>>  { return @intFromEnum(TOK_TYPE.YYEOF); }
+<<EOF>>  { return TOK_TYPE.YYEOF; }
 
 %%
 
@@ -85,7 +85,7 @@ pub fn main() !u8 {
         };
         if (tk == YYLexer.YY_TERMINATED) break;
         switch (tk) {
-            @as(usize, @intFromEnum(TOK_TYPE.YYEOF)) => {
+            TOK_TYPE.YYEOF => {
                 break;
             },
             else => |cur_tk| {

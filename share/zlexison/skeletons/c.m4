@@ -371,11 +371,10 @@ m4_define([b4_token_enum_value2name],
 # --------------
 # The definition of the token kinds.
 m4_define([b4_token_enums],
-[b4_any_token_visible_if([[
-var yytoken_kind_t_value_buf: [32]u8 = undefined;
-
-// /* Token kinds.  */
+[b4_any_token_visible_if([[// /* Token kinds.  */
 pub const ]b4_api_prefix[token_kind_t = struct {
+    pub var yytoken_kind_t_value_buf: [32]u8 = undefined;
+
     pub const ]b4_symbol(empty, [id])[ = -2;
 ]b4_symbol_foreach([b4_token_enum])dnl
 [
@@ -384,7 +383,7 @@ pub const ]b4_api_prefix[token_kind_t = struct {
             -2 => return "]b4_symbol(empty, [id])[",
             ]b4_symbol_foreach([b4_token_enum_value2name])[
             else => {
-                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "char=({any})", .{v}) catch {
+                return std.fmt.bufPrint(&yytoken_kind_t_value_buf, "char=({d})", .{v}) catch {
                     return "";
                 };
             },
