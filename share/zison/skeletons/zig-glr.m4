@@ -258,9 +258,9 @@ const YY_ASSERT = std.debug.assert;
 const zlexison = @@import("zlexison.zig");
 
 /// utils for pointer operations.
-// inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
-//     return (@@intFromPtr(p2) - @@intFromPtr(p1)) / @@sizeOf(T);
-// }
+inline fn cPtrDistance(comptime T: type, p1: [*c]T, p2: [*c]T) usize {
+    return (@@intFromPtr(p2) - @@intFromPtr(p1)) / @@sizeOf(T);
+}
 
 inline fn ptrEq(p1: anytype, p2: anytype) bool {
     return @@intFromPtr(p1) == @@intFromPtr(p2);
@@ -418,23 +418,6 @@ inline fn YYRHSLOC(Rhs: anytype, K: anytype) YYLTYPE {
 }
 ]])[
 
-]b4_pure_if(
-[
-// #define yynerrs (yystackp->yyerrcnt)
-// #define yychar (yystackp->yyrawchar)
-// #define yylval (yystackp->yyval)
-// #define yylloc (yystackp->yyloc)
-m4_if(b4_prefix[], [yy], [],
-[// #define b4_prefix[]nerrs yynerrs
-// #define b4_prefix[]char yychar
-// #define b4_prefix[]lval yylval
-// #define b4_prefix[]lloc yylloc])],
-[YYSTYPE yylval;]b4_locations_if([[
-YYLTYPE yylloc;]])[
-
-int yynerrs;
-int yychar;])[
-
 const YYENOMEM = -2;
 
 // YYRESULTTAG
@@ -479,17 +462,6 @@ inline fn YY_RESERVE_GLRSTACK(yystackp: *yyGLRStack) !void {
 
 const YYSIZE_MAXIMUM = std.math.maxInt(usize);
 const YYSTACK_ALLOC_MAXIMUM = YYSIZE_MAXIMUM;
-
-// /** State numbers. */
-// const yy_state_t = usize;
-
-// /** Rule numbers. */
-// const yyRuleNum = usize;
-
-// /** Item references. */
-// const yyItemNum = usize;
-
-// const YYPTRDIFF_T = isize;
 
 const yyGLRState = struct
 {
@@ -583,20 +555,12 @@ inline fn yyerror (loc: *YYLTYPE, msg: []const u8) void {
 
 const YY_NULLPTR = "";
 
-fn yyFail (yystackp: *yyGLRStack]b4_pure_formals[, yymsg: []const u8) usize {
+inline fn yyFail (yystackp: *yyGLRStack]b4_pure_formals[, yymsg: []const u8) usize {
   _ = yystackp;
   _ = scanner;
   if (yymsg.len > 0) {
     yyerror (]b4_yyerror_args[yymsg);
   }
-  // TODO: this is a long jump
-  return 0;
-}
-
-fn yyMemoryExhausted (yystackp: *yyGLRStack) void {
-  _ = yystackp;
-  // YYLONGJMP (yystackp->yyexception_buffer, 2);
-  // TODO: another long jump
   return 0;
 }
 
@@ -2535,11 +2499,6 @@ fn yypstack (yystackp: *yyGLRStack, yyk: isize) void {
 
 // /* Print all the stacks.  */
 fn yypdumpstack (yystackp: *yyGLRStack) void {
-  // YY_CAST (long,                                                        \
-  //          ((YYX)                                                       \
-  //           ? YY_REINTERPRET_CAST (yyGLRStackItem*, (YYX)) - yystackp->yyitems \
-  //           : -1))
-
   var yyp: *yyGLRStackItem = yystackp.yyitems;
   while (yyp < yystackp.yynextFree) : (yyp += 1) {
     std.debug.print("{d}. ", .{yyp - yystackp.yyitems});
