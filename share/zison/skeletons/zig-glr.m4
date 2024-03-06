@@ -2061,19 +2061,19 @@ fn yyreportSyntaxError (allocator: std.mem.Allocator, yystackp: *yyGLRStack) !vo
           try yymsg.writer().print("syntax error", .{});
       },
       1 => {
-          try yymsg.writer().print("syntax error, unexpected {s}", .{yytoken_kind_t.value2name(yyarg[0])});
+          try yymsg.writer().print("syntax error, unexpected '{s}'", .{yysymbol_kind_t.value2name(yyarg[0])});
       },
       2 => {
-          try yymsg.writer().print("syntax error, unexpected {s}, expecting {s}", .{ yytoken_kind_t.value2name(yyarg[0]), yytoken_kind_t.value2name(yyarg[1]) });
+          try yymsg.writer().print("syntax error, unexpected '{s}', expecting '{s}'", .{ yysymbol_kind_t.value2name(yyarg[0]), yysymbol_kind_t.value2name(yyarg[1]) });
       },
       3 => {
-          try yymsg.writer().print("syntax error, unexpected {s}, expecting {s} or {s}", .{ yytoken_kind_t.value2name(yyarg[0]), yytoken_kind_t.value2name(yyarg[1]), yytoken_kind_t.value2name(yyarg[2]) });
+          try yymsg.writer().print("syntax error, unexpected '{s}', expecting '{s}' or '{s}'", .{ yysymbol_kind_t.value2name(yyarg[0]), yysymbol_kind_t.value2name(yyarg[1]), yysymbol_kind_t.value2name(yyarg[2]) });
       },
       4 => {
-          try yymsg.writer().print("syntax error, unexpected {s}, expecting {s} or {s} or {s}", .{ yytoken_kind_t.value2name(yyarg[0]), yytoken_kind_t.value2name(yyarg[1]), yytoken_kind_t.value2name(yyarg[2]), yytoken_kind_t.value2name(yyarg[3]) });
+          try yymsg.writer().print("syntax error, unexpected '{s}', expecting '{s}' or '{s}' or '{s}'", .{ yysymbol_kind_t.value2name(yyarg[0]), yysymbol_kind_t.value2name(yyarg[1]), yysymbol_kind_t.value2name(yyarg[2]), yysymbol_kind_t.value2name(yyarg[3]) });
       },
       5 => {
-          try yymsg.writer().print("syntax error, unexpected {s}, expecting {s} or {s} or {s} or {s}", .{ yytoken_kind_t.value2name(yyarg[0]), yytoken_kind_t.value2name(yyarg[1]), yytoken_kind_t.value2name(yyarg[2]), yytoken_kind_t.value2name(yyarg[3]), yytoken_kind_t.value2name(yyarg[4]) });
+          try yymsg.writer().print("syntax error, unexpected '{s}', expecting '{s}' or '{s}' or '{s}' or '{s}'", .{ yysymbol_kind_t.value2name(yyarg[0]), yysymbol_kind_t.value2name(yyarg[1]), yysymbol_kind_t.value2name(yyarg[2]), yysymbol_kind_t.value2name(yyarg[3]), yysymbol_kind_t.value2name(yyarg[4]) });
       },
       else => {},
   }

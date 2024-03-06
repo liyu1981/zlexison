@@ -478,6 +478,14 @@ m4_define([b4_symbol_enum],
            [b4_symbol_tag_comment([$1])])])
 
 
+m4_define([b4_symbol_enum_value2name],
+[m4_format([  %-40s %s],
+           m4_format([[%s => return "%s",]],
+                     b4_symbol([$1], [kind_base]),
+                     [m4_bpatsubsts(b4_symbol([$1], [tag]), ["], [], ['], [])]),
+           [b4_symbol_tag_comment([$1])])])
+
+
 # b4_declare_symbol_enum
 # ----------------------
 # The definition of the symbol internal numbers as an enum.
@@ -486,9 +494,23 @@ m4_define([b4_symbol_enum],
 m4_define([b4_declare_symbol_enum],
 [[// /* Symbol kind.  */
 pub const yysymbol_kind_t = struct {
+  pub var yysymbol_kind_t_value_buf: [64]u8 = undefined;
+
   pub const ]b4_symbol(empty, [kind_base])[ = -2;
 ]b4_symbol_foreach([b4_symbol_enum])dnl
-[};]])])
+[
+  pub fn value2name(v: isize) []const u8 {
+    switch (v) {
+      YYSYMBOL_YYEMPTY => return "",
+      ]b4_symbol_foreach([b4_symbol_enum_value2name])[
+      else => {
+          return std.fmt.bufPrint(&yysymbol_kind_t_value_buf, "char=({d})", .{v}) catch {
+              return "";
+          };
+      },
+    }
+  }
+};]])])
 
 
 ## ----------------- ##

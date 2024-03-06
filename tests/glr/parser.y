@@ -81,10 +81,10 @@
     }
 
     pub fn toString(this: *allowzero const Node, allocator: std.mem.Allocator) ![]const u8 {
-      if (@intFromPtr(this) == 0) return "";
       var buf = std.ArrayList(u8).init(allocator);
       defer buf.deinit();
       var buf_writer = buf.writer();
+      if (@intFromPtr(this) == 0) return buf.toOwnedSlice();
       if (this.isNterm) {
         var child_strs: [3][]const u8 = undefined;
         var child_strs_count: usize = 0;
@@ -105,20 +105,11 @@
         }
 
         switch (child_strs_count) {
-            0 => return this.content.nterm.format,
-            1 => {
-                try buf_writer.print("{s}({s})", .{ this.content.nterm.format, child_strs[0] });
-                return buf.toOwnedSlice();
-            },
-            2 => {
-                try buf_writer.print("{s}({s}, {s})", .{ this.content.nterm.format, child_strs[0], child_strs[1] });
-                return buf.toOwnedSlice();
-            },
-            3 => {
-                try buf_writer.print("{s}({s}, {s}, {s})", .{ this.content.nterm.format, child_strs[0], child_strs[1], child_strs[2] });
-                return buf.toOwnedSlice();
-            },
-            else => unreachable,
+          0 => try buf_writer.print("{s}", .{this.content.nterm.format}),
+          1 => try buf_writer.print("{s}({s})", .{ this.content.nterm.format, child_strs[0] }),
+          2 => try buf_writer.print("{s}({s}, {s})", .{ this.content.nterm.format, child_strs[0], child_strs[1] }),
+          3 => try buf_writer.print("{s}({s}, {s}, {s})", .{ this.content.nterm.format, child_strs[0], child_strs[1], child_strs[2] }),
+          else => unreachable,
         }
       } else {
         try buf_writer.print("{s}", .{this.content.term.text});
