@@ -673,7 +673,9 @@ fn yydestruct (yyctx: *yyparse_context_t, yymsg: []const u8,
 ][{ _ = &yyctx; _ = &yylocationp; }]
 b4_locations_if([[]])
 [
+  if (yydebug) {
     try YY_SYMBOL_PRINT(yymsg, yykind, yyvaluep, yylocationp);
+  }
 
   ]b4_symbol_actions([destructor])[
 }]dnl
@@ -695,7 +697,7 @@ fn yy_symbol_value_print (
   yyvaluep: *const YYSTYPE]b4_locations_if(dnl
 [[, yylocationp: *const YYLTYPE]])[][) !void {
    ]b4_locations_if([[_ = yylocationp;]])[
-   ][  // if (yyvaluep == null) return;]
+   ][]
    b4_percent_code_get([[pre-printer]])dnl
    b4_symbol_actions([printer])
    b4_percent_code_get([[post-printer]])dnl

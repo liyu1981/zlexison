@@ -8,10 +8,10 @@
 [[:alpha:]]([[:alnum:][_]])*    {
     const t = yyget_text(yyg);
     if (std.ascii.isUpper(t[0])) {
-      yyset_lval(YYSTYPE{.TYPENAME = try Node.newTerm(yyg.lexer_.allocator, t)}, yyg);
+      yyset_lval(YYSTYPE{ .tag = .TYPENAME, .value = .{ .TYPENAME = try Node.newTerm(yyg.lexer_.allocator, t)} }, yyg);
       return TOK_TYPE.TYPENAME;
     } else {
-      yyset_lval(YYSTYPE{.ID = try Node.newTerm(yyg.lexer_.allocator, t)}, yyg);
+      yyset_lval(YYSTYPE{ .tag = .ID, .value = .{ .ID = try Node.newTerm(yyg.lexer_.allocator, t)} }, yyg);
       return TOK_TYPE.ID;
     }
   }
@@ -29,9 +29,14 @@
 
 // a default main fn can be used testing scanner
 pub fn main() !u8 {
-    const args = try std.process.argsAlloc(std.heap.page_allocator);
-    defer std.heap.page_allocator.free(args);
-    const allocator = std.heap.page_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        _ = gpa.detectLeaks();
+    }
+    const allocator = gpa.allocator();
+
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
 
     const stdout_writer = std.io.getStdOut().writer();
 
@@ -50,16 +55,14 @@ pub fn main() !u8 {
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    _ = &yylval;
+    defer yylval.deinit(allocator);
     var yylloc: YYLexer.YYLTYPE = .{};
-    _ = &yylloc;
 
-    var lexer = YYLexer{ .allocator = std.heap.page_allocator };
+    var lexer = YYLexer{ .allocator = allocator };
+    try lexer.init();
+    defer lexer.deinit();
 
-    try YYLexer.yylex_init(&lexer);
-    defer YYLexer.yylex_destroy(&lexer);
-
-    _ = try YYLexer.yy_scan_string(content, lexer.yyg);
+    try lexer.scan_string(content);
 
     while (true) {
         const tk = lexer.yylex(&yylval, &yylloc) catch |err| {

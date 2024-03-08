@@ -500,10 +500,10 @@ m4_define([b4_symbol_tag_comment],
 # Run the action ACTION ("destructor" or "printer") for SYMBOL-NUM.
 m4_define([b4_symbol_action],
 [b4_symbol_if([$1], [has_$2],
-[b4_dollar_pushdef([(yyvaluep)],
+[b4_dollar_pushdef([(yyvaluep.value)],
                    [$1],
                    [],
-                   [(*yylocationp)])dnl
+                   [(yylocationp)])dnl
 ]$3[_b4_symbol_case([$1])[]dnl
 b4_syncline([b4_symbol([$1], [$2_line])], [b4_symbol([$1], [$2_file])])dnl
 b4_symbol([$1], [$2])
@@ -516,10 +516,10 @@ b4_dollar_popdef[]dnl
 
 m4_define([b4_symbol_checker],
 [b4_symbol_if([$1], [has_$2],
-[b4_dollar_pushdef([(yyvaluep)],
+[b4_dollar_pushdef([(yyvaluep.value)],
                    [$1],
                    [],
-                   [(*yylocationp)])dnl
+                   [(yylocationp)])dnl
 ]$3[_b4_symbol_case([$1])[]dnl
                 if (!std.mem.eql(u8, @@tagName(std.meta.activeTag(yyctx.yyval)), "]b4_symbol([$1], [id])[")) {
                     std.debug.print("Wanted tag {s}, but active tag of yyctx.yyval is ${s}\n", .{ "]b4_symbol([$1], [id])[", @@tagName(std.meta.activeTag(yyctx.yylval)) });

@@ -23,8 +23,8 @@
     isNterm: bool,
     parents: usize,
     content: union{
-      nterm: *Nterm,
-      term: *Term,
+      nterm: Nterm,
+      term: Term,
     },
 
     pub fn newNterm(allocator: std.mem.Allocator, fmt: []const u8, n1: ?*Node, n2: ?*Node, n3: ?*Node) !*Node {
@@ -32,50 +32,42 @@
       if (n1 != null) parents += 1;
       if (n2 != null) parents += 1;
       if (n3 != null) parents += 1;
-      const new_nterm = try allocator.create(Nterm);
-      new_nterm.* = .{
-        .format = fmt,
-        .children = .{n1, n2, n3},
-      };
       const new_node = try allocator.create(Node);
       new_node.* = Node{
         .isNterm = true,
-        .parents = 0,
-        .content = .{ .nterm = new_nterm },
+        .parents = parents,
+        .content = .{
+          .nterm = .{
+            .format = fmt,
+            .children = .{n1, n2, n3},
+          },
+        },
       };
       return new_node;
     }
 
     pub fn newTerm(allocator: std.mem.Allocator, text: []const u8) !*Node {
-      const new_term = try allocator.create(Term);
-      new_term.* = .{
-        .text = text,
-      };
       const new_node = try allocator.create(Node);
       new_node.* = Node{
         .isNterm = false,
         .parents = 0,
-        .content = .{ .term = new_term },
+        .content = .{
+          .term = .{
+            .text = text,
+          },
+        },
       };
       return new_node;
     }
 
     pub fn free(this: *allowzero Node, allocator: std.mem.Allocator) void {
       if (@intFromPtr(this) == 0) return;
-      this.parents -|= 1;
-      if (this.parents > 0) {
-        return;
-      }
       if (this.isNterm) {
         for (0..3) |i| {
             if (this.content.nterm.children[i]) |c| {
                 c.free(allocator);
             }
         }
-        allocator.destroy(this.content.nterm);
-      } else {
-        allocator.free(this.content.term.text);
-        allocator.destroy(this.content.term);
       }
       allocator.destroy(this);
     }
@@ -134,10 +126,14 @@
   Node => return @ptrFromInt(0),
 }
 
-
 %code top {
   const YYLexer = @import("scan.zig");
   const Node = zlexison.Node;
+
+  pub const Ast = struct {
+    loc: YYLTYPE,
+    root: *allowzero Node,
+  };
 }
 
 %define api.value.type union
@@ -159,19 +155,12 @@
   defer std.heap.page_allocator.free(s);
   try yyo.writer().print("{s}", .{s}); } <Node>
 
-%param {scanner: *YYLexer}
+%param {scanner: *YYLexer}{ast_out: *Ast}
 
 %%
 
 prog : %empty
-     | prog stmt   {
-                     const stdout_writer = std.io.getStdOut().writer();
-                     try stdout_writer.print("{s}", .{&@2});
-                     try stdout_writer.print(": ", .{});
-                     try stdout_writer.print("{s}", .{$2});
-                     try stdout_writer.print("\n", .{});
-                     $2.free(yyctx.allocator);
-                   }
+     | prog stmt   { yyctx.ast_out.* = .{ .loc = @2, .root = $2 }; }
      ;
 
 stmt : expr ';'  %merge <stmtMerge>     { $$ = $1; }
@@ -200,15 +189,18 @@ declarator
 %%
 
 fn stmtMerge(yyctx: *yyparse_context_t, x0: *YYSTYPE, x1: *YYSTYPE) !*Node {
-    return try Node.newNterm(yyctx.allocator, "<OR>", x0.stmt, x1.stmt, null);
+    return try Node.newNterm(yyctx.allocator, "<OR>", x0.value.stmt, x1.value.stmt, null);
 }
 
 pub fn main() !u8 {
-    const args = try std.process.argsAlloc(std.heap.page_allocator);
-    defer std.heap.page_allocator.free(args);
-    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer aa.deinit();
-    const arena = aa.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer {
+        _ = gpa.detectLeaks();
+    }
+    const allocator = gpa.allocator();
+
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
 
     const stdout_writer = std.io.getStdOut().writer();
 
@@ -221,18 +213,26 @@ pub fn main() !u8 {
     };
     defer f.close();
 
-    const content = try f.readToEndAlloc(arena, std.math.maxInt(usize));
-    defer arena.free(content);
+    const content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(content);
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
-    var scanner = YYLexer{ .allocator = arena };
+    var scanner = YYLexer{ .allocator = allocator };
+    try scanner.init();
+    defer scanner.deinit();
 
-    try YYLexer.yylex_init(&scanner);
-    defer YYLexer.yylex_destroy(&scanner);
+    try scanner.scan_string(std.mem.trim(u8, content, &std.ascii.whitespace));
 
-    _ = try YYLexer.yy_scan_string(std.mem.trim(u8, content, &std.ascii.whitespace), scanner.yyg);
+    var ast: Ast = undefined;
 
-    _ = try YYParser.yyparse(arena, &scanner);
+    _ = try YYParser.yyparse(allocator, &scanner, &ast);
+
+    const out_writer = std.io.getStdOut().writer();
+    try out_writer.print("{s}", .{ast.loc});
+    try out_writer.print(": ", .{});
+    try out_writer.print("{s}", .{ast.root});
+    try out_writer.print("\n", .{});
+    ast.root.free(allocator);
 
     return 0;
 }

@@ -659,24 +659,26 @@ m4_expand([m4_format([  %-40s ,%s],
                      m4_expand([b4_symbol([$1], [type_tag]): [ExternUnionType[(]]b4_symbol([$1], [type])[)]]),
                      [b4_symbol_tag_comment([$1])])]))
 m4_define([b4_union_member_default_constructor],
-  m4_expand([m4_format([  pub fn default() YYSTYPE {
-    return YYSTYPE{ .%s = YYSTYPE.defaultValue(%s) };
+  [  pub fn default() YYSTYPE {
+    return YYSTYPE{ .tag = .default, .value = undefined };
   }
 
-  ],
-    m4_expand([b4_symbol([$1], [type_tag])]),
-    m4_expand([b4_symbol([$1], [type])])
-  )]))
+  ])
 m4_append([b4_union_member_constructors],
 m4_expand([m4_format([  pub fn %s() YYSTYPE {
-  return YYSTYPE{ .%s = YYSTYPE.defaultValue(%s) };
+  return YYSTYPE{ .tag = .%s, .value = .{ .%s = YYSTYPE.defaultValue(%s) } };
 }
 
 ],
   m4_expand([b4_symbol([$1], [type_tag])]),
   m4_expand([b4_symbol([$1], [type_tag])]),
+  m4_expand([b4_symbol([$1], [type_tag])]),
   m4_expand([b4_symbol([$1], [type])])
 )]))
+m4_append([b4_union_member_type_enums],
+m4_expand([m4_format([  %-40s ,%s],
+                     m4_expand([b4_symbol([$1], [type_tag])]),
+                     [b4_symbol_tag_comment([$1])])]))
 ])
 
 
@@ -793,8 +795,17 @@ m4_bmatch(b4_percent_define_get_kind([[api.value.type]]),
 [m4_bmatch(b4_percent_define_get([[api.value.type]]),
 [union\|union-directive],
 [b4_percent_define_get_syncline([[api.value.union.name]])dnl
-[pub const ]b4_percent_define_get([[api.value.union.name]])[ = extern union {
-]b4_user_union_members[
+[pub const ]b4_percent_define_get([[api.value.union.name]])[ = struct {
+  pub const TYPE = enum {
+    default,
+    ]b4_union_member_type_enums[
+  };
+  pub const VALUE = extern union {
+]b4_user_union_members[};
+
+  tag: TYPE,
+  value: VALUE,
+
 ]b4_union_member_default_constructor[
 ]b4_union_member_constructors[
 

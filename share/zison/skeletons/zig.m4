@@ -2057,7 +2057,7 @@ fn label_yyinit(yyctx: *yyparse_context_t) usize {
                       [b4_push_if([b4_pure_if([*])yypushed_loc], [yylloc])])dnl
     b4_user_initial_action
     b4_dollar_popdef[]dnl
-    m4_ifdef([b4_dollar_dollar_used],[[  yyctx.yyvsp[0] = yyctx.yylval;]])])dnl
+    m4_ifdef([_used],[[  yyctx.yyvsp[0] = yyctx.yylval;]])])dnl
     b4_locations_if([[
       yyctx.yylsp[0] = ]b4_push_if([b4_pure_if([])yyctx.yypushed_loc.*], [yyctx.yylloc])[;
     ]])dnl
