@@ -200,6 +200,10 @@ const parser_test_data = .{
     },
 };
 
+fn yyerrorSaveToAst(yyctx: *YYParser.yyparse_context_t, loc: *YYParser.YYLTYPE, msg: []const u8) !void {
+    yyctx.ast_out.last_err = try std.fmt.bufPrint(&yyctx.ast_out.errmsg_buf, "{s}: {s}\n", .{ loc.*, msg });
+}
+
 fn runParserTest(allocator: std.mem.Allocator, input: []const u8, expected_output: []const u8) !void {
     var scanner = YYLexer{ .allocator = allocator };
     try scanner.init();
@@ -210,6 +214,7 @@ fn runParserTest(allocator: std.mem.Allocator, input: []const u8, expected_outpu
     var ast: YYParser.Ast = undefined;
 
     YYParser.yydebug = false;
+    YYParser.yyerror = yyerrorSaveToAst;
     _ = try YYParser.yyparse(allocator, &scanner, &ast);
 
     var buf = std.ArrayList(u8).init(allocator);

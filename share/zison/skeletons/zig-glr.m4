@@ -559,18 +559,23 @@ const yyGLRStack = struct {
   yytops: yyGLRStateSet = yyGLRStateSet{},
 };
 
-inline fn yyerror (loc: *YYLTYPE, msg: []const u8) void {
-  std.debug.print("{s}: {s}\n", .{loc.*, msg});
+fn stdDebugYyerror(yyctx: *yyparse_context_t, loc: *YYLTYPE, msg: []const u8) anyerror!void {
+    _ = yyctx;
+    std.debug.print("{s}: {s}\n", .{ loc.*, msg });
 }
+
+/// function type for yyerror
+pub const yyerrorFn = *const fn (yyctx: *yyparse_context_t, loc: *YYLTYPE, msg: []const u8) anyerror!void;
+
+/// custom yyerror handler can be provided by YYParser.yyerror = <custom yyerrorFn>, default is stdDebugYyerror
+pub var yyerror: yyerrorFn = stdDebugYyerror;
 
 const YY_NULLPTR = "";
 
-inline fn yyFail (yystackp: *yyGLRStack]b4_yyerror_formals[,yymsg: []const u8) usize {
-  _ = yystackp;
+inline fn yyFail (yyctx: *yyparse_context_t]b4_yyerror_formals[,yymsg: []const u8) !void {
   if (yymsg.len > 0) {
-    yyerror (]b4_yyerror_args[yymsg);
+    try yyerror (yyctx,]b4_yyerror_args[yymsg);
   }
-  return 0;
 }
 
 // /** Accessing symbol of state YYSTATE.  */
@@ -1532,15 +1537,13 @@ fn yyresolveStates (yyctx: *yyparse_context_t, yys: *allowzero yyGLRState, yyn: 
   return YYRESULTTAG.yyok;
 }
 
-const yyresolveActionError = error{OutOfMemory} || std.fs.File.WriteError;
-
 // /** Resolve the states for the RHS of YYOPT on *YYSTACKP, perform its
 //  *  user action, and return the semantic value and location in *YYVALP
 //  *  and *YYLOCP.  Regardless of whether result = yyok, all RHS states
 //  *  have been destroyed (assuming the user action destroys all RHS
 //  *  semantic values if invoked).  */
 fn yyresolveAction (yyctx: *yyparse_context_t, yyopt: *allowzero yySemanticOption, yystackp: *allowzero yyGLRStack,
-                 yyvalp: *YYSTYPE, yylocp: *YYLTYPE, scanner: *YYLexer) yyresolveActionError!isize {
+                 yyvalp: *YYSTYPE, yylocp: *YYLTYPE, scanner: *YYLexer) anyerror!isize {
   var yyrhsVals: [YYMAXRHS + YYMAXLEFT + 1]yyGLRStackItem = undefined;
   var yynrhs = yyrhsLength(yyopt.yyrule);
   var yyflag = try yyresolveStates(yyctx, yyopt.yystate, yynrhs, yystackp, scanner);
@@ -1618,9 +1621,9 @@ fn yyreportTree (yyx: *allowzero yySemanticOption, yyindent: usize) void {
   }
 }
 
-fn yyreportAmbiguity (yyx0: *allowzero yySemanticOption,
+fn yyreportAmbiguity (yyctx: *yyparse_context_t, yyx0: *allowzero yySemanticOption,
                    yyx1: *allowzero yySemanticOption]b4_locations_if([, yylocp: *YYLTYPE])[)
-isize {
+!isize {
   if (yydebug) {
     std.debug.print("Ambiguity detected.\n", .{});
     std.debug.print("Option 1,\n", .{});
@@ -1630,7 +1633,7 @@ isize {
     std.debug.print("\n", .{});
   }
 
-  yyerror (]b4_locations_if([yylocp, ])["syntax is ambiguous");
+  try yyerror (yyctx,]b4_locations_if([yylocp, ])["syntax is ambiguous");
   return YYRESULTTAG.yyabort;
 }]b4_locations_if([[
 
@@ -1702,7 +1705,7 @@ fn yyresolveValue (yyctx: *yyparse_context_t, yys: *allowzero yyGLRState, yystac
           switch (yypreference (yybest, yyp)) {
             0 => {]b4_locations_if([[
               yyresolveLocations (yys, 1, yystackp, scanner);]])[
-              return yyreportAmbiguity (yybest, yyp]b4_locations_if([, yylocp])[);
+              return yyreportAmbiguity (yyctx, yybest, yyp]b4_locations_if([, yylocp])[);
             },
 
             1 => {
@@ -2015,7 +2018,8 @@ usize {
 }
 ]])[
 
-fn yyreportSyntaxError (allocator: std.mem.Allocator, yystackp: *yyGLRStack) !void {
+fn yyreportSyntaxError (yyctx: *yyparse_context_t, yystackp: *yyGLRStack) !void {
+  const allocator = yyctx.allocator;
   if (yystackp.yyerrState != 0) {
     return;
   }
@@ -2062,7 +2066,7 @@ fn yyreportSyntaxError (allocator: std.mem.Allocator, yystackp: *yyGLRStack) !vo
       else => {},
   }
 
-  yyerror(&yystackp.yyloc, yymsg.items);
+  try yyerror(yyctx, &yystackp.yyloc, yymsg.items);
   }]])[
   yystackp.yyerrcnt += 1;
 }
@@ -2078,7 +2082,7 @@ fn yyrecoverSyntaxError (yyctx: *yyparse_context_t, yystackp: *yyGLRStack, scann
       var yytoken: isize = undefined;
       var yyj: isize = 0;
       if (yystackp.yyrawchar == yytoken_kind_t.]b4_symbol(eof, [id])[) {
-        _ = yyFail (yystackp, &yystackp.yyloc, YY_NULLPTR);
+        try yyFail (yyctx, &yystackp.yyloc, YY_NULLPTR);
       }
       if (yystackp.yyrawchar != yytoken_kind_t.]b4_symbol(empty, id)[) {]b4_locations_if([[
           // /* We throw away the lookahead, but the error range
@@ -2116,7 +2120,7 @@ fn yyrecoverSyntaxError (yyctx: *yyparse_context_t, yystackp: *yyGLRStack, scann
         break;
     }
     if (yyk >= yystackp.yytops.yysize) {
-      _ = yyFail (yystackp, &yystackp.yyloc, YY_NULLPTR);
+      try yyFail (yyctx, &yystackp.yyloc, YY_NULLPTR);
     }
     yyk += 1;
     while (yyk < yystackp.yytops.yysize) : (yyk += 1) {
@@ -2164,7 +2168,7 @@ fn yyrecoverSyntaxError (yyctx: *yyparse_context_t, yystackp: *yyGLRStack, scann
       yystackp.yyitems_arr_next -|= 1;
   }
   if (@@intFromPtr(yystackp.yytops.yystates[0]) == 0) {
-    _ = yyFail (yystackp, &yystackp.yyloc, YY_NULLPTR);
+    try yyFail (yyctx, &yystackp.yyloc, YY_NULLPTR);
   }
 }
 
@@ -2179,7 +2183,7 @@ fn YYCHK1(YYE: anytype) usize {
     }
 }
 
-const yyparse_context_t = struct {
+pub const yyparse_context_t = struct {
   allocator: std.mem.Allocator,
   ]m4_ifset([b4_user_formals], [b4_formals_struct(b4_user_formals)])[,
   yyresult: isize = 0,
@@ -2217,9 +2221,9 @@ fn label_yyabortlab(yyctx: *yyparse_context_t) usize {
   return LABEL_YYRETURNLAB;
 }
 
-fn label_yyexhaustedlab(yyctx: *yyparse_context_t) usize {
+fn label_yyexhaustedlab(yyctx: *yyparse_context_t) !usize {
   const yystackp = yyctx.yystackp;
-  yyerror (]b4_lyyerror_args["memory exhausted");
+  try yyerror (yyctx,]b4_lyyerror_args["memory exhausted");
   yyctx.yyresult = 2;
   return LABEL_YYRETURNLAB;
 }
@@ -2252,7 +2256,7 @@ fn label_yyparse_impl(yyctx: *yyparse_context_t) !usize {
             if (yyrule == 0)
               {]b4_locations_if([[
                 yyctx.yystackp.yyerror_range[1].yystate.yyloc = yyctx.yystackp.yyloc;]])[
-                try yyreportSyntaxError (yyctx.allocator, yyctx.yystackp);
+                try yyreportSyntaxError (yyctx, yyctx.yystackp);
                 return LABEL_YYUSER_ERROR;
               }
             ret = YYCHK1 (try yyglrReduce (yyctx, yyctx.yystackp, 0, yyrule, true));
@@ -2282,7 +2286,7 @@ fn label_yyparse_impl(yyctx: *yyparse_context_t) !usize {
                 // /* Issue an error message unless the scanner already
                 //    did. */
                 if (yyctx.yystackp.yyrawchar != yysymbol_kind_t.YYSYMBOL_]b4_symbol(error, id)[) {
-                  try yyreportSyntaxError (yyctx.allocator, yyctx.yystackp);
+                  try yyreportSyntaxError (yyctx, yyctx.yystackp);
                 }
                 return LABEL_YYUSER_ERROR;
             } else {
@@ -2332,7 +2336,7 @@ fn label_yyparse_impl(yyctx: *yyparse_context_t) !usize {
           if (yyctx.yystackp.yytops.yysize == 0) {
               yyundeleteLastStack (yyctx.yystackp);
               if (yyctx.yystackp.yytops.yysize == 0) {
-                _ = yyFail (yyctx.yystackp, &yyctx.yystackp.yyloc, "syntax error");
+                try yyFail (yyctx, &yyctx.yystackp.yyloc, "syntax error");
               }
               ret = YYCHK1 (try yyresolveStack (yyctx, yyctx.yystackp, yyctx.scanner));
               if (ret != 0) {
@@ -2343,7 +2347,7 @@ fn label_yyparse_impl(yyctx: *yyparse_context_t) !usize {
               }
               ]b4_locations_if([[
               yyctx.yystackp.yyerror_range[1].yystate.yyloc = yyctx.yystackp.yyloc;]])[
-              try yyreportSyntaxError (yyctx.allocator, yyctx.yystackp);
+              try yyreportSyntaxError (yyctx, yyctx.yystackp);
               return LABEL_YYUSER_ERROR;
           }
 
@@ -2437,7 +2441,7 @@ b4_dollar_popdef])[]dnl
         loop_control = label_yyabortlab(&yyctx);
       },
       LABEL_YYEXHAUSTEDLAB => {
-        loop_control = label_yyexhaustedlab(&yyctx);
+        loop_control = try label_yyexhaustedlab(&yyctx);
       },
       LABEL_YYRETURNLAB => {
         break;

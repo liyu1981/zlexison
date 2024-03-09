@@ -882,9 +882,9 @@ typedef ]b4_percent_define_get([[api.value.type]])[ ]b4_api_PREFIX[STYPE;
 m4_define([b4_location_type_define],
 [[// /* Location type.  */
 ]b4_percent_define_ifdef([[api.location.type]],
-[[const YYLTYPE =]b4_percent_define_get([[api.location.type]])[;
+[[pub const YYLTYPE =]b4_percent_define_get([[api.location.type]])[;
 ]],
-[[const YYLTYPE = YYLexer.YYLTYPE;
+[[pub const YYLTYPE = YYLexer.YYLTYPE;
 ]])])
 
 

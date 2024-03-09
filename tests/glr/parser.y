@@ -154,6 +154,8 @@
   pub const Ast = struct {
     loc: YYLTYPE,
     root: *allowzero Node,
+    errmsg_buf: [4096]u8,
+    last_err: []u8,
   };
 }
 
@@ -181,7 +183,7 @@
 %%
 
 prog : %empty
-     | prog stmt   { yyctx.ast_out.* = .{ .loc = @2, .root = $2 }; }
+     | prog stmt   { yyctx.ast_out.loc = @2; yyctx.ast_out.root = $2; }
      ;
 
 stmt : expr ';'  %merge <stmtMerge>     { $$ = $1; }
