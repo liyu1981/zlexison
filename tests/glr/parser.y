@@ -61,15 +61,36 @@
     }
 
     pub fn free(this: *allowzero Node, allocator: std.mem.Allocator) void {
-      if (@intFromPtr(this) == 0) return;
-      if (this.isNterm) {
-        for (0..3) |i| {
-            if (this.content.nterm.children[i]) |c| {
-                c.free(allocator);
+        if (@intFromPtr(this) == 0) return;
+        if (this.isNterm) {
+            // terms can be shared across nterms so to avoid double free use a hashmap
+            var terms = std.AutoArrayHashMap(*Node, void).init(allocator);
+            defer terms.deinit();
+            this._free(allocator, &terms);
+            var it = terms.iterator();
+            while (it.next()) |t| {
+                t.key_ptr.*.free(allocator);
+            }
+        } else {
+            allocator.destroy(this);
+        }
+    }
+
+    fn _free(this: *allowzero Node, allocator: std.mem.Allocator, terms: *std.AutoArrayHashMap(*Node, void)) void {
+        if (this.isNterm) {
+            for (0..3) |i| {
+                if (this.content.nterm.children[i]) |c| {
+                    c._free(allocator, terms);
+                }
+            }
+            allocator.destroy(this);
+        } else {
+            if (@intFromPtr(this) != 0) {
+                terms.put(@ptrCast(this), {}) catch {
+                    unreachable;
+                };
             }
         }
-      }
-      allocator.destroy(this);
     }
 
     pub fn toString(this: *allowzero const Node, allocator: std.mem.Allocator) ![]const u8 {

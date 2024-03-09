@@ -163,6 +163,41 @@ const parser_test_data = .{
         \\L0:C0 - L0:C6: +(z, q)
         \\
     },
+    .{
+        "T x;",
+        \\L0:C0 - L0:C4: <declare>(T, x)
+        \\
+    },
+    .{
+        "T x = y;",
+        \\L0:C0 - L0:C8: <init-declare>(T, x, y)
+        \\
+    },
+    .{
+        "x = y;",
+        \\L0:C0 - L0:C6: =(x, y)
+        \\
+    },
+    .{
+        "T (x) + y;",
+        \\L0:C0 - L0:C10: +(<cast>(x, T), y)
+        \\
+    },
+    .{
+        "T (x);",
+        \\L0:C0 - L0:C6: <OR>(<declare>(T, x), <cast>(x, T))
+        \\
+    },
+    .{
+        "T (y) = z + q;",
+        \\L0:C0 - L0:C14: <OR>(<init-declare>(T, y, +(z, q)), =(<cast>(y, T), +(z, q)))
+        \\
+    },
+    .{
+        "T (y y) = z + q;",
+        \\L0:C0 - L0:C16: <error>
+        \\
+    },
 };
 
 fn runParserTest(allocator: std.mem.Allocator, input: []const u8, expected_output: []const u8) !void {

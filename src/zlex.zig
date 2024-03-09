@@ -18,6 +18,7 @@ const ZlexRunMode = enum {
     init,
     zlex,
     zflex,
+    zlexison,
     flex,
     zm4,
     version,
@@ -62,6 +63,11 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
 
     if (std.mem.eql(u8, args1[0], "zflex")) {
         r.runMode = .zflex;
+        return r;
+    }
+
+    if (std.mem.eql(u8, args1[0], "zlexison")) {
+        r.runMode = .zlexison;
         return r;
     }
 
@@ -179,6 +185,17 @@ pub fn main() !u8 {
         .flex => {
             const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
             @import("zlex/runAsFlex.zig").runAsFlex(args[1..], exe_info.exe_path, m4_path);
+        },
+        .zlexison => {
+            const m4_path = try runAsM4.ensureZm4(arena, exe_info.dir);
+            @import("zison/runAsZlexison.zig").runAsZlexison(args[1..], .{
+                .zison_exe_path = exe_info.exe_path,
+                .m4_exe_path = m4_path,
+                .output_file_path = opts.output_file_path,
+            }) catch |err| switch (err) {
+                error.InvalidOption => printErrAndUsageExit(err),
+                else => return err,
+            };
         },
         .zm4 => {
             runAsM4.runAsM4(args[1..], opts.zlex_exe);

@@ -15,6 +15,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug test",
+      "program": "${workspaceFolder}/test",
+      "args": ["glr"],
+      "cwd": "${workspaceFolder}/tests"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug bison_parser scan",
       "program": "${workspaceFolder}/scan",
       "args": [],

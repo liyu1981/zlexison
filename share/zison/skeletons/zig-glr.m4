@@ -1879,8 +1879,8 @@ fn yyprocessOneStack (yyctx: *yyparse_context_t, yystackp: *yyGLRStack, yyk: isi
           } else if (yyisErrorAction (yyaction)) {
             if (yydebug) {
               std.debug.print("Stack {d} dies.\n", .{yyk});
-              yymarkStackDeleted (yystackp, yyk);
             }
+            yymarkStackDeleted (yystackp, yyk);
             break;
           } else {
               const yyflag = try yyglrReduce(yyctx, yystackp, yyk, @@intCast(-yyaction), yyimmediate[@@intCast(-yyaction)] != 0);
@@ -2366,7 +2366,9 @@ fn label_yyparse_impl(yyctx: *yyparse_context_t) !usize {
               if (yydebug) {
                 std.debug.print("On stack {d}, ", .{yys});
               }
-              try YY_SYMBOL_PRINT ("shifting", yytoken_to_shift, &yyctx.yystackp.yyval, &yyctx.yystackp.yyloc);
+              if (yydebug) {
+                try YY_SYMBOL_PRINT ("shifting", yytoken_to_shift, &yyctx.yystackp.yyval, &yyctx.yystackp.yyloc);
+              }
               try yyglrShift (yyctx.yystackp, yys, @@intCast(yyaction), @@intCast(yyctx.yyposn),
                           &yyctx.yystackp.yyval]b4_locations_if([, &yyctx.yystackp.yyloc])[);
               if (yydebug) {
