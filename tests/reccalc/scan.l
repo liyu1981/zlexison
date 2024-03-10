@@ -37,7 +37,7 @@ pub var context: Context = undefined;
 [0-9]+   {
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
-    yyset_lval(YYSTYPE{.TOK_NUM = @intCast(intval)}, yyg);
+    yyset_lval(YYSTYPE{ .tag = .TOK_NUM, .value = .{ .TOK_NUM = @intCast(intval)} }, yyg);
     return TOK_TYPE.TOK_NUM;
   }
 
@@ -63,7 +63,7 @@ pub var context: Context = undefined;
     if (context.nesting == 0) {
         BEGIN(INITIAL, yyg);
         if (context.str.items.len > 0) {
-            yyset_lval(YYSTYPE{.TOK_STR = &context.str.items}, yyg);
+            yyset_lval(YYSTYPE{ .tag = .TOK_STR, .value = .{ .TOK_STR = &context.str.items } }, yyg);
             return TOK_TYPE.TOK_STR;
         }
     } else {
@@ -99,18 +99,16 @@ pub fn main() !u8 {
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    _ = &yylval;
     var yylloc: YYLexer.YYLTYPE = .{};
-    _ = &yylloc;
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };
     YYLexer.context = YYLexer.Context.init(allocator);
     defer YYLexer.context.deinit();
 
-    try YYLexer.yylex_init(&lexer);
-    defer YYLexer.yylex_destroy(&lexer);
+    try lexer.init();
+    defer lexer.deinit();
 
-    _ = try YYLexer.yy_scan_string(content, lexer.yyg);
+    try lexer.scan_string(content);
 
     while (true) {
         const tk = lexer.yylex(&yylval, &yylloc) catch |err| {

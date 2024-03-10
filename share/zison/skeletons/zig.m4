@@ -143,14 +143,14 @@ m4_define([b4_accept],
 # --------------------------------
 # See README.
 m4_define([b4_lhs_value],
-[b4_symbol_value(yyctx.yyval, [$1], [$2])])
+[b4_symbol_value(yyctx.yyval.value, [$1], [$2])])
 
 
 # b4_rhs_value(RULE-LENGTH, POS, [SYMBOL-NUM], [TYPE])
 # ----------------------------------------------------
 # See README.
 m4_define([b4_rhs_value],
-[b4_symbol_value([valueWithOffset(yyctx.yyvsp, b4_subtract([$2], [$1]))], [$3], [$4])])
+[b4_symbol_value([valueWithOffset(yyctx.yyvsp, b4_subtract([$2], [$1])).value], [$3], [$4])])
 
 
 ## ----------- ##
@@ -333,7 +333,7 @@ $1([yyes_capacity])])])
 # Declaration of yyparse (and dependencies) when using the push parser
 # (including in pull mode).
 m4_define([_b4_declare_yyparse_push],
-[[const YYPUSH_MORE = 4;]])
+[[pub const YYPUSH_MORE = 4;]])
 
 
 # _b4_declare_yyparse
@@ -836,8 +836,14 @@ pub const yypstate = struct {
     //  * If 2, it corresponds to a finished parsing.  */
     yynew: STATE = .NEW,
 
-    pub fn init(allocator: std.mem.Allocator) yypstate {
-        var yyps = yypstate{ .allocator = allocator };
+    pub fn init(allocator: std.mem.Allocator) !*yypstate {
+        var yyps = try allocator.create(yypstate);
+        for (0..YYINITDEPTH) |i| {
+            yyps.yyssa[i] = 0;
+            yyps.yyvsa[i] = YYSTYPE.default();
+            ]b4_locations_if([yyps.yylsa[[i]] = .{};])[
+        }
+        yyps.allocator = allocator;
         yyps.yyss = &yyps.yyssa;
         yyps.yyvs = &yyps.yyvsa;
         ]b4_locations_if([yyps.yyls = &yyps.yylsa;])[
@@ -846,7 +852,7 @@ pub const yypstate = struct {
     }
 
     pub fn deinit(this: *yypstate) void {
-        _ = this;
+        this.allocator.destroy(this);
     }
 
     pub fn reset(this: *yypstate) void {
@@ -1505,14 +1511,11 @@ pub const yyparse_context_t = struct {
       this.yynerrs = yyps.yynerrs;
       this.yystate = yyps.yystate;
       this.yyerrstatus = yyps.yyerrstatus;
-      this.yyssa = yyps.yyssa;
       this.yyss = yyps.yyss;
       this.yyssp = yyps.yyssp;
-      this.yyvsa = yyps.yyvsa;
       this.yyvs = yyps.yyvs;
       this.yyvsp = yyps.yyvsp;
       ]b4_locations_if([
-      this.yylsa = yyps.yylsa;
       this.yyls = yyps.yyls;
       this.yylsp = yyps.yylsp;
       ])[
@@ -1523,14 +1526,11 @@ pub const yyparse_context_t = struct {
       yyps.yynerrs = this.yynerrs;
       yyps.yystate = this.yystate;
       yyps.yyerrstatus = this.yyerrstatus;
-      yyps.yyssa = this.yyssa;
       yyps.yyss = this.yyss;
       yyps.yyssp = this.yyssp;
-      yyps.yyvsa = this.yyvsa;
       yyps.yyvs = this.yyvs;
       yyps.yyvsp = this.yyvsp;
       ]b4_locations_if([
-      yyps.yylsa = this.yylsa;
       yyps.yyls = this.yyls;
       yyps.yylsp = this.yylsp;
       ])[

@@ -11,21 +11,21 @@
 [0-9]+   {
     // Scan an integer.
     const intval = try std.fmt.parseInt(i64, yyget_text(yyg), 10);
-    yylval_.* = .{ .NUM = @as(f64, @floatFromInt(intval)) };
+    yylval_.* = .{ .tag = .NUM, .value = .{ .NUM = @as(f64, @floatFromInt(intval)) } };
     return TOK_TYPE.NUM;
   }
 
 \.[0-9]+ {
     // Scan an float like .123
     const floatval = try std.fmt.parseFloat(f64, yyget_text(yyg));
-    yylval_.* = .{ .NUM = floatval };
+    yylval_.* = .{ .tag = .NUM, .value = .{ .NUM = floatval } };
     return TOK_TYPE.NUM;
   }
 
 [0-9]+\.[0-9]+ {
     // Scan an float like 1.23
     const floatval = try std.fmt.parseFloat(f64, yyget_text(yyg));
-    yylval_.* = .{ .NUM = floatval };
+    yylval_.* = .{ .tag = .NUM, .value = .{ .NUM = floatval } };
     return TOK_TYPE.NUM;
   }
 
@@ -67,16 +67,14 @@ pub fn main() !u8 {
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    _ = &yylval;
     var yylloc: YYLexer.YYLTYPE = .{};
-    _ = &yylloc;
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };
 
-    try YYLexer.yylex_init(&lexer);
-    defer YYLexer.yylex_destroy(&lexer);
+    try lexer.init();
+    defer lexer.deinit();
 
-    _ = try YYLexer.yy_scan_string(content, lexer.yyg);
+    try lexer.scan_string(content);
 
     while (true) {
         const tk = lexer.yylex(&yylval, &yylloc) catch |err| {

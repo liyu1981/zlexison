@@ -55,7 +55,6 @@ pub fn main() !u8 {
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    defer yylval.deinit(allocator);
     var yylloc: YYLexer.YYLTYPE = .{};
 
     var lexer = YYLexer{ .allocator = allocator };
@@ -76,6 +75,16 @@ pub fn main() !u8 {
             },
             else => |cur_tk| {
                 try stdout_writer.print("tk: {any} at loc: {s}\n", .{ cur_tk, yylloc });
+                switch (yylval.tag) {
+                    .default => {},
+                    .TYPENAME => yylval.value.TYPENAME.free(allocator),
+                    .ID => yylval.value.ID.free(allocator),
+                    .stmt => yylval.value.stmt.free(allocator),
+                    .expr => yylval.value.expr.free(allocator),
+                    .decl => yylval.value.decl.free(allocator),
+                    .declarator => yylval.value.declarator.free(allocator),
+                }
+                yylval = YYLexer.YYSTYPE.default();
             },
         }
     }

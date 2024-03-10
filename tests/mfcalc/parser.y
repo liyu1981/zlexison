@@ -108,6 +108,8 @@ pub fn initSymTable(arena: std.mem.Allocator) !void {
 %{
 const YYLexer = @import("scan.zig");
 const Symrec = zlexison.Symrec;
+
+pub var result_buf: std.ArrayList(u8) = undefined;
 %}
 
 %define api.value.type union /* Generate YYSTYPE from these types: */
@@ -143,7 +145,7 @@ input:
 
 line:
   '\n'
-| exp '\n'   { try std.io.getStdOut().writer().print("{d:10.2}\n", .{$1}); }
+| exp '\n'   { try result_buf.writer().print("{d:10.2}", .{$1}); }
 | error '\n' { yyctx.yyerrok();        }
 ;
 
@@ -189,12 +191,16 @@ pub fn main() !u8 {
 
     var scanner = YYLexer{ .allocator = arena };
 
-    try YYLexer.yylex_init(&scanner);
-    defer YYLexer.yylex_destroy(&scanner);
+    try scanner.init();
+    defer scanner.deinit();
 
-    _ = try YYLexer.yy_scan_string(content, scanner.yyg);
+    try scanner.scan_string(content);
+
+    YYParser.result_buf = std.ArrayList(u8).init(arena);
 
     _ = try YYParser.yyparse(arena, &scanner);
+
+    std.debug.print("{s}\n", .{result_buf.items});
 
     return 0;
 }

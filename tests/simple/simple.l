@@ -6,8 +6,8 @@
 %option bison-locations
 
 %{
-var num_lines: usize = 0;
-var num_chars: usize = 0;
+pub var num_lines: usize = 0;
+pub var num_chars: usize = 0;
 %}
 
 %%

@@ -97,7 +97,9 @@ line:
     }
 | error eol
     {
-      std.debug.print("yyerrok!", .{});
+      if (yyctx.res.verbose) {
+        std.debug.print("yyerrok!", .{});
+      }
     }
 ;
 
@@ -115,7 +117,9 @@ exp:
   {
     if ($3 == 0)
       {
-        std.debug.print("invalid division by zero", .{});
+        if (yyctx.res.verbose) {
+          std.debug.print("invalid division by zero", .{});
+        }
         unreachable;
       }
     else {
@@ -130,6 +134,7 @@ exp:
     const input_with_newline = try std.fmt.allocPrint(yyctx.allocator, "{s}\n", .{$1.*});
     defer yyctx.allocator.free(input_with_newline);
     var res: Result = Result{};
+    res.verbose = yyctx.res.verbose;
     var new_scanner = YYLexer{ .allocator = yyctx.allocator };
     YYLexer.context = YYLexer.Context.init(yyctx.allocator);
     defer YYLexer.context.deinit();

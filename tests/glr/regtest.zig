@@ -3,36 +3,9 @@ const testing = std.testing;
 const YYLexer = @import("scan.zig");
 const YYParser = @import("parser.zig");
 
-pub fn runAllTests() !void {
-    try runTests("scan", scan_test_data, runScanTest);
-    try runTests("parser", parser_test_data, runParserTest);
-}
-
-const MAX_INPUT_TAG = 32;
-var input_tag_buf: [MAX_INPUT_TAG + 3]u8 = undefined;
-fn inputTag(input: []const u8) []const u8 {
-    if (input.len < MAX_INPUT_TAG) {
-        return input;
-    } else {
-        return std.fmt.bufPrint(&input_tag_buf, "{s}...", .{input[0..MAX_INPUT_TAG]}) catch {
-            unreachable;
-        };
-    }
-}
-
-const testFn = *const fn (allocator: std.mem.Allocator, input: []const u8, expected_output: []const u8) anyerror!void;
-
-fn runTests(name: []const u8, test_data: anytype, test_fn: testFn) !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    inline for (0..test_data.len) |i| {
-        std.debug.print("\n  run {s} tests [{d}] input[{s}] ... ", .{ name, i, inputTag(test_data[i][0]) });
-        try test_fn(allocator, test_data[i][0], test_data[i][1]);
-        std.debug.print("ok!", .{});
-    }
-    if (gpa.detectLeaks()) {
-        return error.MemLeak;
-    }
+pub fn runAllTests(comptime Util: type) !void {
+    try Util.runTests("scan", scan_test_data, runScanTest);
+    try Util.runTests("parser", parser_test_data, runParserTest);
 }
 
 const scan_test_data = .{

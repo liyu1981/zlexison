@@ -6,13 +6,13 @@ const Symrec = zlexison.Symrec;
 
 \.[0-9]+ {
     const fval = try std.fmt.parseFloat(f64, yyget_text(yyg));
-    yyset_lval(YYSTYPE{ .NUM = fval }, yyg);
+    yyset_lval(YYSTYPE{ .tag = .NUM, .value = .{ .NUM = fval } }, yyg);
     return TOK_TYPE.NUM;
   }
 
 [0-9]+(\.[0-9]+)* {
     const fval = try std.fmt.parseFloat(f64, yyget_text(yyg));
-    yyset_lval(YYSTYPE{ .NUM = fval }, yyg);
+    yyset_lval(YYSTYPE{ .tag = .NUM, .value = .{ .NUM = fval } }, yyg);
     return TOK_TYPE.NUM;
   }
 
@@ -21,17 +21,17 @@ const Symrec = zlexison.Symrec;
     if (zlexison.sym_table.getsym(t)) |s| {
         switch(s.type) {
             .VAR => {
-                yyset_lval(YYSTYPE{ .VAR = s }, yyg);
+                yyset_lval(YYSTYPE{ .tag = .VAR, .value = .{ .VAR = s } }, yyg);
                 return TOK_TYPE.VAR;
             },
             .FUN => {
-                yyset_lval(YYSTYPE{ .FUN = s }, yyg);
+                yyset_lval(YYSTYPE{ .tag = .VAR, .value = .{ .FUN = s } }, yyg);
                 return TOK_TYPE.FUN;
             },
         }
     } else {
         const s = try zlexison.sym_table.putsym(t, .VAR);
-        yyset_lval(YYSTYPE{ .VAR = s }, yyg);
+        yyset_lval(YYSTYPE{ .tag = .VAR, .value = .{ .VAR = s } }, yyg);
         zlexison.sym_table = s;
         return TOK_TYPE.VAR;
     }
@@ -69,9 +69,7 @@ pub fn main() !u8 {
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    _ = &yylval;
     var yylloc: YYLexer.YYLTYPE = .{};
-    _ = &yylloc;
 
     try zlexison.initSymTable(allocator);
 

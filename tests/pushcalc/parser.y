@@ -1,5 +1,7 @@
 %code top {
   const YYLexer = @import("scan.zig");
+
+  pub var result_buf: std.ArrayList(u8) = undefined;
 }
 
 // %define api.header.include {"calc.h"}
@@ -38,7 +40,7 @@ input:
 
 line:
   '\n'
-| expr '\n'  { std.debug.print("{d:.10}\n", .{$1}); }
+| expr '\n'  { try result_buf.writer().print("{d:.10}", .{$1}); }
 | error '\n' { yyctx.yyerrok(); }
 ;
 
@@ -95,16 +97,19 @@ pub fn main() !u8 {
 
       var scanner = YYLexer{ .allocator = arena };
 
-      try YYLexer.yylex_init(&scanner);
-      defer YYLexer.yylex_destroy(&scanner);
+      try scanner.init();
+      defer scanner.deinit();
 
-      _ = try YYLexer.yy_scan_string(line.items, scanner.yyg);
+      try scanner.scan_string(line.items);
 
-      var yylval: YYLexer.YYSTYPE = undefined;
+      var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
       var yylloc: YYLexer.YYLTYPE = .{};
 
-      var yyps = yypstate.init(arena);
+      var yyps = try yypstate.init(arena);
       defer yyps.deinit();
+
+      YYParser.result_buf = std.ArrayList(u8).init(arena);
+      defer YYParser.result_buf.deinit();
 
       while (true) {
           const tk = scanner.yylex(&yylval, &yylloc) catch |err| {
@@ -113,10 +118,12 @@ pub fn main() !u8 {
           };
           if (tk == YYLexer.YY_TERMINATED) break;
           try stdout_writer.print("tk: {any} at loc: {s}\n", .{ tk, yylloc });
-          const result = try yypush_parse(arena, &yyps, @intCast(tk), &yylval, &yylloc);
+          const result = try yypush_parse(arena, yyps, @intCast(tk), &yylval, &yylloc);
           if (result != YYPUSH_MORE)
               break;
       }
+
+      std.debug.print("{s}\n", .{YYParser.result_buf.items});
     } else |err| switch(err) {
       error.EndOfStream => {},
       else => return err,

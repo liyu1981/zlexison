@@ -3,7 +3,7 @@
 rm -f zlexison.zig
 echo "generating empty zlexison.zig..."
 ../../zig-out/bin/zlex init -t zlexison -o zlexison.zig
-echo "generating example.zig..."
-../../zig-out/bin/zlex -o example.zig example.l
+echo "generating simple.zig..."
+../../zig-out/bin/zlex -o simple.zig simple.l
 echo "compiling..."
-zig build-exe example.zig
+zig build-exe simple.zig
