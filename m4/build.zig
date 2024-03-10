@@ -41,7 +41,7 @@ fn m4PreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
     const arena = aa.allocator();
 
     switch (target.result.os.tag) {
-        .macos => {
+        .linux, .macos => {
             const sys_m4_path = brk: {
                 if (findHomebrewM4(arena)) |p| {
                     break :brk p;
@@ -55,7 +55,7 @@ fn m4PreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
         },
 
         else => |t| {
-            std.debug.print("{any}\n", .{t});
+            std.debug.print("Found platform: {any}\n", .{t});
             @panic("Not Support Yet!");
         },
     }

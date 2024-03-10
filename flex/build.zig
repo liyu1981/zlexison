@@ -86,8 +86,20 @@ pub fn build(b: *std.Build) void {
     flex_as_lib.addIncludePath(.{ .path = "flex/src" });
     flex_as_lib.linkSystemLibrary2("m", .{});
 
+    // flex_as_lib.setVerboseCC(true);
+
     flex_as_lib.addCSourceFiles(.{ .files = &flex_srcs_c, .flags = &c_flags });
     for (flex_objs) |obj| flex_as_lib.addObjectFile(.{ .path = obj });
+
+    flex_as_lib.addIncludePath(.{ .path = "." });
+
+    // switch (target.result.os.tag) {
+    //     .linux => {
+    //         flex_as_lib.linkLibC();
+    //     },
+    //     .macos => {},
+    //     else => {},
+    // }
 
     b.installArtifact(flex_as_lib);
 }

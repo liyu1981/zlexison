@@ -16,6 +16,14 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    switch (target.result.os.tag) {
+        .linux, .macos => {},
+        else => |t| {
+            std.debug.print("Found platform: {any}\n", .{t});
+            @panic("Not Support Yet!");
+        },
+    }
+
     const zcmd_dep = b.dependency("zcmd", .{});
     const jstring_dep = b.dependency("jstring", .{});
 
@@ -43,6 +51,14 @@ pub fn build(b: *std.Build) !void {
     jstring_build.linkPCRE(zlex_exe, jstring_dep);
     zlex_exe.addObjectFile(libflex_a.getEmittedBin());
 
+    switch (target.result.os.tag) {
+        .linux => {
+            zlex_exe.linkLibC();
+        },
+        .macos => {},
+        else => {},
+    }
+
     b.installArtifact(zlex_exe);
 
     const bison_dep = b.dependency("bison", .{});
@@ -68,6 +84,14 @@ pub fn build(b: *std.Build) !void {
     zison_exe.root_module.addImport("zcmd", zcmd_dep.module("zcmd"));
     zison_exe.root_module.addImport("jstring", jstring_dep.module("jstring"));
     jstring_build.linkPCRE(zison_exe, jstring_dep);
+
+    switch (target.result.os.tag) {
+        .linux => {
+            zison_exe.linkLibC();
+        },
+        .macos => {},
+        else => {},
+    }
 
     b.installArtifact(zison_exe);
 }

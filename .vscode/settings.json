@@ -9,6 +9,6 @@
   "[cc]": {
     "editor.formatOnSave": false
   },
-  "zig.path": "/Users/bytedance/.asdf/shims/zig",
+  "zig.path": "",
   "zig.initialSetupDone": true
 }
