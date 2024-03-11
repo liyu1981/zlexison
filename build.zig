@@ -2,13 +2,6 @@ const std = @import("std");
 const jstring_build = @import("jstring");
 const zcmd = @import("zcmd").zcmd;
 
-const common_flags = [_][]const u8{
-    "-g",
-    "-Wall",
-};
-
-const c_flags = [_][]const u8{} ++ common_flags;
-
 var g_build: *std.Build = undefined;
 
 pub fn build(b: *std.Build) !void {
@@ -33,12 +26,16 @@ pub fn build(b: *std.Build) !void {
     const flex_dep = b.dependency("flex", .{});
     const libflex_a = flex_dep.artifact("flex_as_lib");
 
+    // zlex
+
     var zlex_exe = b.addExecutable(.{
         .name = "zlex",
         .root_source_file = .{ .path = "src/zlex.zig" },
         .target = target,
         .optimize = optimize,
     });
+    var zlex_top_step = b.step("zlex", "build zlex only");
+    zlex_top_step.dependOn(&zlex_exe.step);
 
     var flex_bin_step = b.step("flex_bin", "copy flex/flex/src/flex as src/flex.bin");
     flex_bin_step.makeFn = flexBinStepMakeFn;
@@ -61,6 +58,8 @@ pub fn build(b: *std.Build) !void {
 
     b.installArtifact(zlex_exe);
 
+    // zison
+
     const bison_dep = b.dependency("bison", .{});
     const libbison_a = bison_dep.artifact("bison_as_lib");
 
@@ -70,6 +69,8 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
+    var zison_top_step = b.step("zison", "build zison only");
+    zison_top_step.dependOn(&zison_exe.step);
 
     var bison_bin_step = b.step("bison_bin", "copy bison/bison/src/bison as src/bison.bin");
     bison_bin_step.makeFn = bisonBinStepMakeFn;
@@ -94,14 +95,37 @@ pub fn build(b: *std.Build) !void {
     }
 
     b.installArtifact(zison_exe);
+
+    // regtest
+
+    var regtest_top_step = b.step("regtest", "regresssion tests");
+    if (b.option(bool, "enable_regtest", "enable build regression tests")) |e| {
+        if (e) {
+            var build_tests_step = b.step("build_all_tests", "run build.sh in all tests folder");
+            build_tests_step.makeFn = buildTestsStepMakeFn;
+
+            const regtest_exe = b.addExecutable(.{
+                .name = "regtest",
+                .root_source_file = .{ .path = "tests/test.zig" },
+                .target = target,
+                .optimize = optimize,
+            });
+            regtest_exe.step.dependOn(build_tests_step);
+            const install_regtest_step = b.addInstallArtifact(regtest_exe, .{});
+            regtest_top_step.dependOn(&install_regtest_step.step);
+        }
+    } else {
+        std.debug.print("Not set '-Denable_test', will do nothing in this step.\n", .{});
+    }
 }
 
 fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
-    _ = node;
     _ = step;
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const allocator = aa.allocator();
+
+    node.setEstimatedTotalItems(2);
 
     {
         const result = try zcmd.run(.{
@@ -116,6 +140,7 @@ fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
     }
 
     {
@@ -131,15 +156,17 @@ fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
     }
 }
 
 fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
-    _ = node;
     _ = step;
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const allocator = aa.allocator();
+
+    node.setEstimatedTotalItems(2);
 
     {
         const result = try zcmd.run(.{
@@ -154,6 +181,7 @@ fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
     }
 
     {
@@ -169,15 +197,17 @@ fn bisonBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
     }
 }
 
 fn bisonShareBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
-    _ = node;
     _ = step;
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const allocator = aa.allocator();
+
+    node.setEstimatedTotalItems(3);
 
     {
         const result = try zcmd.run(.{
@@ -188,6 +218,7 @@ fn bisonShareBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !voi
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
     }
 
     {
@@ -203,6 +234,7 @@ fn bisonShareBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !voi
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
     }
 
     {
@@ -215,5 +247,36 @@ fn bisonShareBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !voi
             .cwd = g_build.pathFromRoot(""),
         });
         result.assertSucceededPanic(.{});
+        node.completeOne();
+    }
+}
+
+fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
+    _ = step;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const arena = aa.allocator();
+
+    const all_test_dirs = .{
+        "tests/simple",
+        "tests/reccalc",
+        "tests/pushcalc",
+        "tests/glr",
+    };
+
+    node.setEstimatedTotalItems(all_test_dirs.len);
+
+    inline for (0..all_test_dirs.len) |i| {
+        {
+            const result = try zcmd.run(.{
+                .allocator = arena,
+                .commands = &[_][]const []const u8{
+                    &[_][]const u8{ "bash", "build.sh" },
+                },
+                .cwd = g_build.pathFromRoot(all_test_dirs[i]),
+            });
+            result.assertSucceededPanic(.{});
+            node.completeOne();
+        }
     }
 }

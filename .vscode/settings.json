@@ -1,7 +1,8 @@
 {
   "files.associations": {
     "iconv.h": "c",
-    "errno.h": "c"
+    "errno.h": "c",
+    "flexdef.h": "c"
   },
   "[c]": {
     "editor.formatOnSave": false
