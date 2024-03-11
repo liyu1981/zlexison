@@ -84,21 +84,21 @@ const parse_test_data = .{
         \\12 + 4 * 5
         \\
         ,
-        \\reccalc.parser.Result{ .verbose = false, .value = 32, .nerrs = 0 }
+        \\Result( .verbose = false, .value = 32, .nerrs = 0 )
         \\
     },
     .{
         \\(1+2) * 3
         \\
         ,
-        \\reccalc.parser.Result{ .verbose = false, .value = 9, .nerrs = 0 }
+        \\Result( .verbose = false, .value = 9, .nerrs = 0 )
         \\
     },
     .{
         \\2 + (4 + 5 * (6))
         \\
         ,
-        \\reccalc.parser.Result{ .verbose = false, .value = 36, .nerrs = 0 }
+        \\Result( .verbose = false, .value = 36, .nerrs = 0 )
         \\
     },
 };
@@ -123,7 +123,7 @@ fn runParseTest(allocator: std.mem.Allocator, input: []const u8, expected_output
     YYParser.yydebug = false;
     _ = try YYParser.yyparse(allocator, &scanner, &res);
 
-    try buf_writer.print("{any}\n", .{res});
+    try buf_writer.print("Result( .verbose = {}, .value = {}, .nerrs = {} )\n", .{ res.verbose, res.value, res.nerrs });
 
     try testing.expectEqualSlices(u8, buf.items, expected_output);
 }

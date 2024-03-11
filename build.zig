@@ -258,10 +258,12 @@ fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
     const arena = aa.allocator();
 
     const all_test_dirs = .{
-        "tests/simple",
-        "tests/reccalc",
-        "tests/pushcalc",
-        "tests/glr",
+        "tests/zlex/simple",
+
+        "tests/zison/glr",
+        "tests/zison/mfcalc",
+        "tests/zison/pushcalc",
+        "tests/zison/reccalc",
     };
 
     node.setEstimatedTotalItems(all_test_dirs.len);

@@ -1,11 +1,12 @@
 const std = @import("std");
 
 const all_tests = .{
-    @import("glr/regtest.zig"),
-    @import("simple/regtest.zig"),
-    @import("reccalc/regtest.zig"),
-    @import("pushcalc/regtest.zig"),
-    @import("mfcalc/regtest.zig"),
+    @import("zlex/simple/regtest.zig"),
+
+    @import("zison/glr/regtest.zig"),
+    @import("zison/reccalc/regtest.zig"),
+    @import("zison/pushcalc/regtest.zig"),
+    @import("zison/mfcalc/regtest.zig"),
 };
 
 const Util = struct {
