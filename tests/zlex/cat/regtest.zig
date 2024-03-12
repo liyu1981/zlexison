@@ -121,7 +121,7 @@ const Tmp = struct {
                         return std.process.getEnvVarOwned(allocator, "TEMP") catch {
                             return std.process.getEnvVarOwned(allocator, "TEMPDIR") catch {
                                 std.debug.print("tried env TMPDIR/TMP/TEMP/TEMPDIR but not found, fallback to /tmp, caution it may not work!", .{});
-                                return "/tmp";
+                                return try allocator.dupe(u8, "/tmp");
                             };
                         };
                     };
