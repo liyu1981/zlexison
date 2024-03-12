@@ -2,6 +2,7 @@ const std = @import("std");
 
 const all_tests = .{
     @import("zlex/simple/regtest.zig"),
+    @import("zlex/cat/regtest.zig"),
 
     @import("zison/glr/regtest.zig"),
     @import("zison/reccalc/regtest.zig"),

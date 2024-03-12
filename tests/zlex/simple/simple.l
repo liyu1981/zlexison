@@ -17,9 +17,14 @@ pub var num_chars: usize = 0;
 %%
 
 pub fn main() !u8 {
-    const allocator = std.heap.page_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer {
+        _ = gpa.detectLeaks();
+    }
+
     const args = try std.process.argsAlloc(allocator);
-    defer allocator.free(args);
+    defer std.process.argsFree(allocator, args);
 
     var f = try std.fs.cwd().openFile(args[1], .{});
     defer f.close();
@@ -28,16 +33,14 @@ pub fn main() !u8 {
     defer allocator.free(content);
 
     var yylval_param: YYSTYPE = YYSTYPE.default();
-    _ = &yylval_param;
     var yylloc_param: YYLTYPE = .{};
-    _ = &yylval_param;
 
-    var lexer = YYLexer{ .allocator = std.heap.page_allocator };
+    var lexer = YYLexer{ .allocator = allocator };
 
-    try yylex_init(&lexer);
-    defer yylex_destroy(&lexer);
+    try lexer.init();
+    defer lexer.deinit();
 
-    _ = try yy_scan_string(content, lexer.yyg);
+    try lexer.scan_string(content);
 
     while (true) {
         const tk = lexer.yylex(&yylval_param, &yylloc_param) catch |err| {
