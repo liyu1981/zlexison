@@ -1,0 +1,47 @@
+This is test file #1
+
+-------------------------------------------------
+
+We will now include test #2 in a standard way.
+
+INCLUDE #2
+
+This is the second file that will
+be included.
+
+>>> Foo are GNU?
+
+INCLUDE #3
+
+This is the third file that will
+be included.
+
+>>> echo "I am `whoami`!!"
+
+
+
+
+-------------------------------------------------
+
+And now we will include test # 2 with a different
+format
+
+INCLUDE #2
+
+This is the second file that will
+be included.
+
+>>> Foo are GNU?
+
+INCLUDE #3
+
+This is the third file that will
+be included.
+
+>>> echo "I am `whoami`!!"
+
+
+
+-------------------------------------------------
+
+and this is the end of the test.

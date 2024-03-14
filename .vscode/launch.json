@@ -17,15 +17,19 @@
       "request": "launch",
       "name": "Debug test",
       "program": "${workspaceFolder}/test",
-      "args": ["glr"],
+      "args": [
+        "glr"
+      ],
       "cwd": "${workspaceFolder}/tests"
     },
     {
       "type": "lldb",
       "request": "launch",
       "name": "Debug bison_parser scan",
-      "program": "${workspaceFolder}/scan",
-      "args": [],
+      "program": "${workspaceFolder}/eof_rules",
+      "args": [
+        "eof_test01.txt"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -41,7 +45,9 @@
       "request": "launch",
       "name": "Debug flex_parser main",
       "program": "${workspaceFolder}/main",
-      "args": ["test.txt"],
+      "args": [
+        "test.txt"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -49,7 +55,9 @@
       "request": "launch",
       "name": "Debug g",
       "program": "${workspaceFolder}/g",
-      "args": ["tests/flex_simple/simple.txt"],
+      "args": [
+        "tests/flex_simple/simple.txt"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -57,7 +65,9 @@
       "request": "launch",
       "name": "Debug zlex_parser",
       "program": "${workspaceFolder}/tests/zlex_parser/zig-out/bin/zlex_parser",
-      "args": ["../rpcalc/scan.l"],
+      "args": [
+        "../rpcalc/scan.l"
+      ],
       "cwd": "${workspaceFolder}/tests/zlex_parser"
     },
     {
@@ -65,7 +75,10 @@
       "request": "launch",
       "name": "Debug zison",
       "program": "${workspaceFolder}/zig-out/bin/zison",
-      "args": ["bison", "tests/reccalc/parser.y"],
+      "args": [
+        "bison",
+        "tests/reccalc/parser.y"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -73,7 +86,11 @@
       "request": "launch",
       "name": "Debug zlex",
       "program": "${workspaceFolder}/zig-out/bin/zlex",
-      "args": ["-t", "dump_generated_l", "tests/rpcalc/scan.l"],
+      "args": [
+        "-t",
+        "dump_generated_l",
+        "tests/rpcalc/scan.l"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -81,7 +98,10 @@
       "request": "launch",
       "name": "Debug zlex flex",
       "program": "${workspaceFolder}/zig-out/bin/zlex",
-      "args": ["flex", "--help"],
+      "args": [
+        "flex",
+        "--help"
+      ],
       "cwd": "${workspaceFolder}"
     },
     {
