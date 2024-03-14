@@ -9,5 +9,7 @@ echo "generating scan.zig..."
 ${ROOT_DIR}/zig-out/bin/zlex -o scan.zig scan.l
 echo "generating parser.zig..."
 ${ROOT_DIR}/zig-out/bin/zison -o parser.zig parser.y
-echo "compiling..."
-zig build-exe parser.zig
+if [ -z ${NO_COMPILE+x} ]; then
+    echo "compiling..."
+    zig build-exe parser.zig
+fi

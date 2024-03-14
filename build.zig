@@ -115,7 +115,7 @@ pub fn build(b: *std.Build) !void {
             regtest_top_step.dependOn(&install_regtest_step.step);
         }
     } else {
-        std.debug.print("Not set '-Denable_test', will do nothing in this step.\n", .{});
+        std.debug.print("Not set '-Denable_regtest', will do nothing in this step.\n", .{});
     }
 }
 
@@ -259,6 +259,8 @@ fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
 
     const all_test_dirs = .{
         "tests/zlex/simple",
+        "tests/zlex/cat",
+        "tests/zlex/eof_rules",
 
         "tests/zison/glr",
         "tests/zison/mfcalc",
@@ -268,6 +270,9 @@ fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
 
     node.setEstimatedTotalItems(all_test_dirs.len);
 
+    var envmap = try std.process.getEnvMap(arena);
+    try envmap.put("NO_COMPILE", "1");
+
     inline for (0..all_test_dirs.len) |i| {
         {
             const result = try zcmd.run(.{
@@ -276,6 +281,7 @@ fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
                     &[_][]const u8{ "bash", "build.sh" },
                 },
                 .cwd = g_build.pathFromRoot(all_test_dirs[i]),
+                .env_map = &envmap,
             });
             result.assertSucceededPanic(.{});
             node.completeOne();
