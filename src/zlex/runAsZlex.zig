@@ -65,7 +65,7 @@ pub fn runAsZlex(opts: struct {
 
     // following a lot of jstring be created, so remember to use arena to avoid
     // manual deinit
-    var raw_yyc_fixed = try (try jstring.JString.newFromSlice(arena, raw_yyc)).replaceAll("<REJECT>;", "REJECT(yyg); loop_control = LOOP_START_YY_FIND_RULE; continue;");
+    var raw_yyc_fixed = try (try jstring.JString.newFromSlice(arena, raw_yyc)).replaceAll("<REJECT>;", "REJECT(yyg, &yy_cp); loop_control = LOOP_START_YY_FIND_RULE; continue;");
 
     var yyc_final1 = (try (try raw_yyc_fixed.replaceAll("<stdin>", opts.input_file_path))
         .replaceAll("<stdout>", opts.output_file_path));

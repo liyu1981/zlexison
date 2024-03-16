@@ -2,7 +2,8 @@
   "files.associations": {
     "iconv.h": "c",
     "errno.h": "c",
-    "flexdef.h": "c"
+    "flexdef.h": "c",
+    "random": "c"
   },
   "[c]": {
     "editor.formatOnSave": false

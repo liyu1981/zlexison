@@ -7,10 +7,18 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug pushcalc a.out",
-      "program": "${workspaceFolder}/bison/bison/examples/c/pushcalc/a.out",
+      "name": "Debug a.out",
+      "program": "${workspaceFolder}/tests/flex_reject/a.out",
       "args": [],
-      "cwd": "${workspaceFolder}/bison/bison/examples/c/pushcalc"
+      "cwd": "${workspaceFolder}/tests/flex_reject/"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug misc",
+      "program": "${workspaceFolder}/reject",
+      "args": [],
+      "cwd": "${workspaceFolder}"
     },
     {
       "type": "lldb",
@@ -26,10 +34,8 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug bison_parser scan",
-      "program": "${workspaceFolder}/eof_rules",
-      "args": [
-        "eof_test01.txt"
-      ],
+      "program": "${workspaceFolder}/scan",
+      "args": [],
       "cwd": "${workspaceFolder}"
     },
     {
