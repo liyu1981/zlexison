@@ -16,7 +16,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug misc",
-      "program": "${workspaceFolder}/reject",
+      "program": "${workspaceFolder}/yymore",
       "args": [],
       "cwd": "${workspaceFolder}"
     },

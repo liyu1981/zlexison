@@ -21,7 +21,7 @@ fn runSimpleTest(allocator: std.mem.Allocator, input: []const u8, expected_outpu
     var yylval_param: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
     var yylloc_param: YYLexer.YYLTYPE = .{};
 
-    var lexer = YYLexer{ .allocator = std.heap.page_allocator };
+    var lexer = YYLexer{ .allocator = allocator };
     try lexer.init();
     defer lexer.deinit();
 

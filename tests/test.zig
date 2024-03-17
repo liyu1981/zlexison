@@ -5,6 +5,7 @@ const all_tests = .{
     @import("zlex/cat/regtest.zig"),
     @import("zlex/eof_rules/regtest.zig"),
     @import("zlex/reject/regtest.zig"),
+    @import("zlex/yymore/regtest.zig"),
 
     @import("zison/glr/regtest.zig"),
     @import("zison/reccalc/regtest.zig"),
