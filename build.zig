@@ -261,6 +261,7 @@ fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
         "tests/zlex/simple",
         "tests/zlex/cat",
         "tests/zlex/eof_rules",
+        "tests/zlex/reject",
 
         "tests/zison/glr",
         "tests/zison/mfcalc",
