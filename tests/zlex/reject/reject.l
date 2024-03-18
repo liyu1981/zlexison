@@ -32,13 +32,10 @@ pub fn main() !u8 {
         _ = gpa.detectLeaks();
     }
 
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
-
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
     var yylloc: YYLexer.YYLTYPE = .{};
 
-    var lexer = YYLexer{ .allocator = std.heap.page_allocator };
+    var lexer = YYLexer{ .allocator = allocator };
     try lexer.init();
     defer lexer.deinit();
 

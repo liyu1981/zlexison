@@ -16,7 +16,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug misc",
-      "program": "${workspaceFolder}/yymore",
+      "program": "${workspaceFolder}/dates",
       "args": [],
       "cwd": "${workspaceFolder}"
     },
