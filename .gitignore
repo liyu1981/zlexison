@@ -1,6 +1,7 @@
 parser
 main
 scan
+src/version.zig
 src/share.tgz.bin
 src/share.tgz.bin.hash
 src/m4.bin

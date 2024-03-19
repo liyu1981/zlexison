@@ -86,11 +86,12 @@ pub fn build(b: *std.Build) void {
 }
 
 fn zbisonPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
-    _ = node;
     _ = step;
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const allocator = aa.allocator();
+
+    node.setEstimatedTotalItems(3);
 
     {
         zbison_dir.access("./configure", .{}) catch {
@@ -116,6 +117,7 @@ fn zbisonPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void
                 result.assertSucceededPanic(.{ .check_stderr_empty = false });
             }
         };
+        node.completeOne();
     }
 
     {
@@ -136,6 +138,7 @@ fn zbisonPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void
             });
             result.assertSucceededPanic(.{ .check_stderr_empty = false });
         };
+        node.completeOne();
     }
 
     {
@@ -153,5 +156,6 @@ fn zbisonPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void
         // result.assertSucceededPanic(.{ .check_stderr_empty = false });
         // just double check we have the binary
         try zbison_dir.access("./src/bison", .{});
+        node.completeOne();
     }
 }

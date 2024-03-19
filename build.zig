@@ -4,6 +4,9 @@ const zcmd = @import("zcmd").zcmd;
 
 var g_build: *std.Build = undefined;
 
+const zlex_version = "0.1.0";
+const zison_version = "0.1.0";
+
 pub fn build(b: *std.Build) !void {
     g_build = b;
     const target = b.standardTargetOptions(.{});
@@ -20,11 +23,15 @@ pub fn build(b: *std.Build) !void {
     const zcmd_dep = b.dependency("zcmd", .{});
     const jstring_dep = b.dependency("jstring", .{});
 
+    const version_step = b.step("generate_version", "auto generate version str");
+    version_step.makeFn = versionStepMakeFn;
+
     const m4_dep = b.dependency("m4", .{});
     const m4phony = m4_dep.artifact("m4_as_lib_phony");
 
     const flex_dep = b.dependency("flex", .{});
     const libflex_a = flex_dep.artifact("flex_as_lib");
+    libflex_a.step.dependOn(version_step);
 
     // zlex
 
@@ -40,6 +47,7 @@ pub fn build(b: *std.Build) !void {
     var flex_bin_step = b.step("flex_bin", "copy flex/flex/src/flex as src/flex.bin");
     flex_bin_step.makeFn = flexBinStepMakeFn;
 
+    zlex_exe.step.dependOn(version_step);
     zlex_exe.step.dependOn(flex_bin_step);
     zlex_exe.step.dependOn(&m4phony.step);
     zlex_exe.step.dependOn(&libflex_a.step);
@@ -62,6 +70,7 @@ pub fn build(b: *std.Build) !void {
 
     const bison_dep = b.dependency("bison", .{});
     const libbison_a = bison_dep.artifact("bison_as_lib");
+    libbison_a.step.dependOn(version_step);
 
     var zison_exe = b.addExecutable(.{
         .name = "zison",
@@ -78,6 +87,7 @@ pub fn build(b: *std.Build) !void {
     var bison_share_bin_step = b.step("bison_share_bin", "compress share and save to share.tgz.bin");
     bison_share_bin_step.makeFn = bisonShareBinStepMakeFn;
 
+    zison_exe.step.dependOn(version_step);
     zison_exe.step.dependOn(bison_bin_step);
     zison_exe.step.dependOn(bison_share_bin_step);
     zison_exe.step.dependOn(&m4phony.step);
@@ -117,6 +127,38 @@ pub fn build(b: *std.Build) !void {
     } else {
         std.debug.print("Not set '-Denable_regtest', will do nothing in this step.\n", .{});
     }
+}
+
+fn versionStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
+    _ = step;
+    var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer aa.deinit();
+    const allocator = aa.allocator();
+
+    node.setEstimatedTotalItems(2);
+
+    const commit_str = brk: {
+        const result = try zcmd.run(.{
+            .allocator = allocator,
+            .commands = &[_][]const []const u8{
+                &[_][]const u8{ "git", "rev-parse", "--short=8", "HEAD" },
+            },
+            .cwd = g_build.pathFromRoot(""),
+        });
+        result.assertSucceededPanic(.{ .check_stdout_not_empty = true });
+        node.completeOne();
+        break :brk result.trimedStdout();
+    };
+
+    const tplm = @import("src/tplVersion.zig");
+    var f = try std.fs.createFileAbsolute(g_build.pathFromRoot("src/version.zig"), .{});
+    defer f.close();
+    try tplm.render(f.writer(), .{
+        .zlex_version = zlex_version,
+        .zison_version = zison_version,
+        .commit = commit_str,
+    });
+    node.completeOne();
 }
 
 fn flexBinStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {

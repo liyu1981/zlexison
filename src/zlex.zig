@@ -233,5 +233,8 @@ fn printVersion() !void {
         unreachable;
     };
 
-    try stdout_writer.print("zlex v{s} with flex v{s}\n", .{ version.zlex_version, flex_version });
+    try stdout_writer.print("zlex v{s} with flex v{s}\n", .{
+        version.zlex_version,
+        flex_version,
+    });
 }

@@ -86,30 +86,21 @@ pub fn build(b: *std.Build) void {
     flex_as_lib.addIncludePath(.{ .path = "flex/src" });
     flex_as_lib.linkSystemLibrary2("m", .{});
 
-    // flex_as_lib.setVerboseCC(true);
-
     flex_as_lib.addCSourceFiles(.{ .files = &flex_srcs_c, .flags = &c_flags });
     for (flex_objs) |obj| flex_as_lib.addObjectFile(.{ .path = obj });
 
     flex_as_lib.addIncludePath(.{ .path = "." });
 
-    // switch (target.result.os.tag) {
-    //     .linux => {
-    //         flex_as_lib.linkLibC();
-    //     },
-    //     .macos => {},
-    //     else => {},
-    // }
-
     b.installArtifact(flex_as_lib);
 }
 
 fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void {
-    _ = node;
     _ = step;
     var aa = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer aa.deinit();
     const allocator = aa.allocator();
+
+    node.setEstimatedTotalItems(4);
 
     {
         zflex_dir.access("./configure", .{}) catch {
@@ -123,6 +114,7 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
             });
             result.assertSucceededPanic(.{ .check_stderr_empty = false });
         };
+        node.completeOne();
     }
 
     {
@@ -143,6 +135,7 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
             });
             result.assertSucceededPanic(.{ .check_stderr_empty = false });
         };
+        node.completeOne();
     }
 
     {
@@ -154,7 +147,7 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
         const versions = try getVersions(allocator);
         var buf: [256]u8 = undefined;
         _ = &buf;
-        const verstr = try std.fmt.bufPrint(&buf, "{d}.{d}.{d}.{d}", .{
+        const verstr = try std.fmt.bufPrint(&buf, "{s}.{s}.{s}.{s}", .{
             versions.flex_major_version,
             versions.flex_minor_version,
             versions.flex_subminor_version,
@@ -164,7 +157,7 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
         const result = try zcmd.run(.{
             .allocator = allocator,
             .commands = &[_][]const []const u8{
-                &[_][]const u8{ "bash", "./mkskel_zig.sh", ".", "m4", "2.6.4.1" },
+                &[_][]const u8{ "bash", "./mkskel_zig.sh", ".", "m4", verstr },
                 // for last version, first 3 should align to flex version, last 1 digit is for zlex
             },
             .cwd_dir = zflex_src_dir,
@@ -173,6 +166,7 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
         var f = try zflex_src_dir.createFile("zig_skel.c", .{});
         defer f.close();
         try f.writeAll(result.stdout.?);
+        node.completeOne();
     }
 
     {
@@ -188,14 +182,15 @@ fn zflexPreBuild(step: *std.Build.Step, node: *std.Progress.Node) anyerror!void 
             .cwd_dir = zflex_dir,
         });
         result.assertSucceededPanic(.{ .check_stderr_empty = false });
+        node.completeOne();
     }
 }
 
 fn getVersions(allocator: std.mem.Allocator) !struct {
-    flex_major_version: usize,
-    flex_minor_version: usize,
-    flex_subminor_version: usize,
-    zlex_version: usize,
+    flex_major_version: []const u8,
+    flex_minor_version: []const u8,
+    flex_subminor_version: []const u8,
+    zlex_version: []const u8,
 } {
     return .{
         .flex_major_version = try getVersion(
@@ -232,7 +227,7 @@ fn getVersions(allocator: std.mem.Allocator) !struct {
     };
 }
 
-fn getVersion(allocator: std.mem.Allocator, commands: []const []const []const u8, cwd_dir: std.fs.Dir) !usize {
+fn getVersion(allocator: std.mem.Allocator, commands: []const []const []const u8, cwd_dir: std.fs.Dir) ![]const u8 {
     var result = try zcmd.run(.{
         .allocator = allocator,
         .commands = commands,
@@ -240,5 +235,5 @@ fn getVersion(allocator: std.mem.Allocator, commands: []const []const []const u8
     });
     defer result.deinit();
     result.assertSucceededPanic(.{});
-    return try std.fmt.parseInt(usize, result.trimedStdout(), 10);
+    return try allocator.dupe(u8, result.trimedStdout());
 }
