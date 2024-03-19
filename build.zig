@@ -30,7 +30,7 @@ pub fn build(b: *std.Build) !void {
     const m4phony = m4_dep.artifact("m4_as_lib_phony");
 
     const flex_dep = b.dependency("flex", .{});
-    const libflex_a = flex_dep.artifact("flex_as_lib");
+    var libflex_a = flex_dep.artifact("flex_as_lib");
     libflex_a.step.dependOn(version_step);
 
     // zlex
@@ -69,7 +69,7 @@ pub fn build(b: *std.Build) !void {
     // zison
 
     const bison_dep = b.dependency("bison", .{});
-    const libbison_a = bison_dep.artifact("bison_as_lib");
+    var libbison_a = bison_dep.artifact("bison_as_lib");
     libbison_a.step.dependOn(version_step);
 
     var zison_exe = b.addExecutable(.{
