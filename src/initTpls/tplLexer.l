@@ -81,9 +81,14 @@
 
 // a default main fn can be used testing scanner
 pub fn main() !u8 {
-    const args = try std.process.argsAlloc(std.heap.page_allocator);
-    defer std.heap.page_allocator.free(args);
-    const allocator = std.heap.page_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer {
+        _ = gpa.detectLeaks();
+    }
+
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
 
     const stdout_writer = std.io.getStdOut().writer();
 
@@ -102,16 +107,14 @@ pub fn main() !u8 {
     try stdout_writer.print("read {d}bytes\n", .{content.len});
 
     var yylval: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    _ = &yylval;
     var yylloc: YYLexer.YYLTYPE = .{};
-    _ = &yylloc;
 
     var lexer = YYLexer{ .allocator = std.heap.page_allocator };
+    try lexer.init();
+    defer lexer.deinit();
+
     YYLexer.context = YYLexer.Context.init(allocator);
     defer YYLexer.context.deinit();
-
-    try YYLexer.yylex_init(&lexer);
-    defer YYLexer.yylex_destroy(&lexer);
 
     _ = try YYLexer.yy_scan_string(content, lexer.yyg);
 

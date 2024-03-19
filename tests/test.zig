@@ -8,6 +8,7 @@ const all_tests = .{
     @import("zlex/yymore/regtest.zig"),
     @import("zlex/comments/regtest.zig"),
     @import("zlex/dates/regtest.zig"),
+    @import("zlex/string1/regtest.zig"),
 
     @import("zison/glr/regtest.zig"),
     @import("zison/reccalc/regtest.zig"),
