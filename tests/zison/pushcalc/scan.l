@@ -83,7 +83,7 @@ pub fn main() !u8 {
         };
         if (tk == YYLexer.YY_TERMINATED) break;
         switch (tk) {
-            TOK_TYPE.YYEOF => {
+            YYLexer.TOK_TYPE.YYEOF => {
                 break;
             },
             else => |cur_tk| {

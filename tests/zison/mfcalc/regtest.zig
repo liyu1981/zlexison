@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const zlexison = @import("zlexison.zig");
-const YYLexer = @import("scan.zig");
+const YYLexer = @import("scan.zig").YYLexer;
 const YYParser = @import("parser.zig");
 
 pub fn runAllTests(comptime Util: type) !void {

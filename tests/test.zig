@@ -11,6 +11,7 @@ const all_tests = .{
     @import("zlex/string1/regtest.zig"),
     @import("zlex/user_act/regtest.zig"),
     @import("zlex/user_init/regtest.zig"),
+    @import("zlex/user_extra/regtest.zig"),
 
     @import("zison/glr/regtest.zig"),
     @import("zison/reccalc/regtest.zig"),

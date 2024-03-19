@@ -106,7 +106,7 @@ pub fn initSymTable(arena: std.mem.Allocator) !void {
 }
 
 %{
-const YYLexer = @import("scan.zig");
+const YYLexer = @import("scan.zig").YYLexer;
 const Symrec = zlexison.Symrec;
 
 pub var result_buf: std.ArrayList(u8) = undefined;

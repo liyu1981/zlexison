@@ -1,5 +1,5 @@
 %code top {
-  const YYLexer = @import("scan.zig");
+  const YYLexer = @import("scan.zig").YYLexer;
 
   pub var result_buf: std.ArrayList(u8) = undefined;
 }

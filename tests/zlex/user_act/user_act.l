@@ -33,7 +33,7 @@ pub fn main() !u8 {
     defer lexer.deinit();
 
     // this is how to use custom user_action instead of default one
-    YYLexer.YY_USER_ACTION = user_action;
+    YYLexer.YY_USER_ACTION = YYLexer.user_action;
 
     YYLexer.yydebug = true;
 

@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const testing = std.testing;
-const YYLexer = @import("comments.zig");
+const YYLexer = @import("comments.zig").YYLexer;
 
 pub fn runAllTests(comptime Util: type) !void {
     try Util.runTests("comments", comments_test_data, runCommentsTest);

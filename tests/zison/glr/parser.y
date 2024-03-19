@@ -148,7 +148,7 @@
 }
 
 %code top {
-  const YYLexer = @import("scan.zig");
+  const YYLexer = @import("scan.zig").YYLexer;
   const Node = zlexison.Node;
 
   pub const Ast = struct {

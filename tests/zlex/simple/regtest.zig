@@ -1,6 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const YYLexer = @import("simple.zig");
+const YYLexer = @import("simple.zig").YYLexer;
 
 pub fn runAllTests(comptime Util: type) !void {
     try Util.runTests("simple", simple_test_data, runSimpleTest);

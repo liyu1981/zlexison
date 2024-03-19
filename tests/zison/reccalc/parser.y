@@ -19,7 +19,7 @@
 %code
 {
   // need to build with: ../../zig-out/bin/zison zbison --locations --no-lines -o parser.zig parser.y
-  const YYLexer = @import("scan.zig");
+  const YYLexer = @import("scan.zig").YYLexer;
 
   pub const Result = struct {
     // Whether to print the intermediate results.

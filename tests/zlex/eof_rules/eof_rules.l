@@ -79,8 +79,8 @@ pub fn main() !u8 {
         return 1;
     }
 
-    var yylval_param: YYSTYPE = YYSTYPE.default();
-    var yylloc_param: YYLTYPE = .{};
+    var yylval_param: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
+    var yylloc_param: YYLexer.YYLTYPE = .{};
 
     @memset(&YYLexer.include_stack, @ptrFromInt(0));
 

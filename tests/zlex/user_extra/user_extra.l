@@ -1,20 +1,18 @@
-%option reject
-%option yymore
-%option unput
-%option stack
-%option bison-bridge
-%option bison-locations
-
 %{
-pub var num_lines: usize = 0;
-pub var num_chars: usize = 0;
+    // This example demos how to use YY_USER_EXTRA
+    // another way of implement zlex/simple
 %}
 
 %%
 
-\n      { num_lines += 1; num_chars += 1; }
-.       { num_chars += 1; }
+\n      { yyg.yyextra_r.num_lines += 1; yyg.yyextra_r.num_chars += 1; }
+.       { yyg.yyextra_r.num_chars += 1; }
 %%
+
+const Counter = struct {
+    num_lines: usize = 0,
+    num_chars: usize = 0,
+};
 
 pub fn main() !u8 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -32,10 +30,16 @@ pub fn main() !u8 {
     const content = try f.readToEndAlloc(allocator, std.math.maxInt(usize));
     defer allocator.free(content);
 
-    var yylval_param: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
-    var yylloc_param: YYLexer.YYLTYPE = .{};
+    // here we define a YYLexer type knows about our Counter type as extra
+    const MyYYLexer = defineYYLexer(.{ .YY_EXTRA_TYPE = Counter });
 
-    var lexer = YYLexer{ .allocator = allocator };
+    var yylval_param: MyYYLexer.YYSTYPE = MyYYLexer.YYSTYPE.default();
+    var yylloc_param: MyYYLexer.YYLTYPE = .{};
+
+    var lexer = MyYYLexer{ .allocator = allocator };
+
+    // init our extra data, remember that its type is Counter
+    lexer.yyg.yyextra_r = .{};
 
     try lexer.init();
     defer lexer.deinit();
@@ -50,8 +54,8 @@ pub fn main() !u8 {
         if (tk == YYLexer.YY_TERMINATED) break;
     }
     std.debug.print("# of lines = {d}, # of chars = {d}\n", .{
-        YYLexer.num_lines,
-        YYLexer.num_chars,
+        lexer.yyg.yyextra_r.num_lines,
+        lexer.yyg.yyextra_r.num_chars,
     });
     return 0;
 }

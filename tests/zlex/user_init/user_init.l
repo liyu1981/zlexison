@@ -2,7 +2,7 @@
     pub var exe_args: [][:0]const u8 = undefined;
 
     // this example demos how to use YY_USER_INIT in zig
-    pub fn userInitOpenFileFromArg1(lexer: *YYLexer) anyerror!void {
+    pub fn userInitOpenFileFromArg1(lexer: *Self) anyerror!void {
         if (exe_args.len < 2) {
             std.debug.print("Usage: <exe> <input_file>\n", .{});
             return error.InvalidArgs;
@@ -37,7 +37,7 @@ pub fn main() !u8 {
     defer lexer.deinit();
 
     // this is how to use custom user_init instead of default one
-    YYLexer.YY_USER_INIT = userInitOpenFileFromArg1;
+    YYLexer.YY_USER_INIT = YYLexer.userInitOpenFileFromArg1;
 
     const args = try std.process.argsAlloc(lexer.allocator);
     defer std.process.argsFree(lexer.allocator, args);

@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const testing = std.testing;
-const YYLexer = @import("cat.zig");
+const YYLexer = @import("cat.zig").YYLexer;
 const tmpfile = @import("../../utils/tmpfile.zig");
 
 fn createTmpFiles(allocator: std.mem.Allocator, contents: []const []const u8) ![]tmpfile.TmpFile {
