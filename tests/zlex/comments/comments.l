@@ -9,6 +9,8 @@
 
 %%
   /* Rules Section */
+  /* multi line comments
+     will work too. */
 ruleA /* after regex */ { /* code block */ } /* after code block */
       /* Rules Section (indented) */
 <STATE_X>{
