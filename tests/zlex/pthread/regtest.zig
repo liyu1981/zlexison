@@ -11,7 +11,7 @@ const pthread_test_data = .{
         \\ line 1
         \\ line 2
         ,
-        \\From thread 1: # of lines = 1, # of chars = 15
+        \\From thread 1: # of lines = 2, # of chars = 16
         \\From thread 2: # of lines = 2, # of chars = 16
         \\
     },
