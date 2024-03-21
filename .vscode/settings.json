@@ -3,7 +3,8 @@
     "iconv.h": "c",
     "errno.h": "c",
     "flexdef.h": "c",
-    "random": "c"
+    "random": "c",
+    "config.h": "c"
   },
   "[c]": {
     "editor.formatOnSave": false

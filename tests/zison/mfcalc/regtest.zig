@@ -147,7 +147,5 @@ fn runParseTest(allocator: std.mem.Allocator, input: []const u8, expected_output
 
     _ = try YYParser.yyparse(allocator, &scanner);
 
-    std.debug.print("{s}", .{YYParser.result_buf.items});
-
     try testing.expectEqualSlices(u8, YYParser.result_buf.items, expected_output);
 }

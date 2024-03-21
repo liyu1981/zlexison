@@ -16,7 +16,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug misc",
-      "program": "${workspaceFolder}/string1",
+      "program": "${workspaceFolder}/lineno_trailing",
       "args": [],
       "cwd": "${workspaceFolder}"
     },

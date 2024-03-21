@@ -3,6 +3,7 @@ pub const Context = struct {
     allocator: std.mem.Allocator,
     nesting: usize = 0,
     str: std.ArrayList(u8),
+    loc: YYLTYPE = .{},
 
     pub fn init(allocator: std.mem.Allocator) Context {
       return Context{
@@ -31,6 +32,8 @@ pub var context: Context = undefined;
 "("      {
     context.nesting += 1;
     context.str.clearAndFree();
+    context.loc.first_line = yyg.yylloc_r.first_line;
+    context.loc.first_column = yyg.yylloc_r.first_column;
     BEGIN(SC_STRING, yyg);
   }
 
@@ -61,6 +64,9 @@ pub var context: Context = undefined;
 <SC_STRING>")"    {
     context.nesting -= 1;
     if (context.nesting == 0) {
+        const last_loc = try yy_get_last_loc(yyg);
+        context.loc.last_line = last_loc.lineno;
+        context.loc.last_column = last_loc.column;
         BEGIN(INITIAL, yyg);
         if (context.str.items.len > 0) {
             yyset_lval(YYSTYPE{ .tag = .TOK_STR, .value = .{ .TOK_STR = &context.str.items } }, yyg);
@@ -119,6 +125,9 @@ pub fn main() !u8 {
         switch (tk) {
             YYLexer.TOK_TYPE.TOK_EOF => {
                 break;
+            },
+            YYLexer.TOK_TYPE.TOK_STR => |cur_tk| {
+                try stdout_writer.print("tk: {any} at loc: {s}\n", .{ cur_tk, YYLexer.context.loc });
             },
             else => |cur_tk| {
                 try stdout_writer.print("tk: {any} at loc: {s}\n", .{ cur_tk, yylloc });
