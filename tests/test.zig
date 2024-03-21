@@ -15,6 +15,8 @@ const all_tests = .{
     @import("zlex/pthread/regtest.zig"),
     @import("zlex/lineno_r/regtest.zig"),
     @import("zlex/lineno_trailing/regtest.zig"),
+    @import("zlex/trival/regtest.zig"),
+    @import("zlex/multi_scanner/regtest.zig"),
 
     @import("zison/glr/regtest.zig"),
     @import("zison/reccalc/regtest.zig"),
