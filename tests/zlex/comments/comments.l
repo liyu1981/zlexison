@@ -14,7 +14,11 @@
 ruleA /* after regex */ { /* code block */ } /* after code block */
       /* Rules Section (indented) */
 <STATE_X>{
-        ruleC try ECHO(yyg);
+        ruleC { 
+                try ECHO(yyg);
+                // quotes with comments should work
+                //' "
+            }
         ruleD try ECHO(yyg);
         %{
             /* code block */
