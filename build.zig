@@ -316,6 +316,7 @@ fn buildTestsStepMakeFn(step: *std.Build.Step, node: *std.Progress.Node) !void {
         "tests/zlex/lineno_trailing",
         "tests/zlex/trival",
         "tests/zlex/multi_scanner",
+        "tests/zlex/rescan",
 
         "tests/zison/glr",
         "tests/zison/mfcalc",
