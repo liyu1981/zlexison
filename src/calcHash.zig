@@ -44,12 +44,12 @@ pub fn main() !u8 {
 
     opts = parseArgs(args, CalcHahsOptions) catch {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
-        std.os.exit(1);
+        std.posix.exit(1);
     };
 
     if (opts.input_file_path == null) {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
-        std.os.exit(1);
+        std.posix.exit(1);
     }
 
     const cwd = std.fs.cwd();

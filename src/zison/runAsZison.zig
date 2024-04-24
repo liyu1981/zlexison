@@ -44,7 +44,7 @@ pub fn runAsZison(opts: struct {
             .print_stderr = true,
         }) catch {
             std.debug.print("{?s}\n", .{result.stderr});
-            std.os.exit(1);
+            std.posix.exit(1);
         };
     }
 
@@ -101,7 +101,7 @@ pub fn runAsZison(opts: struct {
             std.debug.print("// zig fmt failed with: \n", .{});
             for (err_js_lines) |line| std.debug.print("// {s}\n", .{line});
             std.debug.print("// below is the generated source. \n{s}\n", .{raw_tabc_fixed});
-            std.os.exit(1);
+            std.posix.exit(1);
         };
         break :brk result.stdout.?;
     };

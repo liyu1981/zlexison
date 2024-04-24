@@ -4,8 +4,8 @@
 
     .dependencies = .{
         .zcmd = .{
-            .url = "https://github.com/liyu1981/zcmd.zig/archive/refs/heads/main.tar.gz",
-            .hash = "1220e8ee3817ef4f253e824e6ba96b473ec00b4be1e4d3d7c1fa5c29e2c540ae6015",
+            .url = "https://github.com/liyu1981/zcmd.zig/archive/refs/tags/v0.3.0.tar.gz",
+            .hash = "12206ecf3612cbbe7cd92cc3d29a9cb0b9441d4f006d5bb66551f1fda0ffaf9e68bd",
         },
         .jstring = .{
             .url = "https://github.com/liyu1981/jstring.zig/archive/refs/heads/main.tar.gz",

@@ -98,7 +98,7 @@ fn writeInitFile(maybe_output_file_path: ?[]const u8, init_content: []const u8) 
                 break :brk try std.fs.cwd().createFile(maybe_output_file_path.?, .{});
             };
             std.debug.print("found existing file {s}. exit!", .{maybe_output_file_path.?});
-            std.os.exit(1);
+            std.posix.exit(1);
         } else {
             break :brk std.io.getStdOut();
         }

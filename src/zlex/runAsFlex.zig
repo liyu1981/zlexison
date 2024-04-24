@@ -31,7 +31,7 @@ pub fn runAsFlex(args: [][:0]const u8, zlex_exe_path: []const u8, m4_exe_path: [
 
     const ret = std.process.execve(arena, argv, &envmap);
     std.debug.print("Oops, {any}\n", .{ret});
-    std.os.exit(1);
+    std.posix.exit(1);
 }
 
 fn ensureZlexFlex(allocator: std.mem.Allocator, zlex_exe_dir: []const u8) ![]const u8 {

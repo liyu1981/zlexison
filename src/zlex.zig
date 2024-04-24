@@ -132,7 +132,7 @@ fn parseArgs(args: [][:0]u8) !ZlexOptions {
 fn printErrAndUsageExit(err: anyerror) noreturn {
     std.debug.print("{any}\n", .{err});
     std.debug.print("{s}\n", .{usage});
-    std.os.exit(1);
+    std.posix.exit(1);
 }
 
 var opts: ZlexOptions = undefined;
@@ -147,7 +147,7 @@ pub fn main() !u8 {
 
     opts = parseArgs(args) catch {
         try std.io.getStdErr().writer().print("{s}\n", .{usage});
-        std.os.exit(1);
+        std.posix.exit(1);
     };
 
     var exe_info = try util.ExeInfo.init(arena);

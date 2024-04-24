@@ -28,7 +28,7 @@ pub fn runAsM4(args: [][:0]const u8, exe_path: []const u8) void {
 
     const ret = std.process.execve(arena, argv, &envmap);
     std.debug.print("Oops, {any}\n", .{ret});
-    std.os.exit(1);
+    std.posix.exit(1);
 }
 
 pub fn ensureZm4(allocator: std.mem.Allocator, exe_dir: []const u8) ![]const u8 {

@@ -46,7 +46,7 @@ pub fn runAsBison(
 
     const ret = std.process.execve(arena, argv, &envmap);
     std.debug.print("Oops, {any}\n", .{ret});
-    std.os.exit(1);
+    std.posix.exit(1);
 }
 
 fn ensureZisonBison(allocator: std.mem.Allocator, zison_exe_dir: []const u8) ![]const u8 {

@@ -58,7 +58,7 @@ pub fn runAsZlex(opts: struct {
             .print_stderr = true,
         }) catch {
             std.debug.print("{?s}\n", .{result.stderr});
-            std.os.exit(1);
+            std.posix.exit(1);
         };
         break :brk result.stdout.?;
     };
@@ -96,7 +96,7 @@ pub fn runAsZlex(opts: struct {
             std.debug.print("// zig fmt failed with: \n", .{});
             for (err_js_lines) |line| std.debug.print("// {s}\n", .{line});
             std.debug.print("// below is the generated source. \n{s}\n", .{yyc_final2});
-            std.os.exit(1);
+            std.posix.exit(1);
         };
         break :brk result.stdout.?;
     };
@@ -123,7 +123,7 @@ pub fn runAsZflex(args: [][:0]const u8, m4_path: []const u8) void {
     const m4pathZ = arena.dupeZ(u8, m4_path) catch {
         @panic("Oops! OOM!");
     };
-    std.os.exit(flex_main(
+    std.posix.exit(flex_main(
         args.len,
         @as([*c]const u8, @ptrCast(argv_buf.ptr)),
         m4pathZ.ptr,

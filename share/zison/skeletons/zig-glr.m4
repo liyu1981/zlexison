@@ -1289,7 +1289,7 @@ inline fn yydoAction (yyctx: *yyparse_context_t, yystackp: *yyGLRStack, yyk: isi
     {
       // /* Standard special case: single stack.  */
       const yystates_at_yyk: *yyGLRState = @@ptrCast(valueWithOffset(yystackp.yytops.yystates, yyk));
-      const yyrhs: *allowzero yyGLRStackItem = @@fieldParentPtr(yyGLRStackItem, "yystate", yystates_at_yyk);
+      const yyrhs: *allowzero yyGLRStackItem = @@fieldParentPtr("yystate", yystates_at_yyk);
       YY_ASSERT (yyk == 0);
       yystackp.yynextFree = movePtr(yystackp.yynextFree, -yynrhs);
       yystackp.yyspaceLeft = @@intCast(@@as(isize, @@intCast(yystackp.yyspaceLeft)) + yynrhs);
@@ -1803,7 +1803,7 @@ fn yycompressStack (yystackp: *yyGLRStack) void {
 
     yystackp.yyspaceLeft += ptrDistance(yyGLRStackItem, &yystackp.yyitems[0], yystackp.yynextFree);
     const yysplitPoint_as_state: *yyGLRState = @@ptrCast(yystackp.yysplitPoint);
-    yystackp.yynextFree = @@fieldParentPtr(yyGLRStackItem, "yystate", yysplitPoint_as_state);
+    yystackp.yynextFree = @@fieldParentPtr("yystate", yysplitPoint_as_state);
     yystackp.yynextFree = movePtr(yystackp.yynextFree, 1);
     yystackp.yyspaceLeft -= ptrDistance(yyGLRStackItem, &yystackp.yyitems[0], yystackp.yynextFree);
     yystackp.yysplitPoint = @@ptrFromInt(0);

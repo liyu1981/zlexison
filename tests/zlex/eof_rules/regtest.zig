@@ -47,8 +47,8 @@ fn runEofRulesTest(allocator: std.mem.Allocator, input: []const u8, expected_out
     var cur_dir_buf: [8192]u8 = undefined;
     const cur_dir = try std.process.getCwd(&cur_dir_buf);
 
-    try std.os.chdir(tmp_dir.abs_path);
-    defer std.os.chdir(cur_dir) catch {
+    try std.posix.chdir(tmp_dir.abs_path);
+    defer std.posix.chdir(cur_dir) catch {
         @panic("can not restore cwd");
     };
 

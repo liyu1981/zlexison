@@ -98,7 +98,7 @@ pub fn runAsZlexison(
             std.debug.print("// zig fmt failed with: \n", .{});
             for (err_js_lines) |line| std.debug.print("// {s}\n", .{line});
             std.debug.print("// below is the generated source. \n{s}\n", .{raw_zz});
-            std.os.exit(1);
+            std.posix.exit(1);
         };
         break :brk result.stdout.?;
     };
@@ -140,5 +140,5 @@ fn ensureZlexisonZigFilePathZ(arena: std.mem.Allocator, output_file_path: []cons
         return arena.dupeZ(u8, zlexison_output_file);
     };
     std.debug.print("found zlexison.zig in current dir, go forward may overwrite it. Abort!", .{});
-    std.os.exit(1);
+    std.posix.exit(1);
 }

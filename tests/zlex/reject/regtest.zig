@@ -24,18 +24,18 @@ const reject_test_data = .{
 };
 
 fn runRejectTest(allocator: std.mem.Allocator, input: []const u8, expected_output: []const u8) !void {
-    const in_pipe = try std.os.pipe2(.{});
-    const forked_pid = try std.os.fork();
+    const in_pipe = try std.posix.pipe2(.{});
+    const forked_pid = try std.posix.fork();
 
     if (forked_pid != 0) {
-        defer _ = std.os.waitpid(forked_pid, 0);
+        defer _ = std.posix.waitpid(forked_pid, 0);
 
         // we are parent
-        std.os.close(in_pipe[1]);
-        const back_stdin: std.os.fd_t = try std.os.dup(std.os.STDIN_FILENO);
-        try std.os.dup2(in_pipe[0], std.os.STDIN_FILENO);
-        std.os.close(in_pipe[0]);
-        defer std.os.dup2(back_stdin, std.os.STDIN_FILENO) catch unreachable;
+        std.posix.close(in_pipe[1]);
+        const back_stdin: std.posix.fd_t = try std.posix.dup(std.posix.STDIN_FILENO);
+        try std.posix.dup2(in_pipe[0], std.posix.STDIN_FILENO);
+        std.posix.close(in_pipe[0]);
+        defer std.posix.dup2(back_stdin, std.posix.STDIN_FILENO) catch unreachable;
 
         var yylval_param: YYLexer.YYSTYPE = YYLexer.YYSTYPE.default();
         var yylloc_param: YYLexer.YYLTYPE = .{};
@@ -57,9 +57,9 @@ fn runRejectTest(allocator: std.mem.Allocator, input: []const u8, expected_outpu
         try testing.expectEqualSlices(u8, output_buf.items, expected_output);
     } else {
         // we are child
-        std.os.close(in_pipe[0]);
-        try std.os.dup2(in_pipe[1], std.os.STDOUT_FILENO);
-        std.os.close(in_pipe[1]);
+        std.posix.close(in_pipe[0]);
+        try std.posix.dup2(in_pipe[1], std.posix.STDOUT_FILENO);
+        std.posix.close(in_pipe[1]);
         try std.io.getStdOut().writeAll(input);
     }
 }
